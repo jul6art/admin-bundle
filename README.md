@@ -63,7 +63,8 @@ admin:
         favicon: 'img/favicon.ico'
         home_route: admin_dashboard
 
-    # An empty route name HIDES its link rather than breaking the render.
+    # An empty route name HIDES its link rather than breaking the render — which is what makes
+    # the multi-area case below work.
     routes:
         login: admin_security_login
         logout: admin_security_logout
@@ -78,6 +79,25 @@ admin:
         hub_url: '%env(MERCURE_PUBLIC_URL)%'
         token_route: admin_mercure_token
 ```
+
+> ⚠️ **`routes` is a GLOBAL table — one route per entry, for the whole application.**
+>
+> An application with several areas, where the same screen exists twice — `/admin/account/appearance`
+> and `/organization/account/appearance` — cannot name both here. Leave that entry **empty** and let
+> each layout add its own link:
+>
+> ```twig
+> {% block admin_account_menu_extra %}
+>     {{ include('@Admin/partials/_menu_link.html.twig', {
+>         route: 'app_organization_account_appearance_edit',
+>         icon: 'fa-solid fa-palette',
+>         label: 'nav.appearance'|trans,
+>     }) }}
+> {% endblock %}
+> ```
+>
+> A single value sends everyone to the same place, and the audience of the other area to a 403 —
+> the page works, the *link* is wrong, and nothing in a controller test looks at links.
 
 ### The base template
 

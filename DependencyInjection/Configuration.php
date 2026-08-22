@@ -61,7 +61,7 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->arrayNode('routes')
-                    ->info('Route names the shipped shell and auth pages link to. Every one of them has a default matching the names this bundle\'s own controllers declare; an application that names its routes otherwise overrides the ones it has and leaves the rest empty — an empty name hides the link instead of failing the render.')
+                    ->info('Route names the shipped shell and auth pages link to. Every one of them has a default matching the names this bundle\'s own controllers declare; an application that names its routes otherwise overrides the ones it has and leaves the rest empty — an empty name hides the link instead of failing the render. WARNING: this table is GLOBAL, one route per entry for the whole application. An application with several areas — /admin and /organization, say — where the same screen exists twice must leave that entry EMPTY and let each layout add its own link in the admin_account_menu_extra block. A single value would send everyone to the same place, and the audience of the other area to a 403.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('login')->defaultValue('admin_security_login')->end()
