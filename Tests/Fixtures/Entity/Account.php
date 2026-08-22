@@ -120,6 +120,20 @@ class Account implements AdminUserInterface, AppearanceAwareInterface, UserInter
         return ['ROLE_USER'];
     }
 
+    /**
+     * ⚠️ Présente SANS `#[\Override]`, et les deux moitiés comptent.
+     *
+     * `UserInterface::eraseCredentials()` est encore déclarée en Symfony 7.4 et a disparu en 8.0.
+     * Sans la méthode, la classe est abstraite sur 7.4 — erreur fatale. Avec `#[\Override]`, elle
+     * est fatale sur 8.0, où il n'y a plus de parent à surcharger. Cette forme-là passe sur les
+     * deux branches, ce qu'un bundle promettant `^7.4 || ^8.0` doit faire.
+     *
+     * Trouvée par la CI, jeu `lowest deps` : en local Composer résout 8.x et la classe compile.
+     */
+    public function eraseCredentials(): void
+    {
+    }
+
     #[\Override]
     public function getUserIdentifier(): string
     {

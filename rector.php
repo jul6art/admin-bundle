@@ -36,6 +36,16 @@ return RectorConfig::configure()
     ->withAttributesSets(symfony: true, doctrine: true, phpunit: true)
     ->withComposerBased(doctrine: true, symfony: true, phpunit: true)
     ->withSkip([
+        // ⚠️ `eraseCredentials()` de la fixture n'est appelée par personne et a quitté
+        // `UserInterface` en Symfony 8 : Rector la voit morte et la retire. Elle ne l'est pas sur
+        // la branche 7.4, où l'interface la déclare encore — sans elle, la classe y est abstraite.
+        // Un bundle qui promet `^7.4 || ^8.0` doit tenir les deux.
+        // ⚠️ `RemoveEraseCredentialsRector` retire `eraseCredentials()` parce que Symfony 8 l'a
+        // sortie de `UserInterface`. Vrai sur cette branche, faux sur la 7.4, où l'interface la
+        // déclare encore : sans la méthode, la classe y est ABSTRAITE et le chargement est fatal.
+        // Un bundle qui promet `^7.4 || ^8.0` doit tenir les deux, et Rector ne raisonne que sur
+        // la version installée localement — c'est le jeu `lowest deps` de la CI qui l'a montré.
+        Rector\Symfony\Symfony80\Rector\Class_\RemoveEraseCredentialsRector::class,
         // Ce déplacement de namespace vise `Symfony\Component\DependencyInjection\Kernel\BundleInterface`,
         // qui n'existe pas en Symfony 8.1 — et le bundle déclare `^7.4 || ^8.0`, donc il ne peut
         // pas s'appuyer sur une classe présente d'un seul côté. `HttpKernel\Bundle\BundleInterface`
