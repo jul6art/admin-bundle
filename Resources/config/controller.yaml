@@ -4,7 +4,19 @@
 services:
     _defaults:
         autowire: true
-        autoconfigure: true
 
+    # ⚠️ `autoconfigure: false`, et c'est le cœur du câblage.
+    #
+    # L'autoconfiguration de FrameworkBundle voit l'attribut `#[Route]` et pose le tag
+    # `routing.controller` — que le loader `routing.controllers` (le `config/routes.yaml` des
+    # recipes Symfony ≥ 7.3) importe automatiquement, SANS le préfixe que l'application avait
+    # choisi. La route sortait alors en `/account/appearance` au lieu de
+    # `/admin/account/appearance` : hors du préfixe, donc hors des `access_control` qui le visent.
+    #
+    # Les tags dont le contrôleur a réellement besoin sont posés à la main — les DEUX :
+    # `container.service_subscriber` alimente le `setContainer()` d'`AbstractController`, sans
+    # lui la compilation échoue sur un `ContainerInterface` introuvable. La route, elle, ne naît
+    # que de l'import explicite du projet.
     Jul6Art\AdminBundle\Controller\AppearanceController:
-        tags: ['controller.service_arguments']
+        autoconfigure: false
+        tags: ['controller.service_arguments', 'container.service_subscriber']

@@ -143,6 +143,18 @@ final class TestKernel extends Kernel
                         $alias->setPublic(true);
                     }
                 }
+
+                // Les tags ne survivent pas à la compilation : un test qui veut savoir qui porte
+                // `routing.controller` doit le lire ICI, pendant le build, et le retrouver ensuite
+                // dans un paramètre. C'est ce que `ContainerTest` consomme.
+                $container->setParameter(
+                    'test.routing_controller_tags',
+                    array_keys($container->findTaggedServiceIds('routing.controller')),
+                );
+                $container->setParameter(
+                    'test.controller_service_arguments_tags',
+                    array_keys($container->findTaggedServiceIds('controller.service_arguments')),
+                );
             }
         }, PassConfig::TYPE_BEFORE_REMOVING, 100);
     }
