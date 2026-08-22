@@ -1,0 +1,25 @@
+{#
+    Confirmation d'envoi. Volontairement muette sur l'existence du compte, pour la raison écrite
+    dans `reset_password_request.html.twig`.
+#}
+{% extends '@Admin/security/_card.html.twig' %}
+{% trans_default_domain 'security' %}
+
+{% block auth_title %}{{ 'security.reset_password.check_email.title'|trans }}{% endblock %}
+
+{% block auth_body %}
+    <div class="flex flex-col items-center text-center gap-4 py-2">
+        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/40">
+            <i class="fa-solid fa-envelope text-xl text-accent-600 dark:text-accent-400"></i>
+        </span>
+        <p class="text-sm text-slate-600 dark:text-slate-400">{{ 'security.reset_password.check_email.body'|trans }}</p>
+    </div>
+{% endblock %}
+
+{% block auth_footer %}
+    {% if admin_route('login') %}
+        <a href="{{ path(admin_route('login')) }}" class="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
+            {{ 'security.reset_password.back_to_login'|trans }}
+        </a>
+    {% endif %}
+{% endblock %}

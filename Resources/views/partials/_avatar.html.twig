@@ -1,0 +1,17 @@
+{#
+    La pastille d'un compte : sa photo, ou ses initiales. Attend `user`, et `size` en unités
+    Tailwind (8 → `w-8 h-8`).
+
+    Les deux classes sont écrites en toutes lettres plutôt que composées, parce qu'une classe
+    construite par concaténation est invisible pour le scanner de Tailwind et disparaît du CSS de
+    production — et de celui-là seulement.
+#}
+{% set _classes = { 7: 'w-7 h-7', 8: 'w-8 h-8', 10: 'w-10 h-10' } %}
+<div class="{{ _classes[size|default(8)]|default('w-8 h-8') }} rounded-full overflow-hidden bg-accent-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+    {% set _avatar = admin_user_avatar(user) %}
+    {% if _avatar is not empty %}
+        <img src="{{ asset(_avatar) }}" alt="{{ admin_user_label(user) }}" class="w-full h-full object-cover">
+    {% else %}
+        {{ admin_user_initials(user) }}
+    {% endif %}
+</div>

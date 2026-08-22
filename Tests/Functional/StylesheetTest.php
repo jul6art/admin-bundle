@@ -1,0 +1,159 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Jul6Art\AdminBundle\Tests\Functional;
+
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Garde-fous sur les feuilles de style de la coquille.
+ *
+ * Une règle CSS n'a pas de sortie observable en test : la seule chose vérifiable sans navigateur
+ * est qu'elle est encore écrite. C'est peu — et c'est exactement ce qui a manqué chaque fois qu'un
+ * de ces réglages a disparu au détour d'un remaniement, pour ne se voir qu'à l'écran, en mode
+ * sombre, sur la machine de quelqu'un d'autre.
+ *
+ * Ces assertions viennent d'un projet qui les portait avant que le CSS entre dans ce bundle. Elles
+ * le suivent, comme leur code : un test resté côté projet garde une garantie sur du code qu'il ne
+ * possède plus.
+ */
+#[CoversNothing]
+final class StylesheetTest extends TestCase
+{
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function buttonClasses(): iterable
+    {
+        yield 'btn-primary' => ['.btn-primary'];
+        yield 'btn-secondary' => ['.btn-secondary'];
+        yield 'btn-danger' => ['.btn-danger'];
+        yield 'btn-warning' => ['.btn-warning'];
+    }
+
+    /**
+     * Chaque bouton pose son propre anneau de focus et neutralise l'outline natif. Sans
+     * `focus-visible:outline-none`, Chrome peint son `outline: auto` par-dessus : un double trait
+     * bleu + halo blanc, illisible sur fond sombre.
+     */
+    #[DataProvider('buttonClasses')]
+    public function testAButtonCarriesAnAccentFocusRingAndNoNativeOutline(string $selector): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/'.preg_quote($selector, '/').' \{[^}]*focus-visible:outline-none[^}]*focus-visible:ring-2[^}]*\}/s',
+            $css,
+            $selector.' doit poser focus-visible:outline-none + focus-visible:ring-2.',
+        );
+    }
+
+    /**
+     * Et surtout pas de `ring-offset` : l'offset est peint dans la couleur de fond de la page,
+     * donc blanc — ce qui ré-introduit exactement le trait clair que l'anneau accent remplace.
+     */
+    #[DataProvider('buttonClasses')]
+    public function testAButtonHasNoRingOffset(string $selector): void
+    {
+        self::assertDoesNotMatchRegularExpression(
+            '/'.preg_quote($selector, '/').' \{[^}]*ring-offset/s',
+            self::components(),
+        );
+    }
+
+    /**
+     * Un `<select>` natif garde `appearance: auto` et peint SA bordure de focus par-dessus celle
+     * de `.form-control` — claire, donc blanche en mode sombre, là où un `<input>` ne le fait pas.
+     * La neutraliser oblige à réinjecter un chevron.
+     */
+    public function testANativeSelectNeutralisesItsOwnChrome(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression('/select\.form-control \{[\s\S]*?appearance-none/', $css);
+        self::assertMatchesRegularExpression('/select\.form-control \{[\s\S]*?background-image:/', $css);
+    }
+
+    /**
+     * La densité pilote le padding des panneaux, et pas seulement la hauteur de ligne d'un
+     * tableau : sans cette règle, choisir « compact » ne se voyait que sur les pages qui portent
+     * une datatable, ce qui ressemblait à un réglage cassé.
+     */
+    public function testDensityDrivesPanelPadding(): void
+    {
+        $css = self::tokens();
+
+        self::assertStringContainsString('--density-panel-p', $css);
+        self::assertMatchesRegularExpression(
+            "/\[data-density='cozy'\] \.panel,\s*\[data-density='compact'\] \.panel \{\s*padding: var\(--density-panel-p\);/",
+            $css,
+        );
+    }
+
+    /**
+     * L'autre moitié de la densité : la hauteur de ligne d'un tableau. La règle vise un sélecteur
+     * du `datatable-bundle` (`table.dataTable td`) mais vit ici, avec le réglage de compte qui la
+     * produit — un projet qui prend le socle de tableau sans cette coquille n'a pas de préférence
+     * de densité à appliquer.
+     */
+    public function testDensityAlsoDrivesDatatableRowHeight(): void
+    {
+        $css = self::tokens();
+
+        self::assertStringContainsString('--density-cell-py', $css);
+        self::assertMatchesRegularExpression("/\[data-density='compact'\] table\.dataTable td/", $css);
+    }
+
+    /**
+     * Le contraste élevé doit être perceptible : bordures plus sombres ET plus épaisses, texte
+     * secondaire dé-atténué. Un simple demi-ton de plus sur une bordure ne se voit pas, ce qui
+     * rend le réglage inutile pour qui en a besoin.
+     */
+    public function testHighContrastIsReinforcedOnBothThemes(): void
+    {
+        $css = self::tokens();
+
+        self::assertStringContainsString('border-color: rgb(51 65 85)', $css);
+        self::assertMatchesRegularExpression('/\[data-contrast=\'high\'\][\s\S]*?border-width: 2px/', $css);
+        self::assertStringContainsString("[data-contrast='high'] .text-slate-500", $css);
+        self::assertStringContainsString(".dark[data-contrast='high'] .panel", $css);
+    }
+
+    /** Les sept accents doivent tous exister : l'enum en propose sept, le CSS doit suivre. */
+    public function testEveryAccentHasItsVariableBlock(): void
+    {
+        $css = self::tokens();
+
+        foreach (['emerald', 'rose', 'amber', 'sky', 'violet', 'teal'] as $accent) {
+            self::assertStringContainsString("[data-accent='".$accent."']", $css, $accent);
+        }
+
+        // `indigo` est le défaut : il vit sur `:root`, pas dans un bloc d'attribut.
+        self::assertMatchesRegularExpression('/:root \{[\s\S]*?--accent-500: 99 102 241;/', $css);
+    }
+
+    /**
+     * L'aperçu doit contenir un `table.dataTable` — c'est ce que la densité re-padde, donc le seul
+     * élément qui rend le réglage démontrable en direct.
+     */
+    public function testTheAppearancePreviewShowsWhatDensityChanges(): void
+    {
+        $twig = (string) file_get_contents(\dirname(__DIR__, 2).'/Resources/views/partials/_appearance_form.html.twig');
+
+        self::assertStringContainsString('class="dataTable', $twig);
+        self::assertStringContainsString('appearance.preview.table.col_name', $twig);
+    }
+
+    private static function components(): string
+    {
+        return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');
+    }
+
+    private static function tokens(): string
+    {
+        return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/tokens.css');
+    }
+}

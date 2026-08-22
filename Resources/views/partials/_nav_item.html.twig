@@ -1,0 +1,22 @@
+{#
+    Une entrée de menu. Attend `item` (un `NavItem`) et `current_route`.
+
+    L'état actif se décide sur un PRÉFIXE de nom de route, et non sur l'égalité : une page de
+    détail (`admin_user_show`) doit garder allumée l'entrée de la liste (`admin_user_index`), sinon
+    la barre latérale se vide dès qu'on ouvre une fiche. Le préfixe par défaut est le nom de la
+    route moins son `_index` final ; `NavItem::$activePrefix` sert aux cas qui n'entrent pas dans
+    cette convention.
+#}
+{% set _active = current_route starts with item.activePrefix() %}
+<li>
+    <a href="{{ path(item.route, item.routeParameters) }}"
+       class="flex items-center gap-3 px-2 py-2 rounded-lg text-sm transition-colors
+              {% if _active %}
+                bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 border-l-2 border-accent-500 pl-[6px]
+              {% else %}
+                text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 border-l-2 border-transparent
+              {% endif %}">
+        <i class="{{ item.icon }} w-4 text-center flex-shrink-0"></i>
+        {{ item.labelKey|trans({}, item.labelDomain) }}
+    </a>
+</li>

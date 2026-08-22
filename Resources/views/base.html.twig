@@ -1,0 +1,42 @@
+{#
+    La coquille HTML : `<html>`, `<head>`, `<body>`, et rien d'autre.
+
+    Ce gabarit ne charge AUCUN asset. C'est délibéré : `encore_entry_link_tags()` et `importmap()`
+    ne coexistent pas, et un bundle qui choisirait pour l'application l'obligerait à changer de
+    chaîne de compilation pour l'adopter. Les deux blocs sont vides, le projet les remplit.
+
+        {% extends '@Admin/base.html.twig' %}
+        {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
+        {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+#}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}"{% block html_attr %} class="fixed-html{% if admin_color_mode(app.user) == 'dark' %} dark{% endif %}"{{ admin_appearance_attributes(app.user) }}{% endblock %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if admin_branding().hasFavicon %}<link rel="icon" href="{{ asset(admin_branding().favicon) }}">{% endif %}
+    <title>{% block title %}{{ admin_branding().name }}{% endblock %}</title>
+
+    {#
+        Anti-FOUC. `data-theme` est déjà rendu côté serveur ; ce script ne fait que résoudre
+        `system`, qui exige `matchMedia` et ne peut donc pas être connu côté serveur, et
+        resynchronise `localStorage` pour que le choix d'un utilisateur précédent ne fuite pas sur
+        une page anonyme.
+    #}
+    <script>(function(){var r=document.documentElement,t=r.getAttribute('data-theme');if(t){var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);r.classList.toggle('dark',d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}}else{try{if(localStorage.getItem('theme')==='dark'){r.classList.add('dark')}}catch(e){}}})();</script>
+
+    {% block stylesheets %}{% endblock %}
+
+    {% if admin_mercure_hub_url() is not empty %}<meta name="mercure-hub" content="{{ admin_mercure_hub_url() }}">{% endif %}
+    {% if admin_mercure_token_route() is not empty %}<meta name="mercure-token-url" content="{{ path(admin_mercure_token_route()) }}">{% endif %}
+    {% if app.user is not null and app.user.id is defined %}<meta name="current-user-id" content="{{ app.user.id }}">{% endif %}
+
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased"{% block body_attr %}{% endblock %}>
+{% block body %}{% endblock %}
+{% block toasts %}{{ include('@Admin/partials/_toasts.html.twig') }}{% endblock %}
+{% block modals %}{% endblock %}
+{% block javascripts %}{% endblock %}
+</body>
+</html>

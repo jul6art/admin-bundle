@@ -1,0 +1,10 @@
+# Chargé uniquement quand Form ET Doctrine ORM sont présents : le contrôleur d'apparence écrit une
+# entité. L'application importe encore sa route là où elle veut la voir — c'est aussi là que se
+# décide le pare-feu qui l'entoure.
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Jul6Art\AdminBundle\Controller\AppearanceController:
+        tags: ['controller.service_arguments']

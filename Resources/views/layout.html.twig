@@ -1,0 +1,159 @@
+{#
+    La coquille du back-office : barre latérale repliable, barre du haut, zone de contenu.
+
+    Elle ne connaît aucune page. Le menu vient de `admin_navigation()`, donc des fournisseurs que
+    l'application déclare ; le nom et le logo de `admin_branding()`. Ce qui reste propre à une
+    application passe par des blocs, listés ici pour qu'on n'ait pas à lire le gabarit pour les
+    trouver :
+
+    | Bloc | Ce qu'on y met |
+    |---|---|
+    | `admin_sidebar_brand`   | l'en-tête de la barre latérale, logo compris |
+    | `admin_sidebar_nav`     | le menu — par défaut, celui des fournisseurs |
+    | `admin_sidebar_footer`  | le bloc utilisateur en bas de la barre |
+    | `admin_topbar_left`     | à gauche de la barre du haut, après le bouton mobile |
+    | `admin_topbar_center`   | au centre (un bandeau d'usurpation, une recherche…) |
+    | `admin_topbar_actions`  | à droite, AVANT le menu de compte (cloche, sélecteur de langue…) |
+    | `admin_account_menu_extra` | des entrées supplémentaires dans le menu de compte |
+    | `admin_body_end`        | après `<main>` : une variable JS globale, un widget flottant |
+    | `container_class`       | la largeur maximale du contenu |
+    | `content`               | la page |
+
+    ⚠️ Les trois hauteurs sont liées : `h-14` sur l'en-tête de la barre latérale et sur la barre du
+    haut, `max-h-screen` sur le conteneur. Changer l'une sans les autres décale la barre latérale
+    d'une poignée de pixels — visible seulement sur un écran, et sur celui du relecteur jamais.
+#}
+{# Héritage dynamique : `admin.base_template` décide quel gabarit sert de socle. Par défaut celui
+   du bundle ; une application qui a déjà le sien — balises d'assets, métas maison, bandeau de
+   cookies — l'indique là, et fait étendre `@Admin/base.html.twig` par le sien. Sans cette
+   indirection, une page d'administration court-circuite la base de l'application : elle s'affiche
+   sans la moindre feuille de style, et rien ne désigne la cause. #}
+{% extends admin_base_template() %}
+
+{% block body %}
+<div class="flex min-h-screen max-h-screen">
+    {# ── Barre latérale ──────────────────────────────────────── #}
+    <aside data-ui-sidebar-panel class="w-64 lg:translate-x-0 -translate-x-full transform transition-transform duration-200 z-20 lg:z-0 fixed lg:static inset-y-0 left-0 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-sm">
+        {% block admin_sidebar_brand %}
+            <div class="h-14 flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
+                <a href="{{ path(admin_branding().homeRoute) }}" class="flex items-center gap-2">
+                    {% if admin_branding().hasLogo %}
+                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-9 w-auto">
+                    {% endif %}
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ admin_branding().name }}</span>
+                </a>
+            </div>
+        {% endblock %}
+
+        <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+            {% block admin_sidebar_nav %}
+                {# Le menu n'est construit QUE si ce bloc est rendu. Le calculer au niveau du
+                   gabarit ferait payer une vérification de permission par entrée à un layout
+                   enfant qui remplace le bloc par le sien — ce qu'un projet existant fait
+                   volontiers pour garder son menu en Twig. #}
+                {% set _nav = admin_navigation() %}
+                {% set _current_route = app.request.attributes.get('_route') %}
+                {% set _active_section = admin_active_section(_current_route, _nav) %}
+                {% for section in _nav %}
+                    <div data-controller="ui--sidebar-section"
+                         data-ui--sidebar-section-key-value="{{ section.key }}"
+                         data-ui--sidebar-section-active-value="{{ section.key == _active_section ? 'true' : 'false' }}">
+                        <button type="button"
+                                data-action="click->ui--sidebar-section#toggle"
+                                class="w-full flex items-center justify-between px-2 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded">
+                            <span class="flex items-center gap-2">
+                                <i class="{{ section.icon }} w-4 text-center"></i>
+                                {{ section.labelKey|trans({}, section.labelDomain) }}
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-[10px] transition-transform" data-ui--sidebar-section-target="chevron"></i>
+                        </button>
+                        <ul class="space-y-0.5 mt-1 pl-1" data-ui--sidebar-section-target="content">
+                            {% for item in section.items %}
+                                {{ include('@Admin/partials/_nav_item.html.twig', { item: item, current_route: _current_route }) }}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            {% endblock %}
+        </nav>
+
+        {% block admin_sidebar_footer %}
+            {% if app.user %}
+                <div class="border-t border-slate-200 dark:border-slate-700 px-3 py-3 bg-slate-50/60 dark:bg-slate-800/60">
+                    <div class="flex items-center gap-3 px-2 py-2 rounded-lg">
+                        {{ include('@Admin/partials/_avatar.html.twig', { user: app.user, size: 8 }) }}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{{ admin_user_label(app.user) }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ app.user.userIdentifier }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endblock %}
+    </aside>
+
+    {# ── Contenu ─────────────────────────────────────────────── #}
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-0">
+        <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-4 z-10">
+            <div class="flex items-center gap-3">
+                <button type="button" data-ui-sidebar-toggle class="lg:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                {% block admin_topbar_left %}{% endblock %}
+            </div>
+
+            {% block admin_topbar_center %}<div></div>{% endblock %}
+
+            <div class="flex items-center gap-3">
+                {% block admin_topbar_actions %}{% endblock %}
+
+                {% if app.user %}
+                    <div class="relative" data-ui-dropdown>
+                        <button type="button" class="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
+                            {{ include('@Admin/partials/_avatar.html.twig', { user: app.user, size: 8 }) }}
+                            <span class="hidden md:block text-sm text-slate-700 dark:text-slate-200">{{ admin_user_label(app.user) }}</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-500 dark:text-slate-400"></i>
+                        </button>
+
+                        <div data-ui-dropdown-menu class="hidden absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl z-10">
+                            <div class="px-3 py-2 border-b border-slate-200 dark:border-slate-700 mb-1">
+                                <p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{{ admin_user_label(app.user) }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ app.user.userIdentifier }}</p>
+                            </div>
+
+                            {% if admin_route('profile') %}
+                                {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('profile'), icon: 'fa-solid fa-user', label: 'nav.profile'|trans }) }}
+                            {% endif %}
+                            {% if admin_route('change_password') %}
+                                {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('change_password'), icon: 'fa-solid fa-key', label: 'nav.change_password'|trans }) }}
+                            {% endif %}
+                            {% if admin_route('appearance') %}
+                                {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('appearance'), icon: 'fa-solid fa-palette', label: 'nav.appearance'|trans }) }}
+                            {% endif %}
+
+                            {% block admin_account_menu_extra %}{% endblock %}
+
+                            {% if admin_route('logout') %}
+                                <a href="{{ path(admin_route('logout')) }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> {{ 'nav.logout'|trans }}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 max-h-screen">
+            <div class="{% block container_class %}max-w-7xl 2xl:max-w-[1680px]{% endblock %} mx-auto px-6 py-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        {# De quoi poser ce qui doit vivre à l'intérieur de la coquille sans être du contenu : une
+           variable JavaScript globale, un widget flottant. Après `<main>`, donc après le rendu de
+           la page. #}
+        {% block admin_body_end %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{#
+    Les messages flash, rendus en toasts. Le contrôleur `ui--toast` les fait disparaître et gère la
+    fermeture ; les messages programmatiques passent par
+    `document.dispatchEvent(new CustomEvent('ui:toast', { detail: { message, type } }))`.
+
+    ⚠️ `message|trans` : un flash est une CLÉ de traduction, pas une phrase. Un contrôleur qui pose
+    une phrase toute faite fonctionne ici — et casse le jour où l'application gagne une seconde
+    langue, sans que rien ne le signale.
+#}
+<div data-controller="ui--toast"
+     data-ui-toast-close-label="{{ 'toast.close'|trans }}"
+     class="fixed top-4 left-4 right-4 sm:left-auto z-50 flex flex-col gap-3 sm:w-full sm:max-w-sm pointer-events-none">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div data-ui--toast-target="item"
+                 data-type="{{ type }}"
+                 data-autodismiss="{{ type == 'success' ? '1' : '' }}"
+                 class="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm transition-all duration-200
+                 {% if type == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-700
+                 {% elseif type == 'error' %}bg-red-50 border-red-200 text-red-700
+                 {% elseif type == 'warning' %}bg-amber-50 border-amber-200 text-amber-700
+                 {% else %}bg-accent-50 border-accent-200 text-accent-700{% endif %}">
+                <span>{{ message|trans }}</span>
+                <button type="button"
+                        data-action="ui--toast#close"
+                        class="ml-2 flex-shrink-0 text-current opacity-60 hover:opacity-100 transition-opacity"
+                        aria-label="{{ 'toast.close'|trans }}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>

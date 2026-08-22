@@ -1,0 +1,166 @@
+{#
+    Le corps de l'écran d'apparence — inclus par `@Admin/account/appearance.html.twig`, et
+    réutilisable tel quel par une application qui veut le poser dans une autre coquille (un espace
+    « mon compte » à onglets, par exemple). Attend `form`.
+
+    Aucun champ n'est rendu en `<select>` : le mode est trois cartes d'aperçu, l'accent une rangée
+    de pastilles, la densité et l'échelle des contrôles segmentés. Un réglage qui ne se voit qu'en
+    ouvrant une liste déroulante est un réglage que personne ne découvre.
+
+    `form_widget(choice, { attr: { class: 'sr-only peer' } })` puis `{% do field.setRendered %}` :
+    l'input reste dans le DOM — il porte la valeur postée — mais invisible, et c'est le `<span>`
+    frère qui est stylé par `peer-checked:`. Retirer le `setRendered` ferait rendre une seconde
+    fois le champ par `form_rest()`, en double.
+#}
+{% trans_default_domain 'appearance' %}
+
+{# ⚠️ `choice.vars.value` d'un enfant de `ChoiceType` étendu est la CHAÎNE de la vue, pas le cas
+   d'enum : `choice.vars.value.swatch()` lèverait « impossible d'accéder à un attribut sur une
+   variable chaîne ». D'où la table, construite une fois depuis l'enum. #}
+{% set swatch = admin_accent_swatches() %}
+
+
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ 'appearance.title'|trans }}</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'appearance.subtitle'|trans }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl">
+    {# ── Controls ─────────────────────────────────────────────── #}
+    <div class="lg:col-span-2">
+        <div class="form-panel">
+            {{ form_start(form, {attr: {
+                class: 'space-y-6',
+                'data-controller': 'ui--appearance',
+                'data-action': 'change->ui--appearance#apply',
+            }}) }}
+
+                {# ── Section : Thème ── #}
+                <fieldset class="form-fieldset space-y-5">
+                    <legend>{{ 'appearance.section.theme'|trans }}</legend>
+
+                    {# Mode — preview cards #}
+                    <div class="space-y-3">
+                        <span class="form-label">{{ 'appearance.form.mode'|trans }}</span>
+                        <div class="grid grid-cols-3 gap-3">
+                            {% for choice in form.colorMode %}
+                                {% set v = choice.vars.value %}
+                                <label class="cursor-pointer">
+                                    {{ form_widget(choice, {attr: {class: 'sr-only peer'}}) }}
+                                    <span class="flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 p-2.5 transition hover:border-slate-300 dark:hover:border-slate-600 peer-checked:border-accent-500 peer-checked:bg-accent-50 dark:peer-checked:bg-accent-900/20">
+                                        <span class="relative block w-full h-14 rounded-md overflow-hidden border border-slate-200 dark:border-slate-600 {{ v == 'dark' ? 'bg-slate-900' : 'bg-white' }}">
+                                            {% if v == 'system' %}<span class="absolute inset-y-0 right-0 w-1/2 bg-slate-900"></span>{% endif %}
+                                            <span class="absolute top-2 left-2 right-2 h-2 rounded-sm {{ v == 'dark' ? 'bg-slate-600' : 'bg-slate-200' }}"></span>
+                                            <span class="absolute top-6 left-2 w-1/2 h-1.5 rounded-sm {{ v == 'dark' ? 'bg-slate-700' : 'bg-slate-200' }}"></span>
+                                            <span class="absolute bottom-2 left-2 h-3 w-8 rounded-sm bg-accent-500"></span>
+                                        </span>
+                                        <span class="text-xs font-medium text-slate-700 dark:text-slate-200">{{ choice.vars.label|trans }}</span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% do form.colorMode.setRendered %}
+                    </div>
+
+                    {# Accent — colour swatches #}
+                    <div class="space-y-3">
+                        <span class="form-label">{{ 'appearance.form.accent'|trans }}</span>
+                        <div class="flex flex-wrap gap-3">
+                            {% for choice in form.accent %}
+                                <label class="cursor-pointer" data-controller="ui--tooltip" data-ui--tooltip-text-value="{{ choice.vars.label|trans }}">
+                                    {{ form_widget(choice, {attr: {class: 'sr-only peer'}}) }}
+                                    <span class="block w-9 h-9 rounded-full ring-2 ring-transparent ring-offset-2 ring-offset-white dark:ring-offset-slate-800 transition peer-checked:ring-slate-400 dark:peer-checked:ring-slate-300 peer-focus-visible:ring-slate-400"
+                                          style="background-color: {{ swatch[choice.vars.value]|default('#64748b') }}"></span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% do form.accent.setRendered %}
+                    </div>
+                </fieldset>
+
+                {# ── Section : Affichage ── #}
+                <fieldset class="form-fieldset space-y-5">
+                    <legend>{{ 'appearance.section.display'|trans }}</legend>
+
+                    {# Density — segmented control #}
+                    <div class="space-y-3">
+                        <span class="form-label">{{ 'appearance.form.density'|trans }}</span>
+                        <div class="inline-flex flex-wrap rounded-lg bg-slate-100 dark:bg-slate-700/50 p-1">
+                            {% for choice in form.density %}
+                                <label class="cursor-pointer">
+                                    {{ form_widget(choice, {attr: {class: 'sr-only peer'}}) }}
+                                    <span class="block px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 transition peer-checked:bg-white dark:peer-checked:bg-slate-800 peer-checked:text-accent-700 dark:peer-checked:text-accent-300 peer-checked:shadow-sm">{{ choice.vars.label|trans }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% do form.density.setRendered %}
+                    </div>
+
+                    {# Font scale — segmented control #}
+                    <div class="space-y-3">
+                        <span class="form-label">{{ 'appearance.form.font_scale'|trans }}</span>
+                        <div class="inline-flex flex-wrap items-end rounded-lg bg-slate-100 dark:bg-slate-700/50 p-1">
+                            {% for choice in form.fontScale %}
+                                <label class="cursor-pointer">
+                                    {{ form_widget(choice, {attr: {class: 'sr-only peer'}}) }}
+                                    <span class="block px-4 py-1.5 rounded-md font-medium text-slate-600 dark:text-slate-300 transition peer-checked:bg-white dark:peer-checked:bg-slate-800 peer-checked:text-accent-700 dark:peer-checked:text-accent-300 peer-checked:shadow-sm {{ {'sm':'text-xs','md':'text-sm','lg':'text-base','xl':'text-lg'}[choice.vars.value] }}">{{ choice.vars.label|trans }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% do form.fontScale.setRendered %}
+                    </div>
+                </fieldset>
+
+                {# ── Section : Accessibilité ── #}
+                <fieldset class="form-fieldset space-y-3">
+                    <legend>{{ 'appearance.section.accessibility'|trans }}</legend>
+                    {{ form_row(form.highContrast) }}
+                    {{ form_row(form.reducedMotion) }}
+                </fieldset>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">{{ 'action.save'|trans({}, 'messages') }}</button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    {# ── Live preview ─────────────────────────────────────────── #}
+    <div class="lg:col-span-1">
+        <div class="panel p-5 sticky top-6" data-appearance-preview>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-4">
+                {{ 'appearance.preview.title'|trans }}
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ 'appearance.preview.heading'|trans }}</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'appearance.preview.body'|trans }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" class="btn-primary">{{ 'appearance.preview.button'|trans }}</button>
+                    <span class="badge-active">{{ 'appearance.preview.badge'|trans }}</span>
+                </div>
+                <a href="#" class="text-accent-600 dark:text-accent-400 text-sm font-medium" onclick="return false;">{{ 'appearance.preview.link'|trans }}</a>
+
+                {# Sample rows so the density setting is demonstrable live —
+                   `table.dataTable td` is what the density CSS re-pads. #}
+                <table class="dataTable w-full text-sm border-t border-slate-200 dark:border-slate-700">
+                    <thead>
+                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                            <th class="py-2">{{ 'appearance.preview.table.col_name'|trans }}</th>
+                            <th class="py-2 text-right">{{ 'appearance.preview.table.col_status'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                        {% for row in ['row1', 'row2', 'row3'] %}
+                            <tr>
+                                <td class="text-slate-700 dark:text-slate-200">{{ ('appearance.preview.table.' ~ row)|trans }}</td>
+                                <td class="text-right"><span class="badge-active">{{ 'appearance.preview.badge'|trans }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

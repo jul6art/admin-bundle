@@ -1,0 +1,22 @@
+parameters:
+    level: max
+    phpVersion:
+        min: 80500
+        max: 80599
+    paths:
+        - AdminBundle.php
+        - Appearance
+        - Contract
+        - Controller
+        - DependencyInjection
+        - Entity
+        - Form
+        - Navigation
+        - Tests
+        - Twig
+        - Ui
+        - rector.php
+    treatPhpDocTypesAsCertain: false
+
+    # Le niveau max dès le premier jour, et sans baseline : une brique extraite avec une
+    # baseline arrive avec sa dette déjà tolérée, et personne ne la reprend ensuite.

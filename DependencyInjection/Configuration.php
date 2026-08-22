@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Jul6Art\AdminBundle\DependencyInjection;
+
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
+
+/**
+ * The bundle's configuration tree.
+ *
+ * Write an `->info()` on every node: it is what `config:dump-reference` shows, and it is the only
+ * documentation a reader gets before opening the code.
+ *
+ * > ⚠️ **A node that decides something at compile time cannot be an env var.** `%env(bool:X)%`
+ * > reaches a `booleanNode()` as the placeholder *string* and the config layer rejects it. Use a
+ * > plain value for anything that gates service registration, and keep env vars for values passed
+ * > through to a service at runtime (a `scalarNode` argument).
+ */
+class Configuration implements ConfigurationInterface
+{
+    #[\Override]
+    public function getConfigTreeBuilder(): TreeBuilder
+    {
+        $treeBuilder = new TreeBuilder('admin');
+
+        $treeBuilder->getRootNode()
+            ->children()
+                ->booleanNode('enabled')
+                    ->info('Registers the bundle\'s services. false leaves it installed and inert.')
+                    ->defaultTrue()
+                ->end()
+                ->scalarNode('base_template')
+                    ->info('The template `@Admin/layout.html.twig` extends. Default: the bundle\'s own. An application that already has a base — asset tags, its own meta tags, a cookie banner — points this at it, and makes THAT template extend `@Admin/base.html.twig`. Without this indirection an admin page would bypass the application\'s base entirely, and the symptom is a page rendered with no stylesheet at all.')
+                    ->defaultValue('@Admin/base.html.twig')
+                    ->cannotBeEmpty()
+                ->end()
+                ->arrayNode('branding')
+                    ->info('The four values that make the shell look like your product rather than the bundle\'s demo. They appear in the sidebar, the sign-in card and the head — hence configuration rather than five Twig blocks to override.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('name')
+                            ->info('Product name, shown next to the logo and used as the default page title.')
+                            ->defaultValue('Admin')
+                            ->cannotBeEmpty()
+                        ->end()
+                        ->scalarNode('logo')
+                            ->info('Asset path of the logo, passed through Twig\'s asset(). Empty renders the name alone.')
+                            ->defaultValue('')
+                        ->end()
+                        ->scalarNode('favicon')
+                            ->info('Asset path of the favicon, passed through asset(). Empty renders no <link rel="icon">.')
+                            ->defaultValue('')
+                        ->end()
+                        ->scalarNode('home_route')
+                            ->info('Route the logo links to, and where a signed-in account lands.')
+                            ->defaultValue('admin_dashboard')
+                            ->cannotBeEmpty()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('routes')
+                    ->info('Route names the shipped shell and auth pages link to. Every one of them has a default matching the names this bundle\'s own controllers declare; an application that names its routes otherwise overrides the ones it has and leaves the rest empty — an empty name hides the link instead of failing the render.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('login')->defaultValue('admin_security_login')->end()
+                        ->scalarNode('logout')->defaultValue('admin_security_logout')->end()
+                        ->scalarNode('register')->defaultValue('')->info('Empty closes public sign-up: the link disappears from the sign-in card.')->end()
+                        ->scalarNode('reset_password_request')->defaultValue('')->end()
+                        ->scalarNode('profile')->defaultValue('')->end()
+                        ->scalarNode('change_password')->defaultValue('')->end()
+                        ->scalarNode('appearance')->defaultValue('admin_account_appearance_edit')->info('Empty removes the appearance entry from the account menu.')->end()
+                        ->scalarNode('privacy')->defaultValue('')->info('Linked from the cookie banner; empty renders no banner.')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('mercure')
+                    ->info('The two meta tags the real-time front end reads. Both empty means no live refresh, and the datatables simply stop reloading on their own.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('hub_url')
+                            ->info('Public URL of the Mercure hub. An env var placeholder is fine here — it is only ever printed.')
+                            ->defaultValue('')
+                        ->end()
+                        ->scalarNode('token_route')
+                            ->info('Route minting the subscriber JWT and returning the authoritative topic list.')
+                            ->defaultValue('')
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $treeBuilder;
+    }
+}

@@ -1,0 +1,41 @@
+{#
+    La carte centrée que partagent les quatre pages d'authentification : logo, titre, sous-titre,
+    contenu, pied.
+
+    Ces pages n'ont pas de barre latérale et pas de compte connecté, donc elles n'étendent pas
+    `@Admin/layout.html.twig` — mais elles étendent la même base, et héritent donc du thème, des
+    jetons d'accent et des toasts.
+
+    Blocs : `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer`.
+#}
+{% extends '@Admin/base.html.twig' %}
+
+{% block title %}{% block auth_title %}{{ admin_branding().name }}{% endblock %} · {{ admin_branding().name }}{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+        <div class="flex flex-col items-center gap-3 mb-8">
+            {% if admin_branding().hasLogo %}
+                <a href="{{ path(admin_branding().homeRoute) }}">
+                    <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-12 w-auto">
+                </a>
+            {% endif %}
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ admin_branding().name }}</span>
+        </div>
+
+        <div class="panel p-6 sm:p-8">
+            <div class="mb-6">
+                <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ block('auth_title') }}</h1>
+                {% block auth_subtitle %}{% endblock %}
+            </div>
+
+            {% block auth_body %}{% endblock %}
+        </div>
+
+        <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% block auth_footer %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

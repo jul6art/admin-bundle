@@ -1,0 +1,80 @@
+{#
+    Connexion. Attend `error` (une `AuthenticationException` ou null) et `last_username`.
+
+    Le formulaire poste sur lui-même : `check_path` du pare-feu vaut la même route, c'est la
+    convention de `form_login` et elle évite d'avoir à exposer une seconde route.
+
+    ⚠️ Le jeton `authenticate` n'est pas décoratif. Sans lui, `enable_csrf: true` refuse chaque
+    tentative avec « Invalid CSRF token » — un message que l'utilisateur lit comme « mauvais mot de
+    passe ».
+#}
+{% extends '@Admin/security/_card.html.twig' %}
+{% trans_default_domain 'security' %}
+
+{% block auth_title %}{{ 'security.login.title'|trans }}{% endblock %}
+{% block auth_subtitle %}<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'security.login.subtitle'|trans }}</p>{% endblock %}
+
+{#
+    `|default` sur les deux variables : sous `strict_variables: true`, un rendu qui ne les passe
+    pas — un test, une page d'erreur, un contrôleur qui a oublié `AuthenticationUtils` — échoue
+    au lieu d'afficher un formulaire vide, ce qui est le comportement le moins utile des deux.
+#}
+{% set error = error|default(null) %}
+{% set last_username = last_username|default('') %}
+
+{% block auth_body %}
+    {% if error %}
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+    {% endif %}
+
+    <form method="post" class="space-y-5">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <div class="form-field">
+            <label class="form-label" for="username">{{ 'security.login.email'|trans }}</label>
+            <input class="form-control" type="email" id="username" name="_username"
+                   value="{{ last_username }}" autocomplete="email" required autofocus>
+        </div>
+
+        <div class="form-field" data-controller="form--password">
+            <label class="form-label" for="password">{{ 'security.login.password'|trans }}</label>
+            <div class="relative">
+                <input class="form-control pr-10" type="password" id="password" name="_password"
+                       autocomplete="current-password" required
+                       data-form--password-target="input">
+                <button type="button"
+                        class="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-slate-600"
+                        data-action="form--password#toggle"
+                        data-form--password-target="toggle"
+                        aria-label="{{ 'security.login.show_password'|trans }}">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <input type="checkbox" name="_remember_me" class="rounded border-slate-300 text-accent-600 focus:ring-accent-500">
+                {{ 'security.login.remember_me'|trans }}
+            </label>
+            {% if admin_route('reset_password_request') %}
+                <a href="{{ path(admin_route('reset_password_request')) }}" class="text-sm text-accent-600 hover:text-accent-700 dark:text-accent-400">
+                    {{ 'security.login.forgot_password'|trans }}
+                </a>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn-primary w-full justify-center">{{ 'security.login.submit'|trans }}</button>
+    </form>
+{% endblock %}
+
+{% block auth_footer %}
+    {% if admin_route('register') %}
+        {{ 'security.login.no_account'|trans }}
+        <a href="{{ path(admin_route('register')) }}" class="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
+            {{ 'security.login.create_account'|trans }}
+        </a>
+    {% endif %}
+{% endblock %}

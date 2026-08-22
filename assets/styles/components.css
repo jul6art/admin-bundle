@@ -1,0 +1,387 @@
+/*
+ * Les composants de la coquille : panneau, boutons, badges, champs de formulaire.
+ *
+ * Écrits avec `@apply`, donc traités par le Tailwind de l'application — c'est ce qui permet à un
+ * projet de garder ses propres réglages (rayons, ombres, police) sans forker la feuille.
+ *
+ * ⚠️ Le répertoire `assets/` de ce bundle doit figurer dans le `content` de `tailwind.config.js`,
+ * sinon les classes qui n'apparaissent QUE dans les gabarits du bundle sont purgées — et
+ * uniquement en production.
+ *
+ * La couleur `accent-*` n'est pas une couleur Tailwind : elle est définie par les variables
+ * `--accent-*` de `tokens.css`, que l'attribut `data-accent` échange. Le préréglage
+ * `tailwind/preset.js` la déclare.
+ */
+
+@layer components {
+    .panel {
+        @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
+    }
+
+    /* All buttons share a consistent accent focus ring; `focus-visible:outline-none`
+     * suppresses the browser's native `outline: auto` ring, which Chrome renders
+     * as a two-tone blue + white halo on dark backgrounds (rapport 2026-06-06 § btn).
+     * No `ring-offset` on purpose — a white offset would re-introduce a light gap
+     * in dark mode. */
+    .btn-primary {
+        @apply inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500;
+    }
+
+    .btn-warning {
+        @apply inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400;
+    }
+
+    .badge-active {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800;
+    }
+
+    .badge-inactive {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-600;
+    }
+
+    .form-panel {
+        @apply panel p-6 sm:p-8;
+    }
+
+    .form-grid {
+        @apply space-y-5;
+    }
+
+    .form-field {
+        @apply space-y-1.5;
+    }
+
+    .form-label {
+        @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400;
+    }
+
+    .form-control {
+        @apply w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-accent-500;
+    }
+
+    /* When a checkbox is rendered inside a `_erp_lines_collection` cell the
+     * partial blindly applies `.form-control` — the default width:100% turns
+     * the box into a stretched rectangle. Restore native checkbox sizing. */
+    .form-control[type="checkbox"] {
+        @apply w-auto h-4 p-0 align-middle;
+    }
+
+    /* Rapport 2026-06-06-2 § P3 — native <select> keep `appearance: auto`, so
+     * the browser paints its OWN focus border (light → looks white in dark
+     * mode) on top of the `.form-control` accent ring; text inputs don't.
+     * Neutralise the native chrome so a focused select shows only the accent
+     * ring (parity with inputs), and re-inject a CSS chevron for the arrow. */
+    select.form-control {
+        @apply appearance-none bg-no-repeat pr-9;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='1.75'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.6rem center;
+        background-size: 1.1em 1.1em;
+    }
+
+    .form-control-error {
+        @apply border-red-300 ring-1 ring-red-100 focus:ring-red-500;
+    }
+
+    .form-error {
+        @apply text-xs text-red-700 dark:text-red-400;
+    }
+
+    .form-actions {
+        @apply flex flex-wrap items-center gap-3 border-t border-slate-200 dark:border-slate-700 pt-5;
+    }
+
+    .password-repeat-grid {
+        @apply grid grid-cols-1 gap-3;
+    }
+
+    .role-choice-grid {
+        @apply grid grid-cols-1 gap-2 sm:grid-cols-3;
+    }
+
+    .role-choice-item {
+        @apply block;
+    }
+
+    .role-choice-input {
+        @apply sr-only;
+    }
+
+    .role-choice-label {
+        @apply block rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors min-h-[58px];
+    }
+
+    .role-choice-input:checked + .role-choice-label {
+        @apply border-accent-300 dark:border-accent-600 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300;
+    }
+
+    .role-choice-input:focus-visible + .role-choice-label {
+        @apply ring-2 ring-accent-500 ring-offset-1;
+    }
+
+    /* ── Help text ─────────────────────────────────────────── */
+    .form-help {
+        @apply mt-0 flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed;
+    }
+
+    /* ── Fieldset sections ─────────────────────────────────── */
+    .form-fieldset {
+        @apply relative rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 px-5 pt-6 pb-5 space-y-5;
+        /* Override the UA stylesheet's `min-width: min-content` on
+         * <fieldset> — without it, a child with `min-width: 1000px`
+         * (e.g. the ERP lines table inside `_erp_lines_collection`)
+         * forces the fieldset to grow past its parent and breaks the
+         * `max-w-5xl` layout, causing horizontal overflow on mobile.
+         * Cf. `docs/corrections/2026-05-07-3.md` § 1. */
+        min-width: 0;
+    }
+
+    .form-fieldset > legend {
+        @apply px-2 -ml-1 text-[11px] font-semibold uppercase tracking-widest text-accent-600 dark:text-accent-400;
+    }
+
+    /* ── Toggle switch (CheckboxType) ──────────────────────── */
+    .form-field-checkbox {
+        @apply space-y-1;
+    }
+
+    .toggle-row {
+        @apply inline-flex items-center gap-3 cursor-pointer select-none;
+    }
+
+    .toggle-switch {
+        @apply relative inline-flex h-6 w-11 flex-shrink-0 items-center;
+    }
+
+    .toggle-switch-input {
+        @apply sr-only;
+    }
+
+    .toggle-switch-track {
+        @apply pointer-events-none absolute inset-0 rounded-full bg-slate-300 dark:bg-slate-600 transition-colors;
+    }
+
+    .toggle-switch-track::after {
+        content: '';
+        @apply absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform;
+    }
+
+    .toggle-switch-input:checked + .toggle-switch-track {
+        @apply bg-accent-600;
+    }
+
+    .toggle-switch-input:checked + .toggle-switch-track::after {
+        transform: translateX(1.25rem);
+    }
+
+    .toggle-switch-input:focus-visible + .toggle-switch-track {
+        @apply ring-2 ring-accent-500 ring-offset-1 dark:ring-offset-slate-800;
+    }
+
+    .toggle-label {
+        @apply text-sm font-medium text-slate-700 dark:text-slate-200;
+    }
+
+    /* ── Dropzone (FileType) ───────────────────────────────── */
+    .dropzone-area {
+        @apply relative block rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 px-6 py-8 text-center transition-colors cursor-pointer;
+    }
+
+    .dropzone-area:hover {
+        @apply border-accent-400 bg-accent-50/40 dark:border-accent-500 dark:bg-accent-900/20;
+    }
+
+    .dropzone-area.is-dragging {
+        @apply border-accent-500 bg-accent-50 dark:bg-accent-900/30;
+    }
+
+    .dropzone-area-error {
+        @apply border-red-300 bg-red-50/60 dark:border-red-700 dark:bg-red-900/20;
+    }
+
+    .dropzone-input {
+        @apply absolute inset-0 h-full w-full cursor-pointer opacity-0;
+    }
+
+    .dropzone-body {
+        @apply flex flex-col items-center gap-2 pointer-events-none;
+    }
+
+    .dropzone-icon {
+        @apply flex h-12 w-12 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/40 text-accent-600 dark:text-accent-300 text-xl;
+    }
+
+    .dropzone-text {
+        @apply text-sm text-slate-600 dark:text-slate-300 space-y-0.5;
+    }
+
+    .dropzone-primary {
+        @apply block font-medium text-slate-900 dark:text-slate-100;
+    }
+
+    .dropzone-secondary {
+        @apply block text-xs text-accent-600 dark:text-accent-400 underline;
+    }
+
+    .dropzone-preview {
+        @apply flex items-center gap-4 text-left;
+    }
+
+    .dropzone-preview-img {
+        @apply w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-slate-700;
+    }
+
+    .dropzone-preview-meta {
+        @apply flex-1 min-w-0;
+    }
+
+    .dropzone-preview-name {
+        @apply text-sm font-medium text-slate-900 dark:text-slate-100 truncate;
+    }
+
+    .dropzone-preview-size {
+        @apply text-xs text-slate-500 dark:text-slate-400;
+    }
+
+    .dropzone-clear {
+        @apply relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors;
+    }
+
+    /* ── Avatar upload variant ─────────────────────────────── */
+    .avatar-upload {
+        @apply flex items-center gap-5;
+    }
+
+    .avatar-upload-preview {
+        @apply relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold bg-accent-100 dark:bg-accent-900/40 text-accent-600 dark:text-accent-300 ring-2 ring-slate-200 dark:ring-slate-700 flex-shrink-0;
+    }
+
+    .avatar-upload-preview img {
+        @apply w-full h-full object-cover;
+    }
+
+    .avatar-upload-dropzone {
+        @apply relative flex-1 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 px-4 py-3 text-left transition-colors cursor-pointer;
+    }
+
+    .avatar-upload-dropzone:hover {
+        @apply border-accent-400 bg-accent-50/40 dark:border-accent-500 dark:bg-accent-900/20;
+    }
+
+    .avatar-upload-dropzone.is-dragging {
+        @apply border-accent-500 bg-accent-50 dark:bg-accent-900/30;
+    }
+
+    .avatar-upload-input {
+        @apply absolute inset-0 h-full w-full cursor-pointer opacity-0;
+    }
+
+    .avatar-upload-label {
+        @apply flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200 pointer-events-none;
+    }
+
+    .avatar-upload-label i {
+        @apply text-accent-500 dark:text-accent-300;
+    }
+
+    /* ── Color picker (TextType with attr.type=color) ──────── */
+    .color-picker {
+        @apply flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 transition-colors;
+    }
+
+    .color-picker:hover {
+        @apply border-accent-300 dark:border-accent-500;
+    }
+
+    .color-picker-native {
+        @apply w-12 h-12 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer bg-transparent p-0;
+        flex-shrink: 0;
+    }
+
+    .color-picker-native::-webkit-color-swatch-wrapper {
+        padding: 2px;
+        border-radius: 0.375rem;
+    }
+
+    .color-picker-native::-webkit-color-swatch {
+        border: 0;
+        border-radius: 0.25rem;
+    }
+
+    .color-picker-native::-moz-color-swatch {
+        border: 0;
+        border-radius: 0.25rem;
+    }
+
+    .color-picker-hex {
+        @apply font-mono text-sm uppercase text-slate-700 dark:text-slate-200 font-semibold tracking-wide;
+    }
+
+    textarea {
+        @apply resize-none overflow-y-auto min-h-[3rem] max-h-[24rem];
+        field-sizing: content;
+    }
+
+    .popup-impersonate {
+        top: unset;
+        bottom: 20px;
+        right: unset;
+        left: calc(100vw - 65px);
+        transition: all .3s linear;
+
+        &:hover {
+            left: calc(100vw - 300px);
+        }
+    }
+
+    .span-role-permission-role {
+        margin-top: -15px;
+        margin-right: -15px;
+        margin-bottom: 8px;
+    }
+
+    .badge {
+        white-space: nowrap;
+    }
+
+    .delivery-planning-sidebar-dropzone {
+        height: calc(100% - 50px);
+    }
+
+    /* Agencement des BL dans le planning : piloté par le parent
+     * pour qu-un drag&drop entre sidebar et tournée n-impose pas
+     * un re-rendu côté JS (cf. delivery--planning controller qui
+     * déplace le <li> tel quel). */
+    .delivery-planning-sidebar-dropzone > .delivery-planning-item {
+        @apply block;
+    }
+
+    .delivery-planning-sidebar-dropzone > .delivery-planning-item > .delivery-planning-item__number,
+    .delivery-planning-sidebar-dropzone > .delivery-planning-item > .delivery-planning-item__address,
+    .delivery-planning-sidebar-dropzone > .delivery-planning-item > .delivery-planning-item__date {
+        @apply block;
+    }
+
+    .delivery-planning-sidebar-dropzone > .delivery-planning-item > .delivery-planning-item__date {
+        @apply text-[10px] mt-0.5;
+    }
+
+    .delivery-planning-tour-dropzone > .delivery-planning-item {
+        @apply flex items-center gap-2;
+    }
+
+    .delivery-planning-tour-dropzone > .delivery-planning-item > .delivery-planning-item__address {
+        @apply flex-1;
+    }
+
+    .delivery-planning-tour-dropzone > .delivery-planning-item > .delivery-planning-item__date {
+        @apply text-[10px] whitespace-nowrap;
+    }
+}

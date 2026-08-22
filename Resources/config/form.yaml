@@ -1,0 +1,7 @@
+# Chargé uniquement quand symfony/form est présent.
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Jul6Art\AdminBundle\Form\AppearanceType: ~

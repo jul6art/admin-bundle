@@ -1,0 +1,122 @@
+/*
+ * Per-user appearance design tokens.
+ *
+ * The attributes data-accent / data-density / data-font / data-contrast /
+ * data-motion are rendered on <html> server-side (from User.appearance)
+ * and applied live by the `ui--appearance` Stimulus controller.
+ *
+ * Cf. docs/analyse/theming.md § 5.2.
+ */
+
+/* ── Accent colour (RGB triplets consumed by Tailwind's `accent-*`) ── */
+:root {
+    --accent-50: 238 242 255;
+    --accent-100: 224 231 255;
+    --accent-200: 199 210 254;
+    --accent-300: 165 180 252;
+    --accent-400: 129 140 248;
+    --accent-500: 99 102 241;
+    --accent-600: 79 70 229;
+    --accent-700: 67 56 202;
+    --accent-800: 55 48 163;
+    --accent-900: 49 46 129;
+
+    /* Display density — datatable cell vertical padding + panel padding. */
+    --density-cell-py: 0.625rem;
+    --density-panel-p: 1.5rem;
+}
+
+[data-accent='emerald'] {
+    --accent-50: 236 253 245;  --accent-100: 209 250 229; --accent-200: 167 243 208;
+    --accent-300: 110 231 183; --accent-400: 52 211 153;  --accent-500: 16 185 129;
+    --accent-600: 5 150 105;   --accent-700: 4 120 87;    --accent-800: 6 95 70; --accent-900: 6 78 59;
+}
+[data-accent='rose'] {
+    --accent-50: 255 241 242;  --accent-100: 255 228 230; --accent-200: 254 205 211;
+    --accent-300: 253 164 175; --accent-400: 251 113 133; --accent-500: 244 63 94;
+    --accent-600: 225 29 72;   --accent-700: 190 18 60;   --accent-800: 159 18 57; --accent-900: 136 19 55;
+}
+[data-accent='amber'] {
+    --accent-50: 255 251 235;  --accent-100: 254 243 199; --accent-200: 253 230 138;
+    --accent-300: 252 211 77;  --accent-400: 251 191 36;  --accent-500: 245 158 11;
+    --accent-600: 217 119 6;   --accent-700: 180 83 9;    --accent-800: 146 64 14; --accent-900: 120 53 15;
+}
+[data-accent='sky'] {
+    --accent-50: 240 249 255;  --accent-100: 224 242 254; --accent-200: 186 230 253;
+    --accent-300: 125 211 252; --accent-400: 56 189 248;  --accent-500: 14 165 233;
+    --accent-600: 2 132 199;   --accent-700: 3 105 161;   --accent-800: 7 89 133; --accent-900: 12 74 110;
+}
+[data-accent='violet'] {
+    --accent-50: 245 243 255;  --accent-100: 237 233 254; --accent-200: 221 214 254;
+    --accent-300: 196 181 253; --accent-400: 167 139 250; --accent-500: 139 92 246;
+    --accent-600: 124 58 237;  --accent-700: 109 40 217;  --accent-800: 91 33 182; --accent-900: 76 29 149;
+}
+[data-accent='teal'] {
+    --accent-50: 240 253 250;  --accent-100: 204 251 241; --accent-200: 153 246 228;
+    --accent-300: 94 234 212;  --accent-400: 45 212 191;  --accent-500: 20 184 166;
+    --accent-600: 13 148 136;  --accent-700: 15 118 110;  --accent-800: 17 94 89; --accent-900: 19 78 74;
+}
+
+/* ── Display density ──
+ * Drives both datatable row height AND panel padding (cf. DisplayDensity
+ * docblock). The default `comfortable` keeps the :root values above. */
+[data-density='cozy']    { --density-cell-py: 0.4375rem; --density-panel-p: 1.25rem; }
+[data-density='compact'] { --density-cell-py: 0.25rem;   --density-panel-p: 1rem; }
+
+[data-density='cozy'] table.dataTable td,
+[data-density='compact'] table.dataTable td {
+    padding-top: var(--density-cell-py);
+    padding-bottom: var(--density-cell-py);
+}
+
+/* Panel padding follows the density token. Scoped to cozy/compact so the
+ * comfortable default leaves the Tailwind `p-*` utilities untouched. The
+ * descendant selector outranks the single-class `p-*` utilities. */
+[data-density='cozy'] .panel,
+[data-density='compact'] .panel {
+    padding: var(--density-panel-p);
+}
+
+/* ── Font scale (root font-size; the rem-based UI scales with it) ── */
+html[data-font='sm'] { font-size: 14px; }
+html[data-font='md'] { font-size: 16px; }
+html[data-font='lg'] { font-size: 17px; }
+html[data-font='xl'] { font-size: 19px; }
+
+/* ── High contrast ──
+ * Stronger than a faint border tweak so the change is actually perceptible:
+ * darker + thicker borders, a wider focus-ring offset, and de-muted secondary
+ * text (cf. rapport 2026-06-01 § P1). */
+[data-contrast='high'] .panel,
+[data-contrast='high'] .form-control {
+    border-color: rgb(51 65 85); /* slate-700 */
+    border-width: 2px;
+}
+[data-contrast='high'] {
+    --tw-ring-offset-width: 2px;
+}
+/* De-mute secondary text so it stays legible in high-contrast mode. */
+[data-contrast='high'] .text-slate-400,
+[data-contrast='high'] .text-slate-500 {
+    color: rgb(51 65 85); /* slate-700 */
+}
+
+/* Dark theme keeps the same intent with light-on-dark tones. */
+.dark[data-contrast='high'] .panel,
+.dark[data-contrast='high'] .form-control {
+    border-color: rgb(203 213 225); /* slate-300 */
+}
+.dark[data-contrast='high'] .text-slate-400,
+.dark[data-contrast='high'] .text-slate-500 {
+    color: rgb(203 213 225); /* slate-300 */
+}
+
+/* ── Reduced motion ── */
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+}

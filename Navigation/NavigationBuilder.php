@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Jul6Art\AdminBundle\Navigation;
+
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+
+/**
+ * Collects every provider's sections, drops what the signed-in account may not see, and orders
+ * what is left.
+ *
+ * ## What "may not see" means, in order
+ *
+ * 1. a **section** whose permission or feature is refused disappears with all its items — checking
+ *    the section first also saves N permission checks;
+ * 2. an **item** whose permission or feature is refused disappears;
+ * 3. a section left with no visible item disappears. A group header that opens onto nothing is
+ *    worse than no group at all: it advertises a module the account cannot reach.
+ *
+ * ## Why the permission goes through the authorization checker
+ *
+ * `isGranted()` accepts anything a voter answers — a role, a permission code, an entity attribute.
+ * The bundle therefore needs to know nothing about how the application expresses authorisation,
+ * and an application changing its ACL engine changes nothing here.
+ *
+ * ⚠️ **A permission code that no voter recognises is granted, not refused.** Symfony's access
+ * decision manager returns `true` when every voter abstains, under the default strategy. That is a
+ * property of Symfony, not of this class — but it means a typo in a `NavItem`'s permission makes a
+ * link *appear*, and the route behind it will then refuse. Cover the menu with a test that walks it
+ * rather than trusting the string.
+ */
+final readonly class NavigationBuilder
+{
+    /**
+     * @param iterable<NavigationProviderInterface> $providers
+     */
+    public function __construct(
+        private iterable $providers,
+        private AuthorizationCheckerInterface $authorizationChecker,
+        private ?FeatureVisibilityInterface $features = null,
+    ) {
+    }
+
+    /**
+     * @return list<NavSection>
+     */
+    public function build(): array
+    {
+        $sections = [];
+
+        foreach ($this->providers as $provider) {
+            foreach ($provider->sections() as $section) {
+                if (!$this->isVisible($section->permission, $section->feature)) {
+                    continue;
+                }
+
+                $items = array_values(array_filter(
+                    $section->items,
+                    fn (NavItem $item): bool => $this->isVisible($item->permission, $item->feature),
+                ));
+
+                if ([] === $items) {
+                    continue;
+                }
+
+                $sections[] = $section->withItems($items);
+            }
+        }
+
+        // `usort` n'est pas stable avant PHP 8.0 et l'est depuis : deux sections de même priorité
+        // gardent donc l'ordre de déclaration, ce qui est l'ordre que le lecteur du provider voit.
+        usort($sections, static fn (NavSection $a, NavSection $b): int => $b->priority <=> $a->priority);
+
+        return $sections;
+    }
+
+    /**
+     * The section whose items contain the current route, or null. Read by the layout to decide
+     * which group opens by default.
+     *
+     * @param list<NavSection>|null $sections the already-built sections, so the layout does not
+     *                                        pay for a second pass of permission checks
+     */
+    public function activeSectionKey(string $currentRoute, ?array $sections = null): ?string
+    {
+        foreach ($sections ?? $this->build() as $section) {
+            foreach ($section->items as $item) {
+                if (str_starts_with($currentRoute, $item->activePrefix())) {
+                    return $section->key;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function isVisible(?string $permission, ?string $feature): bool
+    {
+        if (null !== $permission && !$this->authorizationChecker->isGranted($permission)) {
+            return false;
+        }
+
+        if (null === $feature) {
+            return true;
+        }
+
+        // Pas de vérificateur branché : on cache. L'inverse rendrait gratuit tout module payant,
+        // et la suite de tests resterait verte.
+        return $this->features?->isEnabled($feature) ?? false;
+    }
+}

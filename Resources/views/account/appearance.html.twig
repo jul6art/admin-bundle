@@ -1,0 +1,14 @@
+{#
+    L'écran de préférences d'apparence, dans la coquille d'administration.
+
+    Une application qui veut le poser ailleurs — un espace « mon compte » à onglets, par exemple —
+    inclut directement `@Admin/partials/_appearance_form.html.twig` dans son propre gabarit : c'est
+    lui qui porte tout le corps de l'écran.
+#}
+{% extends '@Admin/layout.html.twig' %}
+
+{% block title %}{{ 'appearance.title'|trans({}, 'appearance') }} · {{ admin_branding().name }}{% endblock %}
+
+{% block content %}
+    {{ include('@Admin/partials/_appearance_form.html.twig') }}
+{% endblock %}

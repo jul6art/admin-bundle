@@ -1,0 +1,26 @@
+services:
+    # Services whose dependencies are all guaranteed go here, wired explicitly.
+    #
+    # Anything conditional — a brick that needs an optional package, or a service the
+    # application may not have — is registered from the extension or removed by a compiler
+    # pass instead. Cf. DependencyInjection/AdminExtension.php.
+
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # L'identité du produit. Les quatre valeurs sont posées par l'extension.
+    Jul6Art\AdminBundle\Ui\Branding:
+        arguments:
+            $name: 'Admin'
+            $logo: ''
+            $favicon: ''
+            $homeRoute: 'admin_dashboard'
+
+    # Le menu. `$providers` est rempli par le tag `admin.navigation`, qu'`AdminBundle` autoconfigure
+    # sur toute implémentation du contrat — un projet n'a donc qu'à déclarer sa classe en service.
+    # `$features` est retiré par `FeatureVisibilityPass` quand le projet n'en fournit pas : sans
+    # vérificateur, une entrée qui porte un code de fonctionnalité reste cachée.
+    Jul6Art\AdminBundle\Navigation\NavigationBuilder:
+        arguments:
+            $providers: !tagged_iterator admin.navigation

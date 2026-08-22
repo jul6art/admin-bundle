@@ -1,0 +1,29 @@
+{#
+    Inscription. Attend `form`, un formulaire de l'application — le bundle ne décide pas des champs
+    d'un compte, il en dessine l'écran.
+
+    `form_widget(form)` rend tout ce qui reste, donc un champ ajouté par l'application apparaît
+    sans toucher à ce gabarit. Le thème de formulaire du projet lui donne son allure.
+#}
+{% extends '@Admin/security/_card.html.twig' %}
+{% trans_default_domain 'security' %}
+
+{% block auth_title %}{{ 'security.register.title'|trans }}{% endblock %}
+{% block auth_subtitle %}<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'security.register.subtitle'|trans }}</p>{% endblock %}
+
+{% block auth_body %}
+    {{ form_start(form, { attr: { class: 'space-y-5' } }) }}
+        {{ form_errors(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn-primary w-full justify-center">{{ 'security.register.submit'|trans }}</button>
+    {{ form_end(form) }}
+{% endblock %}
+
+{% block auth_footer %}
+    {% if admin_route('login') %}
+        {{ 'security.register.have_account'|trans }}
+        <a href="{{ path(admin_route('login')) }}" class="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
+            {{ 'security.register.sign_in'|trans }}
+        </a>
+    {% endif %}
+{% endblock %}

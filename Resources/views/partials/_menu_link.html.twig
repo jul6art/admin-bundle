@@ -1,0 +1,6 @@
+{# Une ligne du menu de compte. Attend `route`, `icon`, `label` ; `parameters` et `target` sont optionnels. #}
+<a href="{{ path(route, parameters|default({})) }}"{% if target is defined %} target="{{ target }}" rel="noopener noreferrer"{% endif %}
+   class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+    <i class="{{ icon }} w-4 text-center text-slate-400"></i> {{ label }}
+    {% if target is defined %}<i class="fa-solid fa-arrow-up-right-from-square ml-auto text-[10px] text-slate-400"></i>{% endif %}
+</a>
