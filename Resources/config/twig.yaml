@@ -23,3 +23,4 @@ services:
                 change_password: '%admin.route.change_password%'
                 appearance: '%admin.route.appearance%'
                 privacy: '%admin.route.privacy%'
+                performance: '%admin.route.performance%'

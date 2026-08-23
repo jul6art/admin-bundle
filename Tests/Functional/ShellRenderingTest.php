@@ -7,6 +7,7 @@ namespace Jul6Art\AdminBundle\Tests\Functional;
 use Jul6Art\AdminBundle\Appearance\AccentColor;
 use Jul6Art\AdminBundle\Appearance\ColorMode;
 use Jul6Art\AdminBundle\Appearance\DisplayDensity;
+use Jul6Art\AdminBundle\DependencyInjection\Configuration;
 use Jul6Art\AdminBundle\Form\AppearanceType;
 use Jul6Art\AdminBundle\Tests\Fixtures\Entity\Account;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -104,6 +105,34 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
 
         $login = $this->render('@Admin/security/login.html.twig', $config);
         self::assertStringContainsString('data-project-assets="loaded"', $login, 'Les pages d\'authentification aussi — elles portaient le bug.');
+    }
+
+    /**
+     * ⚠️ Toute clé de `admin.routes` doit atteindre Twig.
+     *
+     * La table est reconstituée à la main dans `Resources/config/twig.yaml`, une ligne par clé :
+     * ajouter une entrée à la configuration sans l'ajouter LÀ produit un paramètre correctement
+     * rempli que `admin_route()` ne voit jamais — le lien ne rend pas, et rien ne le signale.
+     * C'est arrivé avec `performance` (2026-08-23).
+     */
+    public function testEveryConfiguredRouteKeyReachesTwig(): void
+    {
+        $defaults = new Configuration()->getConfigTreeBuilder()->buildTree()->finalize([]);
+        self::assertIsArray($defaults);
+        $routes = $defaults['routes'];
+        self::assertIsArray($routes);
+
+        $configured = array_keys($routes);
+
+        $wiring = (string) file_get_contents(\dirname(__DIR__, 2).'/Resources/config/twig.yaml');
+
+        foreach ($configured as $key) {
+            self::assertStringContainsString(
+                \sprintf("%s: '%%admin.route.%s%%'", $key, $key),
+                $wiring,
+                \sprintf('La clé « %s » est configurable mais n\'est pas passée à l\'extension Twig.', $key),
+            );
+        }
     }
 
     /**
