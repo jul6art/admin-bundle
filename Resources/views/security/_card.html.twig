@@ -7,8 +7,13 @@
     jetons d'accent et des toasts.
 
     Blocs : `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer`.
+
+    ⚠️ `admin_base_template()`, jamais `'@Admin/base.html.twig'` en dur : c'est l'indirection qui
+    permet au projet d'injecter sa chaîne d'assets. En dur, les pages d'authentification rendaient
+    sans la moindre feuille de style — le bug corrigé pour `layout.html.twig` avait été oublié
+    ici, et il ne s'est vu qu'au premier projet qui a rendu ces pages (wovex, 2026-08-23).
 #}
-{% extends '@Admin/base.html.twig' %}
+{% extends admin_base_template() %}
 
 {% block title %}{% block auth_title %}{{ admin_branding().name }}{% endblock %} · {{ admin_branding().name }}{% endblock %}
 

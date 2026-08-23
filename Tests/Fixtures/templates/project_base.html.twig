@@ -1,0 +1,6 @@
+{# Le « base.html.twig » d'un projet consommateur : la coquille du bundle plus sa chaîne d'assets.
+   Le marqueur data-project-assets est ce que les tests cherchent — il prouve que le rendu est
+   bien passé par CE fichier, donc par l'indirection admin_base_template(). #}
+{% extends '@Admin/base.html.twig' %}
+
+{% block stylesheets %}<meta data-project-assets="loaded">{% endblock %}

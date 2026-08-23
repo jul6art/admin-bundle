@@ -87,6 +87,25 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('AL', $html, 'Les initiales servent de pastille en l\'absence de photo.');
     }
 
+    /**
+     * ⚠️ TOUT gabarit de page du bundle passe par `admin_base_template()` — le layout ET la carte
+     * d'authentification. C'est l'indirection qui permet au projet d'injecter sa chaîne d'assets ;
+     * un `extends '@Admin/base.html.twig'` en dur rend la page SANS la moindre feuille de style,
+     * sans erreur nulle part. Le bug a existé : corrigé pour `layout.html.twig` chez superp, il
+     * avait été oublié dans `security/_card.html.twig` et ne s'est vu qu'au premier projet qui a
+     * rendu ces pages (wovex, 2026-08-23).
+     */
+    public function testEveryPageTemplateHonoursTheProjectBaseTemplate(): void
+    {
+        $config = self::BRANDING + ['base_template' => 'project_base.html.twig'];
+
+        $layout = $this->render('@Admin/layout.html.twig', $config, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+        self::assertStringContainsString('data-project-assets="loaded"', $layout, 'Le layout doit rendre à travers le base template du projet.');
+
+        $login = $this->render('@Admin/security/login.html.twig', $config);
+        self::assertStringContainsString('data-project-assets="loaded"', $login, 'Les pages d\'authentification aussi — elles portaient le bug.');
+    }
+
     public function testAnAnonymousPageCarriesNoAppearanceAttributeAtAll(): void
     {
         $html = $this->render('@Admin/security/login.html.twig', self::BRANDING);

@@ -185,6 +185,9 @@ final class TestKernel extends Kernel
 
         $container->loadFromExtension('twig', [
             'strict_variables' => true,
+            // Le « templates/ » d'un projet consommateur : ShellRenderingTest y prend
+            // project_base.html.twig pour prouver l'indirection admin_base_template().
+            'paths' => [__DIR__.'/templates'],
         ]);
 
         $container->loadFromExtension('security', [
