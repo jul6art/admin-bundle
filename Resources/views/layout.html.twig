@@ -36,11 +36,15 @@
     <aside data-ui-sidebar-panel class="w-64 lg:translate-x-0 -translate-x-full transform transition-transform duration-200 z-20 lg:z-0 fixed lg:static inset-y-0 left-0 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-sm">
         {% block admin_sidebar_brand %}
             <div class="h-14 flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
-                <a href="{{ path(admin_branding().homeRoute) }}" class="flex items-center gap-2">
+                {# `show_name: false` : le logo occupe toute la largeur de l'en-tête — le cas
+                   d'un wordmark, qui écrit déjà le nom. #}
+                <a href="{{ path(admin_branding().homeRoute) }}" class="flex items-center gap-2 {{ admin_branding().showName ? '' : 'w-full' }}">
                     {% if admin_branding().hasLogo %}
-                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-9 w-auto">
+                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="{{ admin_branding().showName ? 'h-9 w-auto' : 'h-auto max-h-10 w-full object-contain' }}">
                     {% endif %}
-                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ admin_branding().name }}</span>
+                    {% if admin_branding().showName %}
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ admin_branding().name }}</span>
+                    {% endif %}
                 </a>
             </div>
         {% endblock %}

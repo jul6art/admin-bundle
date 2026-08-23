@@ -1,0 +1,14 @@
+{#
+    Le bouton d'action d'un e-mail. Variables : `url` (absolue !), `label`.
+
+    Une table et non un <a> stylé seul : c'est la seule forme qui rend un bouton cliquable
+    partout, Outlook compris. La couleur est neutre (slate) plutôt qu'un jeton d'accent : les
+    e-mails n'ont pas accès aux variables CSS du thème.
+#}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 24px auto;">
+    <tr>
+        <td style="border-radius: 8px; background-color: #1e293b;">
+            <a href="{{ url }}" style="display: inline-block; padding: 12px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">{{ label }}</a>
+        </td>
+    </tr>
+</table>

@@ -23,10 +23,18 @@
         <div class="flex flex-col items-center gap-3 mb-8">
             {% if admin_branding().hasLogo %}
                 <a href="{{ path(admin_branding().homeRoute) }}">
-                    <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-12 w-auto">
+                    {# `logo_width` fixe la largeur (un wordmark se dimensionne en largeur) ; sans
+                       lui, la hauteur fixe historique s'applique et la largeur suit. #}
+                    {% if admin_branding().logoWidth %}
+                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" style="width: {{ admin_branding().logoWidth }}px" class="h-auto">
+                    {% else %}
+                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-12 w-auto">
+                    {% endif %}
                 </a>
             {% endif %}
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ admin_branding().name }}</span>
+            {% if admin_branding().showName %}
+                <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ admin_branding().name }}</span>
+            {% endif %}
         </div>
 
         <div class="panel p-6 sm:p-8">

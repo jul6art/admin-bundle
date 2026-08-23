@@ -8,6 +8,7 @@ use Jul6Art\AdminBundle\DependencyInjection\Configuration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Exception\InvalidTypeException;
 use Symfony\Component\Config\Definition\Processor;
 
@@ -24,6 +25,28 @@ final class ConfigurationTest extends TestCase
         self::assertSame('admin', new Configuration()->getConfigTreeBuilder()->buildTree()->getName());
     }
 
+    /**
+     * Un logo qui embarque déjà le nom du produit (un wordmark) rend le nom en dessous redondant,
+     * et sa largeur naturelle dépend du fichier : les deux se règlent en configuration, pas en
+     * surchargeant la carte d'authentification.
+     */
+    public function testTheAuthCardBrandingIsTunable(): void
+    {
+        $config = self::process([['branding' => ['logo_width' => 220, 'show_name' => false]]]);
+
+        $branding = $config['branding'];
+        self::assertIsArray($branding);
+        self::assertSame(220, $branding['logo_width']);
+        self::assertFalse($branding['show_name']);
+    }
+
+    public function testALogoWidthMustBePositive(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        self::process([['branding' => ['logo_width' => 0]]]);
+    }
+
     public function testItAppliesItsDefaults(): void
     {
         self::assertSame([
@@ -34,6 +57,8 @@ final class ConfigurationTest extends TestCase
                 'logo' => '',
                 'favicon' => '',
                 'home_route' => 'admin_dashboard',
+                'logo_width' => null,
+                'show_name' => true,
             ],
             // Les noms par défaut sont ceux que les contrôleurs de ce bundle déclarent ; les autres
             // sont vides, et une route vide MASQUE le lien au lieu de faire échouer le rendu.

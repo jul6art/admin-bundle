@@ -106,6 +106,54 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('data-project-assets="loaded"', $login, 'Les pages d\'authentification aussi — elles portaient le bug.');
     }
 
+    /**
+     * `logo_width` dimensionne le logo des pages d'authentification ; sans lui, la hauteur fixe
+     * historique s'applique. `show_name` retire la ligne du nom sous le logo — le cas d'un
+     * wordmark, où le nom serait écrit deux fois.
+     */
+    public function testTheAuthCardHonoursLogoWidthAndShowName(): void
+    {
+        $config = ['branding' => self::BRANDING['branding'] + ['logo_width' => 220, 'show_name' => false]];
+        $html = $this->render('@Admin/security/login.html.twig', $config);
+
+        self::assertStringContainsString('width: 220px', $html);
+        self::assertStringNotContainsString('text-lg font-semibold', $html, 'show_name: false doit retirer la ligne du nom.');
+
+        $html = $this->render('@Admin/security/login.html.twig', self::BRANDING);
+        self::assertStringContainsString('h-12', $html, 'Sans logo_width, la hauteur fixe historique s\'applique.');
+        self::assertStringContainsString('text-lg font-semibold', $html, 'Par défaut, le nom reste affiché.');
+    }
+
+    /**
+     * `show_name: false` vaut aussi pour la barre latérale : le logo y prend toute la largeur au
+     * lieu de partager la ligne avec un nom qu'il écrit déjà.
+     */
+    public function testTheSidebarBrandHonoursShowName(): void
+    {
+        $config = ['branding' => self::BRANDING['branding'] + ['show_name' => false]];
+        $html = $this->render('@Admin/layout.html.twig', $config, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+
+        self::assertStringContainsString('/img/logo.png', $html);
+        self::assertStringNotContainsString('text-sm font-semibold text-slate-700', $html, 'Le nom de la sidebar doit disparaître.');
+    }
+
+    /**
+     * Le layout d'e-mail est brandé et AUTONOME : un client mail ne charge ni Tailwind ni le CSS
+     * du back-office, donc tout est inline, et le logo part en URL ABSOLUE — un chemin relatif ne
+     * pointe sur rien depuis une boîte mail.
+     */
+    public function testTheEmailLayoutIsBrandedAndSelfContained(): void
+    {
+        $config = ['branding' => self::BRANDING['branding'] + ['logo_width' => 220]];
+        $html = $this->render('email/test_email.html.twig', $config);
+
+        self::assertStringContainsString('http://localhost/img/logo.png', $html, 'Le logo doit être une URL absolue.');
+        self::assertStringContainsString(self::BRANDING['branding']['name'], $html);
+        self::assertStringContainsString('data-email-body-marker', $html, 'Le bloc du template enfant doit rendre.');
+        self::assertStringContainsString('https://example.test/cta', $html, 'Le bouton du partial doit porter son URL.');
+        self::assertStringNotContainsString('class="', $html, 'Aucune classe CSS : les clients mail ne chargent pas de feuille de style.');
+    }
+
     public function testAnAnonymousPageCarriesNoAppearanceAttributeAtAll(): void
     {
         $html = $this->render('@Admin/security/login.html.twig', self::BRANDING);
@@ -207,7 +255,10 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
 
         // `app.request`, `app.flashes` et `csrf_token()` en ont tous besoin ; sans requête le rendu
         // échoue sur « no session available », ce qui ressemble à un défaut du gabarit.
-        $request = new Request();
+        // `Request::create()` et non `new Request()` : le layout d'e-mail passe par
+        // `absolute_url()`, qui lit le host de la requête courante — un `new Request()` nu n'en a
+        // pas et produit « http://:/ ».
+        $request = Request::create('http://localhost/');
         $request->setSession(new Session(new MockArraySessionStorage()));
         $request->attributes->set('_route', $route);
         $requestStack->push($request);

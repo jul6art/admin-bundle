@@ -31,6 +31,11 @@ final readonly class Branding
         public string $logo,
         public string $favicon,
         public string $homeRoute,
+        // Largeur du logo sur les pages d'authentification, en pixels. Null = la hauteur fixe
+        // historique (h-12) et la largeur suit. Un wordmark large a besoin de plus que 48px.
+        public ?int $logoWidth = null,
+        // Un logo qui embarque déjà le nom (wordmark) rend la ligne du nom redondante.
+        public bool $showName = true,
     ) {
     }
 

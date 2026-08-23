@@ -53,7 +53,9 @@ class AdminExtension extends Extension
             ->setArgument('$name', self::asString($branding['name'] ?? null, 'Admin'))
             ->setArgument('$logo', self::asString($branding['logo'] ?? null, ''))
             ->setArgument('$favicon', self::asString($branding['favicon'] ?? null, ''))
-            ->setArgument('$homeRoute', self::asString($branding['home_route'] ?? null, 'admin_dashboard'));
+            ->setArgument('$homeRoute', self::asString($branding['home_route'] ?? null, 'admin_dashboard'))
+            ->setArgument('$logoWidth', \is_int($branding['logo_width'] ?? null) ? $branding['logo_width'] : null)
+            ->setArgument('$showName', !\is_bool($branding['show_name'] ?? null) || $branding['show_name']);
 
         // Les noms de route et les deux valeurs Mercure atteignent les gabarits par des paramètres
         // de conteneur plutôt que par un global Twig : un gabarit du bundle peut les lire, et

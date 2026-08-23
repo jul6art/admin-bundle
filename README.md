@@ -62,6 +62,12 @@ admin:
         logo: 'img/logo.png'        # asset paths, passed through asset()
         favicon: 'img/favicon.ico'
         home_route: admin_dashboard
+        # Logo width in pixels on the authentication pages and in e-mails.
+        # Null keeps the historical fixed height (h-12) and lets the width follow.
+        logo_width: ~
+        # `false` drops the name written under the logo (auth pages) and beside it (sidebar):
+        # the wordmark case, where the logo already says the name. The logo then takes the room.
+        show_name: true
 
     # An empty route name HIDES its link rather than breaking the render — which is what makes
     # the multi-area case below work.

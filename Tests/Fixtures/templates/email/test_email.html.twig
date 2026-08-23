@@ -1,0 +1,7 @@
+{# L'e-mail de test : le layout du bundle + un marqueur + le bouton. #}
+{% extends '@Admin/email/base.html.twig' %}
+
+{% block email_body %}
+    <span data-email-body-marker>Body content</span>
+    {{ include('@Admin/email/_button.html.twig', { url: 'https://example.test/cta', label: 'Do the thing' }) }}
+{% endblock %}

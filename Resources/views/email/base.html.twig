@@ -1,0 +1,51 @@
+{#
+    Le layout d'e-mail transactionnel : logo, nom, panneau de contenu, pied.
+
+    ⚠️ Un client mail ne charge NI Tailwind NI le CSS du back-office : tout est inline, en tables,
+    sans une seule classe. Le logo part en URL ABSOLUE (`absolute_url`) — un chemin relatif ne
+    pointe sur rien depuis une boîte mail. `logo_width` de la configuration s'applique (140px par
+    défaut : un logo d'e-mail se lit petit).
+
+    Blocs : `email_title` (préheader + titre), `email_body` (le contenu), `email_footer`.
+    Le bouton d'action se pose avec le partial `@Admin/email/_button.html.twig`.
+#}
+<!DOCTYPE html>
+<html lang="{{ app.request ? app.request.locale : 'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block email_title %}{{ admin_branding().name }}{% endblock %}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width: 560px; width: 100%;">
+                    <tr>
+                        <td align="center" style="padding-bottom: 24px;">
+                            {% if admin_branding().hasLogo %}
+                                <img src="{{ absolute_url(asset(admin_branding().logo)) }}" alt="{{ admin_branding().name }}" width="{{ admin_branding().logoWidth ?? 140 }}" style="width: {{ admin_branding().logoWidth ?? 140 }}px; height: auto; border: 0;">
+                            {% endif %}
+                            {% if admin_branding().showName %}
+                                <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-top: 8px;">{{ admin_branding().name }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0;">
+                            <div style="font-size: 15px; line-height: 1.6; color: #334155;">
+                                {% block email_body %}{% endblock %}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding-top: 24px; font-size: 12px; color: #94a3b8;">
+                            {% block email_footer %}{{ admin_branding().name }}{% endblock %}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
