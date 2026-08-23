@@ -29,6 +29,7 @@ final readonly class AdminUiExtension
         private Branding $branding,
         private NavigationBuilder $navigation,
         private string $baseTemplate = '@Admin/base.html.twig',
+        private string $layoutTemplate = '@Admin/layout.html.twig',
         private string $mercureHubUrl = '',
         private string $mercureTokenRoute = '',
         /** @var array<string, string> */
@@ -78,6 +79,20 @@ final readonly class AdminUiExtension
     public function baseTemplate(): string
     {
         return $this->baseTemplate;
+    }
+
+    /**
+     * The layout the bundle's own PAGES extend — one cran above `admin_base_template()`.
+     *
+     * Same reasoning, one level up: an application whose pages go through its own layout (the one
+     * exposing `window.jwtToken`, an extra top bar…) points `admin.layout_template` at it. Hard
+     * coding `@Admin/layout.html.twig` here would make a bundle page bypass that layout, and the
+     * symptom is subtle — the page renders, it just lacks whatever the project's layout adds.
+     */
+    #[AsTwigFunction(name: 'admin_layout_template')]
+    public function layoutTemplate(): string
+    {
+        return $this->layoutTemplate;
     }
 
     /**

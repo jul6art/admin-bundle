@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle;
 
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\AppearanceControllerPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\FeatureVisibilityPass;
+use Jul6Art\AdminBundle\DependencyInjection\Compiler\PerformanceControllerPass;
 use Jul6Art\AdminBundle\Navigation\NavigationProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -35,5 +36,8 @@ class AdminBundle extends Bundle
         // du contrôleur, et le retirer ensuite fait échouer la compilation sur un service
         // « inexistant » que plus personne ne réclame explicitement.
         $container->addCompilerPass(new AppearanceControllerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 100);
+        // Même priorité, même raison : le locataire de service survit à un `removeDefinition`
+        // posé plus tard, et l'écran de profilage dépend d'un bundle que celui-ci ne requiert pas.
+        $container->addCompilerPass(new PerformanceControllerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 100);
     }
 }

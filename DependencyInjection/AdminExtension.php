@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle\DependencyInjection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Jul6Art\AdminBundle\Ui\Branding;
+use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -47,6 +48,7 @@ class AdminExtension extends Extension
 
         $container->setParameter('admin.enabled', true);
         $container->setParameter('admin.base_template', self::asString($config['base_template'] ?? null, '@Admin/base.html.twig'));
+        $container->setParameter('admin.layout_template', self::asString($config['layout_template'] ?? null, '@Admin/layout.html.twig'));
 
         $branding = \is_array($config['branding'] ?? null) ? $config['branding'] : [];
         $container->getDefinition(Branding::class)
@@ -61,7 +63,7 @@ class AdminExtension extends Extension
         // de conteneur plutôt que par un global Twig : un gabarit du bundle peut les lire, et
         // `debug:container --parameter` dit la vérité sur ce qui est branché.
         $routes = \is_array($config['routes'] ?? null) ? $config['routes'] : [];
-        foreach (['login', 'logout', 'register', 'reset_password_request', 'profile', 'change_password', 'appearance', 'privacy'] as $key) {
+        foreach (['login', 'logout', 'register', 'reset_password_request', 'profile', 'change_password', 'appearance', 'privacy', 'performance'] as $key) {
             $container->setParameter('admin.route.'.$key, self::asString($routes[$key] ?? null, ''));
         }
 
@@ -71,6 +73,13 @@ class AdminExtension extends Extension
 
         if (class_exists(Environment::class)) {
             $loader->load('twig.yaml');
+        }
+
+        // L'écran du profileur vient de `jul6art/core-bundle`, que ce bundle ne requiert pas :
+        // une application peut prendre la coquille sans la brique de profilage. Le pass affine
+        // ensuite — la classe peut exister sans que le service soit enregistré.
+        if (interface_exists(PerformanceStoreInterface::class)) {
+            $loader->load('performance.yaml');
         }
 
         // Le formulaire d'apparence n'a de sens qu'avec le composant Form ; son contrôleur ajoute

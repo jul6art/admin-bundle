@@ -135,6 +135,13 @@
                                 {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('appearance'), icon: 'fa-solid fa-palette', label: 'nav.appearance'|trans }) }}
                             {% endif %}
 
+                            {# Le profileur : une route vide masque le lien, et c'est ainsi qu'il
+                               ne paraît qu'en développement — le projet ne remplit
+                               `admin.routes.performance` que `when@dev`. #}
+                            {% if admin_route('performance') %}
+                                {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('performance'), icon: 'fa-solid fa-gauge-high', label: 'nav.performance'|trans }) }}
+                            {% endif %}
+
                             {% block admin_account_menu_extra %}{% endblock %}
 
                             {% if admin_route('logout') %}

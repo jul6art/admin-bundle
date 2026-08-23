@@ -25,6 +25,7 @@
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/orm": "^3.5",
         "friendsofphp/php-cs-fixer": "^3.68",
+        "jul6art/core-bundle": "^2.10",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-doctrine": "^2.0",
@@ -82,13 +83,18 @@
             "@rector-check",
             "@phpstan",
             "@test"
-        ]
+        ],
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        }
     },
     "suggest": {
-        "twig/twig": "La coquille, les pages d'authentification et l'écran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entité.",
+        "twig/twig": "La coquille, les pages d'authentification et l'\u00e9cran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entit\u00e9.",
         "symfony/form": "Le formulaire d'apparence (`AppearanceType`).",
-        "doctrine/orm": "Le trait `AppearancePreferencesTrait` et le contrôleur qui l'enregistre.",
+        "doctrine/orm": "Le trait `AppearancePreferencesTrait` et le contr\u00f4leur qui l'enregistre.",
         "symfony/asset": "`asset()` pour le logo et le favicon ; sans lui, les chemins sont rendus tels quels.",
-        "jul6art/datatable-bundle": "Les tableaux du back-office, et les contrôleurs Stimulus `ui--modal` / `ui--tooltip` que la coquille suppose enregistrés."
+        "jul6art/datatable-bundle": "Les tableaux du back-office, et les contr\u00f4leurs Stimulus `ui--modal` / `ui--tooltip` que la coquille suppose enregistr\u00e9s.",
+        "jul6art/core-bundle": "Required by the performance dashboard (Controller\\PerformanceController): it provides the profiler store this screen renders."
     }
 }

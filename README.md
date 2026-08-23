@@ -69,6 +69,36 @@ admin:
         # the wordmark case, where the logo already says the name. The logo then takes the room.
         show_name: true
 
+### Performance dashboard (optional)
+
+When `jul6art/core-bundle` is installed, the bundle also ships the screen that renders its
+per-request profiler: slowest routes, N+1 suspects, CSV/JSON export, and a button to clear the
+store. Without the core bundle the controller is **removed from the container** — the shell alone
+does not require the profiler.
+
+```yaml
+# config/routes/admin.yaml — the application decides the URL and the firewall around it
+admin_performance:
+    resource: '@AdminBundle/Controller/PerformanceController.php'
+    type: attribute
+    prefix: /admin
+
+# config/packages/admin.yaml
+when@dev:
+    admin:
+        routes:
+            performance: admin_performance_dashboard   # empty elsewhere ⇒ no link in the menu
+```
+
+⚠️ The route **names** must keep the `admin_performance_` prefix: that is what
+`core.performance.ignored_route_prefix` excludes from collection. Rename them and the dashboard
+starts measuring its own page, adding a record on every visit to what it displays.
+
+⚠️ Pages shipped by this bundle extend `admin.layout_template` (default `@Admin/layout.html.twig`).
+An application whose own pages go through its own layout — the one exposing `window.jwtToken`, an
+extra top bar — points that key at it, and makes that layout extend `@Admin/layout.html.twig`.
+
+
     # An empty route name HIDES its link rather than breaking the render — which is what makes
     # the multi-area case below work.
     routes:

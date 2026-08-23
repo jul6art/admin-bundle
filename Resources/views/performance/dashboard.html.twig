@@ -1,0 +1,404 @@
+{% extends admin_layout_template() %}
+{% trans_default_domain 'performance' %}
+
+{% block title %}{{ 'performance.dashboard.title'|trans }}{% endblock %}
+{% block container_class %}max-w-full{% endblock %}
+
+{% block content %}
+<div>
+    <div class="flex items-start md:items-center justify-between mb-6 flex-col md:flex-row">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ 'performance.dashboard.title'|trans }}</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'performance.dashboard.subtitle'|trans }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="panel p-4">
+            <div class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ total_records }}</div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">{{ 'performance.summary.total_records'|trans }}</div>
+        </div>
+        <div class="panel p-4">
+            <div class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ loaded_records }}</div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">{{ 'performance.summary.loaded_rows'|trans({'%max%': max_rows}) }}</div>
+        </div>
+        <div class="panel p-4">
+            <div class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ total_queries }}</div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">{{ 'performance.summary.total_queries'|trans }}</div>
+        </div>
+        <div class="panel p-4">
+            <div class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ total_duration_ms|number_format(0, ',', ' ') }} ms</div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-1">{{ 'performance.summary.cumulated_duration'|trans }}</div>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-6">
+        <button type="button" class="btn-primary" id="exportCsv">{{ 'performance.action.export_csv_view'|trans }}</button>
+        <button type="button" class="btn-primary" id="exportJson">{{ 'performance.action.export_json_view'|trans }}</button>
+        <a href="{{ path('admin_performance_export', { format: 'csv' }) }}" class="btn-secondary" title="{{ 'performance.action.raw_csv_help'|trans }}">{{ 'performance.action.raw_csv'|trans }}</a>
+        <a href="{{ path('admin_performance_export', { format: 'json' }) }}" class="btn-secondary" title="{{ 'performance.action.raw_json_help'|trans }}">{{ 'performance.action.raw_json'|trans }}</a>
+        <form action="{{ path('admin_performance_clear') }}" method="post" class="inline" onsubmit="return confirm('{{ 'performance.action.clear_confirm'|trans }}');">
+            <button type="submit" class="btn-danger">{{ 'performance.action.clear'|trans }}</button>
+        </form>
+    </div>
+
+    <div class="border-b border-slate-200 dark:border-slate-700 mb-4 flex gap-4">
+        <button type="button" class="tab-button tab-active" data-tab="requests">{{ 'performance.tab.requests'|trans }}</button>
+        <button type="button" class="tab-button" data-tab="routes">{{ 'performance.tab.routes'|trans }}</button>
+    </div>
+
+    <div id="tab-requests" class="tab-panel">
+        <div class="panel dt-container overflow-hidden">
+            <div class="dt-layout-row">
+                <div class="dt-layout-cell dt-layout-start">
+                    <div class="dt-length">
+                        <label>
+                            {{ 'performance.filter.page_size'|trans }}
+                            <select id="pageSize">
+                                <option>25</option>
+                                <option selected>50</option>
+                                <option>100</option>
+                                <option>250</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="dt-layout-cell dt-layout-end">
+                    <div class="dt-search">
+                        <label for="filter">{{ 'performance.filter.placeholder'|trans }}</label>
+                        <input type="search" id="filter" placeholder="{{ 'performance.filter.placeholder'|trans }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="dataTable" id="requestsTable">
+                    <thead>
+                        <tr>
+                            <th class="dt-orderable-asc dt-orderable-desc dt-ordering-desc" data-col="timestamp" data-type="num">{{ 'performance.col.time'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="route" data-type="text">{{ 'performance.col.route'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="method" data-type="text">{{ 'performance.col.method'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="status_code" data-type="num">{{ 'performance.col.status'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="duration_ms" data-type="num">{{ 'performance.col.duration_ms'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="query_count" data-type="num">{{ 'performance.col.queries'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="distinct_query_count" data-type="num">{{ 'performance.col.distinct'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="db_time_ms" data-type="num">{{ 'performance.col.db_ms'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="memory_peak_bytes" data-type="num">{{ 'performance.col.memory_mib'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="uri" data-type="text">{{ 'performance.col.uri'|trans }}</th>
+                        </tr>
+                        <tr class="dt-filter-row">
+                            <th></th>
+                            <th></th>
+                            <th>
+                                <select id="filterMethod"
+                                        class="dt-filter-select w-full"
+                                        data-controller="ui--select2"
+                                        data-ui--select2-placeholder-value="{{ 'performance.filter.all_methods'|trans }}"
+                                        data-ui--select2-allow-clear-value="true">
+                                    <option value=""></option>
+                                    {% for method in filter_methods %}
+                                        <option value="{{ method }}">{{ method }}</option>
+                                    {% endfor %}
+                                </select>
+                            </th>
+                            <th>
+                                <select id="filterStatus"
+                                        class="dt-filter-select w-full"
+                                        data-controller="ui--select2"
+                                        data-ui--select2-placeholder-value="{{ 'performance.filter.all_statuses'|trans }}"
+                                        data-ui--select2-allow-clear-value="true">
+                                    <option value=""></option>
+                                    {% for status in filter_status_codes %}
+                                        <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="requestsEmpty" class="dt-empty hidden">{{ 'performance.empty'|trans }}</div>
+            </div>
+
+            <div class="dt-layout-row">
+                <div class="dt-layout-cell dt-layout-start">
+                    <div class="dt-info" id="pagerInfo"></div>
+                </div>
+                <div class="dt-layout-cell dt-layout-end">
+                    <div class="dt-paging">
+                        <button type="button" class="dt-paging-button previous" id="pagerPrev">{{ 'performance.pager.prev'|trans }}</button>
+                        <button type="button" class="dt-paging-button next" id="pagerNext">{{ 'performance.pager.next'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-routes" class="tab-panel hidden">
+        <div class="panel dt-container overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="dataTable" id="routesTable">
+                    <thead>
+                        <tr>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="route" data-type="text">{{ 'performance.col.route'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="hits" data-type="num">{{ 'performance.col.hits'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc dt-ordering-desc" data-col="avg_query_count" data-type="num">{{ 'performance.col.avg_queries'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="max_query_count" data-type="num">{{ 'performance.col.max_queries'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="avg_duration_ms" data-type="num">{{ 'performance.col.avg_duration_ms'|trans }}</th>
+                            <th class="dt-orderable-asc dt-orderable-desc" data-col="max_duration_ms" data-type="num">{{ 'performance.col.max_duration_ms'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="routesEmpty" class="dt-empty hidden">{{ 'performance.empty_routes'|trans }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #requestsTable td.num, #routesTable td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #requestsTable td.uri { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab-button { padding: 10px 0; border-bottom: 2px solid transparent; color: rgb(100 116 139); cursor: pointer; background: transparent; border-top: 0; border-left: 0; border-right: 0; }
+    .tab-button.tab-active { color: rgb(15 23 42); border-bottom-color: rgb(99 102 241); }
+    .dark .tab-button.tab-active { color: rgb(241 245 249); }
+    .badge-perf { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .badge-perf.ok { background: rgba(16, 185, 129, 0.12); color: rgb(5 122 85); }
+    .badge-perf.warn { background: rgba(245, 158, 11, 0.15); color: rgb(146 64 14); }
+    .badge-perf.danger { background: rgba(239, 68, 68, 0.15); color: rgb(153 27 27); }
+    .dark .badge-perf.ok { color: rgb(110 231 183); }
+    .dark .badge-perf.warn { color: rgb(252 211 77); }
+    .dark .badge-perf.danger { color: rgb(252 165 165); }
+</style>
+
+<script>
+(function () {
+    const rawRows = {{ rows|json_encode|raw }};
+    const rawRoutes = {{ route_aggregates|json_encode|raw }};
+    const labels = {
+        noMatch: '{{ 'performance.pager.no_match'|trans|e('js') }}',
+        rowsOf: '{{ 'performance.pager.rows_of'|trans|e('js') }}',
+        unmatched: '{{ 'performance.route.unmatched'|trans|e('js') }}',
+        empty: '{{ 'performance.empty'|trans|e('js') }}',
+    };
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('tab-active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            btn.classList.add('tab-active');
+            document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+        });
+    });
+
+    function classify(row) {
+        if (row.query_count >= 50) return 'danger';
+        if (row.query_count >= 20) return 'warn';
+        return 'ok';
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function formatCell(row, col) {
+        switch (col) {
+            case 'timestamp': return new Date(row.timestamp * 1000).toLocaleString();
+            case 'duration_ms':
+            case 'db_time_ms': return Number(row[col] || 0).toFixed(1);
+            case 'memory_peak_bytes': return (Number(row[col] || 0) / 1048576).toFixed(1);
+            case 'avg_query_count':
+            case 'avg_duration_ms':
+            case 'max_duration_ms': return Number(row[col] || 0).toFixed(1);
+            case 'query_count': return '<span class="badge-perf ' + classify(row) + '">' + row.query_count + '</span>';
+            case 'route': return row.route || '<em class="text-slate-400">' + escapeHtml(labels.unmatched) + '</em>';
+            case 'uri': return escapeHtml(row.uri || '');
+            default: return row[col] !== undefined && row[col] !== null ? escapeHtml(String(row[col])) : '';
+        }
+    }
+
+    function headerCells(table) {
+        return Array.from(table.querySelectorAll('thead tr:first-child th'));
+    }
+
+    function numericCols(table) {
+        return headerCells(table).filter(th => th.dataset.type === 'num').map(th => th.dataset.col);
+    }
+
+    function applySort(rows, sortCol, sortDir, numericColsList) {
+        if (!sortCol) return rows;
+        const isNum = numericColsList.includes(sortCol);
+        const sign = sortDir === 'asc' ? 1 : -1;
+        return rows.slice().sort((a, b) => {
+            const av = a[sortCol], bv = b[sortCol];
+            if (isNum) return (Number(av || 0) - Number(bv || 0)) * sign;
+            return String(av || '').localeCompare(String(bv || '')) * sign;
+        });
+    }
+
+    function applyFilter(rows, needle, cols) {
+        if (!needle) return rows;
+        const n = needle.toLowerCase();
+        return rows.filter(r => cols.some(c => String(r[c] || '').toLowerCase().includes(n)));
+    }
+
+    function applyColumnFilters(rows, filters) {
+        return rows.filter(r => Object.entries(filters).every(([col, val]) => {
+            if (val === '' || val === null || val === undefined) return true;
+            return String(r[col] ?? '') === String(val);
+        }));
+    }
+
+    function updateSortIndicators(table, state) {
+        headerCells(table).forEach(th => {
+            th.classList.remove('dt-ordering-asc', 'dt-ordering-desc');
+            if (th.dataset.col === state.sortCol) {
+                th.classList.add(state.sortDir === 'asc' ? 'dt-ordering-asc' : 'dt-ordering-desc');
+            }
+        });
+    }
+
+    function bindSortable(table, state, render) {
+        headerCells(table).forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.col;
+                if (state.sortCol === col) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+                else { state.sortCol = col; state.sortDir = th.dataset.type === 'num' ? 'desc' : 'asc'; }
+                render();
+            });
+        });
+    }
+
+    const reqTable = document.getElementById('requestsTable');
+    if (reqTable) {
+        const tbody = reqTable.querySelector('tbody');
+        const emptyEl = document.getElementById('requestsEmpty');
+        const filterInput = document.getElementById('filter');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const pagerInfo = document.getElementById('pagerInfo');
+        const pagerPrev = document.getElementById('pagerPrev');
+        const pagerNext = document.getElementById('pagerNext');
+        const filterMethod = document.getElementById('filterMethod');
+        const filterStatus = document.getElementById('filterStatus');
+        const cols = Array.from(reqTable.querySelectorAll('thead tr:first-child th')).map(th => th.dataset.col);
+        const numCols = numericCols(reqTable);
+        const state = { sortCol: 'timestamp', sortDir: 'desc', filter: '', method: '', status_code: '', page: 0, pageSize: 50 };
+
+        function render() {
+            let rows = applyFilter(rawRows, state.filter, cols);
+            rows = applyColumnFilters(rows, { method: state.method, status_code: state.status_code });
+            rows = applySort(rows, state.sortCol, state.sortDir, numCols);
+            const total = rows.length;
+            const maxPage = Math.max(0, Math.ceil(total / state.pageSize) - 1);
+            if (state.page > maxPage) state.page = maxPage;
+            const start = state.page * state.pageSize;
+            const slice = rows.slice(start, start + state.pageSize);
+            tbody.innerHTML = slice.map(r => '<tr>' + cols.map(c => {
+                const cellClass = numCols.includes(c) ? ' class="num"' : (c === 'uri' ? ' class="uri"' : '');
+                return '<td' + cellClass + '>' + formatCell(r, c) + '</td>';
+            }).join('') + '</tr>').join('');
+            if (total === 0) {
+                emptyEl.classList.remove('hidden');
+                reqTable.classList.add('hidden');
+                pagerInfo.textContent = rawRows.length === 0 ? '' : labels.noMatch;
+            } else {
+                emptyEl.classList.add('hidden');
+                reqTable.classList.remove('hidden');
+                pagerInfo.textContent = labels.rowsOf.replace('%start%', start + 1).replace('%end%', Math.min(start + state.pageSize, total)).replace('%total%', total);
+            }
+            pagerPrev.classList.toggle('disabled', state.page === 0);
+            pagerNext.classList.toggle('disabled', state.page >= maxPage);
+            pagerPrev.disabled = state.page === 0;
+            pagerNext.disabled = state.page >= maxPage;
+            updateSortIndicators(reqTable, state);
+        }
+
+        bindSortable(reqTable, state, render);
+        filterInput.addEventListener('input', () => { state.filter = filterInput.value.trim(); state.page = 0; render(); });
+        pageSizeSelect.addEventListener('change', () => { state.pageSize = parseInt(pageSizeSelect.value, 10); state.page = 0; render(); });
+        filterMethod.addEventListener('change', () => { state.method = filterMethod.value; state.page = 0; render(); });
+        filterStatus.addEventListener('change', () => { state.status_code = filterStatus.value; state.page = 0; render(); });
+        pagerPrev.addEventListener('click', () => { if (state.page > 0) { state.page--; render(); } });
+        pagerNext.addEventListener('click', () => { state.page++; render(); });
+
+        const exportCols = ['id','timestamp','route','method','uri','status_code','duration_ms','memory_peak_bytes','query_count','distinct_query_count','db_time_ms','response_size_bytes'];
+
+        function currentViewRows() {
+            let rows = applyFilter(rawRows, state.filter, cols);
+            rows = applyColumnFilters(rows, { method: state.method, status_code: state.status_code });
+            return applySort(rows, state.sortCol, state.sortDir, numCols);
+        }
+
+        function download(filename, content, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        function csvEscape(value) {
+            if (value === null || value === undefined) return '';
+            const s = String(value);
+            if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        }
+
+        function buildCsv(rows) {
+            const lines = [exportCols.join(',')];
+            rows.forEach(r => { lines.push(exportCols.map(c => csvEscape(r[c])).join(',')); });
+            return lines.join('\n');
+        }
+
+        function ts() {
+            const d = new Date(); const p = n => String(n).padStart(2, '0');
+            return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+        }
+
+        document.getElementById('exportCsv').addEventListener('click', () => {
+            download('performance-view-' + ts() + '.csv', buildCsv(currentViewRows()), 'text/csv;charset=utf-8');
+        });
+        document.getElementById('exportJson').addEventListener('click', () => {
+            download('performance-view-' + ts() + '.json', JSON.stringify(currentViewRows(), null, 2), 'application/json');
+        });
+
+        render();
+    }
+
+    const routeTable = document.getElementById('routesTable');
+    if (routeTable) {
+        const tbody = routeTable.querySelector('tbody');
+        const emptyEl = document.getElementById('routesEmpty');
+        const cols = Array.from(routeTable.querySelectorAll('thead th')).map(th => th.dataset.col);
+        const numCols = numericCols(routeTable);
+        const state = { sortCol: 'avg_query_count', sortDir: 'desc' };
+
+        function renderRoutes() {
+            const rows = applySort(rawRoutes, state.sortCol, state.sortDir, numCols);
+            if (rows.length === 0) {
+                emptyEl.classList.remove('hidden');
+                routeTable.classList.add('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+            routeTable.classList.remove('hidden');
+            tbody.innerHTML = rows.map(r => '<tr>' + cols.map(c => {
+                const cellClass = numCols.includes(c) ? ' class="num"' : '';
+                return '<td' + cellClass + '>' + formatCell(r, c) + '</td>';
+            }).join('') + '</tr>').join('');
+            updateSortIndicators(routeTable, state);
+        }
+
+        bindSortable(routeTable, state, renderRoutes);
+        renderRoutes();
+    }
+})();
+</script>
+{% endblock %}

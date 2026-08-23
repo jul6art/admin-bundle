@@ -52,6 +52,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame([
             'enabled' => true,
             'base_template' => '@Admin/base.html.twig',
+            'layout_template' => '@Admin/layout.html.twig',
             'branding' => [
                 'name' => 'Admin',
                 'logo' => '',
@@ -64,6 +65,7 @@ final class ConfigurationTest extends TestCase
             // sont vides, et une route vide MASQUE le lien au lieu de faire échouer le rendu.
             'routes' => [
                 'login' => 'admin_security_login',
+                'performance' => '',
                 'logout' => 'admin_security_logout',
                 'register' => '',
                 'reset_password_request' => '',

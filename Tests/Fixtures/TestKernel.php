@@ -9,6 +9,7 @@ use Jul6Art\AdminBundle\AdminBundle;
 use Jul6Art\AdminBundle\Navigation\NavigationBuilder;
 use Jul6Art\AdminBundle\Twig\AdminUiExtension;
 use Jul6Art\AdminBundle\Ui\Branding;
+use Jul6Art\CoreBundle\CoreBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -44,6 +45,8 @@ final class TestKernel extends Kernel
         string $environment,
         private readonly array $bundleConfig = [],
         private readonly bool $withOrm = false,
+        /** Enregistre `jul6art/core-bundle` : l'écran du profileur n'existe qu'avec lui. */
+        private readonly bool $withCore = false,
         private readonly string $uniqueId = 'default',
     ) {
         // Debug mode installs Symfony's error handler and never removes it, which PHPUnit
@@ -66,6 +69,12 @@ final class TestKernel extends Kernel
 
         if ($this->withOrm) {
             yield new DoctrineBundle();
+        }
+
+        // Le core apporte la brique de profilage que l'écran de performance consomme. Il est en
+        // `require-dev` : ce bundle ne l'impose pas, et le test doit prouver LES DEUX cas.
+        if ($this->withCore) {
+            yield new CoreBundle();
         }
 
         // Twig est toujours là : la coquille, les pages d'authentification et l'écran

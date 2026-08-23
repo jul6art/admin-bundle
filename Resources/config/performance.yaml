@@ -1,0 +1,13 @@
+# L'écran du profileur. Chargé uniquement quand `jul6art/core-bundle` fournit la brique — et le
+# `PerformanceControllerPass` retire encore le service si le STORE n'est pas dans le conteneur
+# (le core peut être dans l'arbre sans être enregistré comme bundle).
+services:
+    _defaults:
+        autowire: true
+
+    # ⚠️ Mêmes tags à la main que pour AppearanceController, et pour la même raison :
+    # `routing.controller`, posé par l'autoconfiguration sur tout `#[Route]`, ferait importer ces
+    # routes SANS le préfixe que l'application a choisi — donc hors de ses `access_control`.
+    Jul6Art\AdminBundle\Controller\PerformanceController:
+        autoconfigure: false
+        tags: ['controller.service_arguments', 'container.service_subscriber']

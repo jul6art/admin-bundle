@@ -9,6 +9,7 @@ services:
     Jul6Art\AdminBundle\Twig\AdminUiExtension:
         arguments:
             $baseTemplate: '%admin.base_template%'
+            $layoutTemplate: '%admin.layout_template%'
             $mercureHubUrl: '%admin.mercure.hub_url%'
             $mercureTokenRoute: '%admin.mercure.token_route%'
             # La table des routes est reconstituée ici plutôt que lue clé par clé dans le gabarit :

@@ -36,6 +36,11 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('@Admin/base.html.twig')
                     ->cannotBeEmpty()
                 ->end()
+                ->scalarNode('layout_template')
+                    ->info('The layout that the bundle\'s own PAGES extend (the performance dashboard today). Default: the bundle\'s `@Admin/layout.html.twig`. An application whose pages go through its own layout — the one exposing `window.jwtToken`, an extra top bar… — points this at it, and makes THAT layout extend `@Admin/layout.html.twig`.')
+                    ->defaultValue('@Admin/layout.html.twig')
+                    ->cannotBeEmpty()
+                ->end()
                 ->arrayNode('branding')
                     ->info('The four values that make the shell look like your product rather than the bundle\'s demo. They appear in the sidebar, the sign-in card and the head — hence configuration rather than five Twig blocks to override.')
                     ->addDefaultsIfNotSet()
@@ -74,6 +79,10 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('login')->defaultValue('admin_security_login')->end()
+                        // Vide par défaut, à dessein : l'écran du profileur n'existe que si le
+                        // projet importe ses routes, et il n'a de sens qu'en développement. Le
+                        // remplir `when@dev` suffit à ne montrer le lien que là.
+                        ->scalarNode('performance')->defaultValue('')->end()
                         ->scalarNode('logout')->defaultValue('admin_security_logout')->end()
                         ->scalarNode('register')->defaultValue('')->info('Empty closes public sign-up: the link disappears from the sign-in card.')->end()
                         ->scalarNode('reset_password_request')->defaultValue('')->end()
