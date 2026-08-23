@@ -55,9 +55,15 @@
         </div>
 
         <div class="flex items-center justify-between">
-            <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <input type="checkbox" name="_remember_me" class="rounded border-slate-300 text-accent-600 focus:ring-accent-500">
-                {{ 'security.login.remember_me'|trans }}
+            {# L'interrupteur du reste de la coquille : les jetons `.toggle-*` viennent de
+               `assets/styles/components.css` de ce bundle, rien n'est emprunté au projet.
+               ⚠️ `name="_remember_me"` est le contrat du pare-feu Symfony — il ne bouge pas. #}
+            <label class="toggle-row" for="remember_me">
+                <span class="toggle-switch">
+                    <input type="checkbox" id="remember_me" name="_remember_me" class="toggle-switch-input">
+                    <span class="toggle-switch-track"></span>
+                </span>
+                <span class="toggle-label">{{ 'security.login.remember_me'|trans }}</span>
             </label>
             {% if admin_route('reset_password_request') %}
                 <a href="{{ path(admin_route('reset_password_request')) }}" class="text-sm text-accent-600 hover:text-accent-700 dark:text-accent-400">

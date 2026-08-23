@@ -107,6 +107,24 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * La case « se souvenir de moi » est un INTERRUPTEUR, comme toute case de la coquille.
+     *
+     * Elle était le dernier `<input type="checkbox">` nu des gabarits du bundle : une case
+     * système au milieu d'un formulaire stylé, seule de son espèce. Les jetons `.toggle-*`
+     * appartiennent à ce bundle (`assets/styles/components.css`), donc rien n'est emprunté au
+     * projet — le vocabulaire est déjà là.
+     */
+    public function testTheRememberMeBoxIsASwitchLikeEveryOtherBox(): void
+    {
+        $html = $this->render('@Admin/security/login.html.twig', self::BRANDING);
+
+        self::assertStringContainsString('toggle-switch-input', $html);
+        self::assertStringContainsString('toggle-switch-track', $html);
+        self::assertStringContainsString('name="_remember_me"', $html, 'Le nom du champ est le contrat de `remember_me` : il ne bouge pas.');
+        self::assertStringNotContainsString('rounded border-slate-300 text-accent-600', $html, 'La case système est ce qui a été remplacé.');
+    }
+
+    /**
      * `logo_width` dimensionne le logo des pages d'authentification ; sans lui, la hauteur fixe
      * historique s'applique. `show_name` retire la ligne du nom sous le logo — le cas d'un
      * wordmark, où le nom serait écrit deux fois.
