@@ -6,7 +6,8 @@
     `@Admin/layout.html.twig` — mais elles étendent la même base, et héritent donc du thème, des
     jetons d'accent et des toasts.
 
-    Blocs : `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer`.
+    Blocs : `auth_topbar` (au-dessus de la carte, aligné à droite), `auth_title`,
+    `auth_subtitle`, `auth_body`, `auth_footer`.
 
     ⚠️ `admin_base_template()`, jamais `'@Admin/base.html.twig'` en dur : c'est l'indirection qui
     permet au projet d'injecter sa chaîne d'assets. En dur, les pages d'authentification rendaient
@@ -18,7 +19,18 @@
 {% block title %}{% block auth_title %}{{ admin_branding().name }}{% endblock %} · {{ admin_branding().name }}{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex items-center justify-center px-4 py-12">
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+    {#
+        `auth_topbar` — ce que l'application veut poser AU-DESSUS de la carte, aligné à droite :
+        un sélecteur de langue, typiquement. Vide par défaut, donc sans effet sur l'existant.
+
+        Il existe pour la même raison qu'`admin_topbar_actions` dans le layout : sans lui, la
+        seule façon d'ajouter quoi que ce soit à ces quatre écrans était de les dupliquer dans
+        `templates/bundles/AdminBundle/security/`, quatre gabarits qui divergent du bundle à la
+        première mise à jour.
+    #}
+    <div class="w-full max-w-md flex justify-end mb-3">{% block auth_topbar %}{% endblock %}</div>
+
     <div class="w-full max-w-md">
         <div class="flex flex-col items-center gap-3 mb-8">
             {% if admin_branding().hasLogo %}

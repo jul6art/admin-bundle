@@ -20,7 +20,17 @@
                  {% elseif type == 'error' %}bg-red-50 border-red-200 text-red-700
                  {% elseif type == 'warning' %}bg-amber-50 border-amber-200 text-amber-700
                  {% else %}bg-accent-50 border-accent-200 text-accent-700{% endif %}">
-                <span>{{ message|trans }}</span>
+                {#
+                    ⚠️ Les flashes que CE bundle pose (`appearance.*`, depuis `AppearanceController`)
+                    se traduisent dans LEUR domaine ; tout le reste garde le domaine `messages`,
+                    qui est celui des applications.
+
+                    Sans cette distinction, un bundle qui pose `appearance.flash.saved` obligeait
+                    chaque application à recopier la clé dans `messages` — et tant qu'elle ne le
+                    faisait pas, l'écran affichait la CLÉ BRUTE. Constaté le 2026-08-23 dans deux
+                    projets à la fois, pour la même raison.
+                #}
+                <span>{{ message starts with 'appearance.' ? message|trans({}, 'appearance') : message|trans }}</span>
                 <button type="button"
                         data-action="ui--toast#close"
                         class="ml-2 flex-shrink-0 text-current opacity-60 hover:opacity-100 transition-opacity"
