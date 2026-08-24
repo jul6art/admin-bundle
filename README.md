@@ -63,7 +63,8 @@ admin:
         favicon: 'img/favicon.ico'
         home_route: admin_dashboard
         # Logo width in pixels on the authentication pages and in e-mails.
-        # Null keeps the historical fixed height (h-12) and lets the width follow.
+        # `~` — or leaving the key out — keeps the historical fixed height (h-12) and lets the
+        # width follow. Both spellings work: a node whose default is null accepts an explicit null.
         logo_width: ~
         # `false` drops the name written under the logo (auth pages) and beside it (sidebar):
         # the wordmark case, where the logo already says the name. The logo then takes the room.

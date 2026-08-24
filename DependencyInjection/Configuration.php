@@ -63,10 +63,30 @@ class Configuration implements ConfigurationInterface
                             ->defaultValue('admin_dashboard')
                             ->cannotBeEmpty()
                         ->end()
-                        ->integerNode('logo_width')
-                            ->info('Width in pixels of the logo on the authentication pages. Null keeps the historical fixed height (h-12) and lets the width follow.')
+                        // ⚠️ `scalarNode` et non `integerNode`, et ce n'est pas un relâchement.
+                        //
+                        // `integerNode()->defaultNull()` REFUSE un null explicite : le défaut ne
+                        // s'applique qu'en l'ABSENCE de la clé, et un `logo_width: ~` lève
+                        // « Expected int, but got null » à la compilation du conteneur. Or l'`info`
+                        // ci-dessous invite précisément à ce null. Un mode du
+                        // `symfony-skeleton-generator` écrivait donc `~` en toute bonne foi :
+                        // AUCUN projet généré ne bootait, `debug:router` compris (2026-08-24).
+                        //
+                        // Le domaine de la valeur est `null | int >= 1`, ce qu'aucun nœud typé de
+                        // Symfony n'exprime : `ScalarNode` accepte le null, `IntegerNode` accepte
+                        // l'entier. On garde le premier et on valide le second à la main — la borne
+                        // `min(1)` devient la moitié droite de la condition.
+                        //
+                        // La règle générale, elle, ne dépend pas de ce nœud : **un nœud dont le
+                        // défaut est null doit accepter un null explicite**, sinon sa propre
+                        // documentation invite à ce qu'il refuse.
+                        ->scalarNode('logo_width')
+                            ->info('Width in pixels of the logo on the authentication pages. Null — or the key left out — keeps the historical fixed height (h-12) and lets the width follow.')
                             ->defaultNull()
-                            ->min(1)
+                            ->validate()
+                                ->ifTrue(static fn (mixed $value): bool => null !== $value && (!\is_int($value) || $value < 1))
+                                ->thenInvalid('admin.branding.logo_width expects null or a positive integer, %s given.')
+                            ->end()
                         ->end()
                         ->booleanNode('show_name')
                             ->info('Whether the product name is written under the logo on the authentication pages. Turn it off when the logo is a wordmark — the name would be there twice.')

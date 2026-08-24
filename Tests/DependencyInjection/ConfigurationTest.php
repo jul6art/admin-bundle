@@ -47,6 +47,34 @@ final class ConfigurationTest extends TestCase
         self::process([['branding' => ['logo_width' => 0]]]);
     }
 
+    /**
+     * Un null EXPLICITE est accepté, et c'est le cœur du correctif.
+     *
+     * `integerNode()->defaultNull()` refuse `logo_width: ~` : le défaut ne s'applique qu'en
+     * l'ABSENCE de la clé. Or l'`info` du nœud invite précisément à ce null — et le mode
+     * `backoffice` du `symfony-skeleton-generator` l'écrivait, donc aucun projet généré ne bootait
+     * (signalé le 2026-08-24). Un nœud dont le défaut est null doit accepter un null explicite.
+     */
+    public function testAnExplicitNullLogoWidthIsAccepted(): void
+    {
+        $branding = self::process([['branding' => ['logo_width' => null]]])['branding'];
+
+        self::assertIsArray($branding);
+        self::assertNull($branding['logo_width']);
+    }
+
+    /**
+     * La contrepartie de la nullabilité : le nœud n'étant plus un `integerNode`, c'est le
+     * validateur qui refuse ce qui n'est pas un entier. Sans ce test, relâcher le type passerait
+     * inaperçu — une largeur en chaîne se retrouverait telle quelle dans un attribut `style`.
+     */
+    public function testALogoWidthMustBeAnInteger(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        self::process([['branding' => ['logo_width' => '220']]]);
+    }
+
     public function testItAppliesItsDefaults(): void
     {
         self::assertSame([
