@@ -32,6 +32,39 @@ final class StylesheetTest extends TestCase
         yield 'btn-secondary' => ['.btn-secondary'];
         yield 'btn-danger' => ['.btn-danger'];
         yield 'btn-warning' => ['.btn-warning'];
+        yield 'btn-success' => ['.btn-success'];
+    }
+
+    /**
+     * Les cinq variantes existent, et ce n'est pas une commodité : une classe absente de la
+     * feuille ne lève RIEN, elle ne peint rien. Un bouton « Activer » écrit avec `.btn-success`
+     * dans un projet dont le bundle ne la déclare pas sort en texte nu au milieu d'un formulaire
+     * stylé — et seul l'écran le montre.
+     *
+     * `emerald` et non `green` : c'est la couleur de `.badge-active` et celle de l'action
+     * « Activer » des tableaux. Une action porte la même couleur partout où elle apparaît.
+     */
+    public function testTheSuccessVariantIsEmeraldLikeTheActiveBadge(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*bg-emerald-600[^}]*\}/s', $css);
+        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*hover:bg-emerald-500[^}]*\}/s', $css);
+    }
+
+    /**
+     * Les cinq boutons réservent l'espacement de leur icône. C'est ce qui permet d'écrire
+     * `<i class="fa-solid fa-floppy-disk"></i> Enregistrer` sans une seule classe de plus —
+     * la règle « couleurs et icônes » des checklists de formulaire en dépend.
+     */
+    #[DataProvider('buttonClasses')]
+    public function testAButtonReservesTheGapItsIconNeeds(string $selector): void
+    {
+        self::assertMatchesRegularExpression(
+            '/'.preg_quote($selector, '/').' \{[^}]*inline-flex items-center gap-2[^}]*\}/s',
+            self::components(),
+            $selector.' doit porter `inline-flex items-center gap-2` pour recevoir une icône.',
+        );
     }
 
     /**

@@ -275,9 +275,6 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
-     * @param array<string, mixed> $bundleConfig
-     */
-    /**
      * ⚠️ Un gabarit du bundle traverse le layout que `admin.layout_template` DÉSIGNE.
      *
      * Coder `@Admin/layout.html.twig` en dur fait qu'une page du bundle contourne le layout du
@@ -311,6 +308,9 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('data-project-brand', $html, 'La marque du projet est contournée.');
     }
 
+    /**
+     * @param array<string, mixed> $bundleConfig
+     */
     private function render(string $template, array $bundleConfig, ?Account $user = null, string $route = 'admin_widget_index'): string
     {
         $container = $this->boot(bundleConfig: $bundleConfig);

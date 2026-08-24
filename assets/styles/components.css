@@ -39,6 +39,14 @@
         @apply inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400;
     }
 
+    /* `emerald` et non `green` : c'est la couleur de `.badge-active` juste en dessous, et celle de
+     * l'action « Activer » des tableaux (`text-emerald-600`). Une action porte la même couleur
+     * partout où elle apparaît — un « Activer » vert dans un menu de ligne et gris sur la fiche
+     * de la même entité se lit comme deux actions différentes. */
+    .btn-success {
+        @apply inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500;
+    }
+
     .badge-active {
         @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800;
     }
