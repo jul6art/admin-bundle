@@ -5,7 +5,17 @@
     inclut directement `@Admin/partials/_appearance_form.html.twig` dans son propre gabarit : c'est
     lui qui porte tout le corps de l'écran.
 #}
-{% extends '@Admin/layout.html.twig' %}
+{#
+    ⚠️ `admin_layout_template()`, jamais `'@Admin/layout.html.twig'` en dur : c'est l'indirection
+    qui fait passer cette page par le layout du PROJET quand `admin.layout_template` le désigne.
+
+    En dur, l'écran d'apparence contournait ce layout — et le symptôme est sournois, parce que la
+    page rend parfaitement : il lui manque seulement ce que le projet ajoute. Vu le 2026-08-24
+    dans deux applications à la fois : ni sélecteur de langue dans la barre du haut, ni marque de
+    barre latérale, ni `window.jwtToken`, pendant que toutes les autres pages les avaient. C'est
+    la même omission que celle corrigée pour `_card.html.twig`, une page plus loin.
+#}
+{% extends admin_layout_template() %}
 
 {% block title %}{{ 'appearance.title'|trans({}, 'appearance') }} · {{ admin_branding().name }}{% endblock %}
 

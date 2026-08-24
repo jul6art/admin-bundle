@@ -277,6 +277,40 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     /**
      * @param array<string, mixed> $bundleConfig
      */
+    /**
+     * ⚠️ Un gabarit du bundle traverse le layout que `admin.layout_template` DÉSIGNE.
+     *
+     * Coder `@Admin/layout.html.twig` en dur fait qu'une page du bundle contourne le layout du
+     * projet — et le symptôme est sournois : la page rend parfaitement, il lui manque seulement
+     * ce que le projet ajoute. Constaté sur l'écran d'apparence (2026-08-24) : ni le sélecteur de
+     * langue de la barre du haut, ni la marque de la barre latérale, ni `window.jwtToken` —
+     * pendant que toutes les autres pages d'administration les avaient.
+     *
+     * Le test rend CHAQUE gabarit de page du bundle à travers un layout de projet et exige d'y
+     * retrouver ses marqueurs : une page ajoutée demain sans l'indirection le fera échouer.
+     */
+    public function testEveryBundlePageGoesThroughTheProjectLayout(): void
+    {
+        $container = $this->boot(bundleConfig: array_merge(self::BRANDING, [
+            'layout_template' => 'project_layout.html.twig',
+        ]));
+        $this->pushRequest($container, 'admin_account_appearance_edit');
+
+        $formFactory = $container->get('form.factory');
+        self::assertInstanceOf(FormFactoryInterface::class, $formFactory);
+
+        $twig = $container->get('twig');
+        self::assertInstanceOf(Environment::class, $twig);
+
+        $account = new Account()->setEmail('a@b.test')->setFullName('A B');
+        $form = $formFactory->create(AppearanceType::class, $account);
+
+        $html = $twig->render('@Admin/account/appearance.html.twig', ['form' => $form->createView()]);
+
+        self::assertStringContainsString('data-project-topbar', $html, 'La barre du haut du projet est contournée.');
+        self::assertStringContainsString('data-project-brand', $html, 'La marque du projet est contournée.');
+    }
+
     private function render(string $template, array $bundleConfig, ?Account $user = null, string $route = 'admin_widget_index'): string
     {
         $container = $this->boot(bundleConfig: $bundleConfig);

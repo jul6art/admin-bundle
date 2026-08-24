@@ -1,0 +1,9 @@
+{#
+    Le layout d'un PROJET : ce qu'une application ajoute à la coquille du bundle. Le marqueur
+    ci-dessous est ce qu'un gabarit du bundle doit traverser quand `admin.layout_template` le
+    désigne — et ce qu'il perd s'il code `@Admin/layout.html.twig` en dur.
+#}
+{% extends '@Admin/layout.html.twig' %}
+
+{% block admin_topbar_actions %}<span data-project-topbar>SÉLECTEUR PROJET</span>{% endblock %}
+{% block admin_sidebar_brand %}<div data-project-brand>MARQUE PROJET</div>{% endblock %}
