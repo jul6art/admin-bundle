@@ -180,6 +180,27 @@ final class StylesheetTest extends TestCase
         self::assertStringContainsString('appearance.preview.table.col_name', $twig);
     }
 
+    /**
+     * L'icône d'un texte d'aide est posée sur la ligne du texte, pas au-dessus.
+     *
+     * Font Awesome impose `line-height: 1` à ses icônes — 12px pour un `text-xs` — alors que le
+     * texte est en `leading-relaxed`, soit 19,5px. `.form-help` étant un `flex items-start`, les
+     * deux boîtes s'alignent par le HAUT et le centre de l'icône remonte de (19,5 − 12) / 2 =
+     * 3,75px : mesuré à l'écran, elle flottait visiblement trop haut. Le défaut datait du jour où
+     * le thème a été écrit (superp, 2026-04-16) et a survécu à l'extraction dans ce bundle.
+     *
+     * Le décalage plutôt qu'un `items-center` sur le parent : un texte d'aide passe sur plusieurs
+     * lignes, et le centrage porterait alors sur le bloc — l'icône glisserait au milieu du
+     * paragraphe.
+     */
+    public function testAHelpTextIconSitsOnTheTextLine(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression('/\.form-help i \{[\s\S]*?relative/', $css);
+        self::assertMatchesRegularExpression('/\.form-help i \{[\s\S]*?top-1/', $css);
+    }
+
     private static function components(): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');

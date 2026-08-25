@@ -139,6 +139,22 @@
         @apply mt-0 flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed;
     }
 
+    /* Font Awesome impose `line-height: 1` à ses icônes — 12px ici — alors que le texte d'aide est
+     * en `leading-relaxed`, soit 19,5px. `items-start` alignant les deux boîtes par le HAUT, le
+     * centre de l'icône se retrouve (19,5 − 12) / 2 = 3,75px AU-DESSUS du centre de la première
+     * ligne : mesuré à l'écran, l'icône flottait visiblement trop haut. Le décalage la repose
+     * dessus (écart résiduel 0,25px).
+     *
+     * ⚠️ Pas `items-center` sur le parent : le texte d'aide passe sur plusieurs lignes, et le
+     * centrage porterait alors sur le BLOC — l'icône descendrait au milieu du paragraphe. Le
+     * décalage, lui, reste juste quel que soit le nombre de lignes.
+     *
+     * ⚠️ Corollaire pour les gabarits : ne rien ajouter sur l'icône elle-même. Un `mt-0.5` posé à
+     * la main pour compenser le même défaut s'AJOUTE à ce décalage et la fait passer trop bas. */
+    .form-help i {
+        @apply relative top-1;
+    }
+
     /* ── Fieldset sections ─────────────────────────────────── */
     .form-fieldset {
         @apply relative rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 px-5 pt-6 pb-5 space-y-5;
