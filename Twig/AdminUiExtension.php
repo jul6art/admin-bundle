@@ -235,4 +235,19 @@ final readonly class AdminUiExtension
     {
         return $this->navigation->activeSectionKey($currentRoute, $sections);
     }
+
+    /**
+     * The route of the item to light up — resolved ONCE, for all the items together.
+     *
+     * ⚠️ A per-item `starts with` cannot decide this: when one route name prefixes another, both
+     * items match and both light up. The template compares an equality instead, and the arbitration
+     * (longest matching prefix) lives where it can see every item.
+     *
+     * @param list<NavSection> $sections
+     */
+    #[AsTwigFunction(name: 'admin_active_item')]
+    public function activeItem(string $currentRoute, array $sections): ?string
+    {
+        return $this->navigation->activeItemRoute($currentRoute, $sections);
+    }
 }

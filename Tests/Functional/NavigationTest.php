@@ -124,6 +124,52 @@ final class NavigationTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * ⚠️ **Deux entrées dont l'une préfixe l'autre : une seule s'allume.**.
+     *
+     * La convention « préfixe de nom de route » se retourne dès qu'un nom est le préfixe d'un
+     * autre : `admin_asset` matche `admin_asset_type_index` aussi bien que `admin_asset_type`. Sur
+     * wovex, « Équipements » et « Types d'équipement » s'allumaient ENSEMBLE (constaté le
+     * 2026-08-26), et aucun `activePrefix` explicite ne pouvait les départager — tout préfixe
+     * couvrant les routes d'équipement couvre aussi celles des types. Le seul critère qui tranche
+     * est la SPÉCIFICITÉ, et elle ne se voit qu'en regardant les entrées ensemble.
+     */
+    public function testTheMostSpecificItemWinsWhenTwoPrefixesMatch(): void
+    {
+        $builder = $this->nestedBuilder();
+
+        self::assertSame('admin_asset_type_index', $builder->activeItemRoute('admin_asset_type_index'));
+        self::assertSame('admin_asset_index', $builder->activeItemRoute('admin_asset_index'));
+        self::assertSame('admin_asset_index', $builder->activeItemRoute('admin_asset_show'), 'Une fiche garde sa liste allumée.');
+        self::assertNull($builder->activeItemRoute('admin_something_else'));
+    }
+
+    /** La section suit l'entrée gagnante, pas la première qui matche. */
+    public function testTheActiveSectionFollowsTheMostSpecificItem(): void
+    {
+        self::assertSame('types', $this->nestedBuilder()->activeSectionKey('admin_asset_type_index'));
+    }
+
+    private function nestedBuilder(): NavigationBuilder
+    {
+        return new NavigationBuilder(
+            [new class implements NavigationProviderInterface {
+                #[\Override]
+                public function sections(): iterable
+                {
+                    yield new NavSection('parc', 'nav.parc', 'i', [
+                        new NavItem('admin_asset_index', 'nav.assets', 'i'),
+                    ], priority: 20);
+
+                    yield new NavSection('types', 'nav.types', 'i', [
+                        new NavItem('admin_asset_type_index', 'nav.asset_types', 'i'),
+                    ], priority: 10);
+                }
+            }],
+            $this->checker([]),
+        );
+    }
+
+    /**
      * @param list<string> $granted
      */
     private function builder(array $granted = [], ?FeatureVisibilityInterface $features = null): NavigationBuilder

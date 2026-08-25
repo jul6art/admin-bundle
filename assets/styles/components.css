@@ -71,6 +71,24 @@
         @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400;
     }
 
+    /*
+     * Le marqueur d'obligation.
+     *
+     * ⚠️ Symfony pose la classe `required` sur le label d'un champ obligatoire, et c'est tout ce
+     * qu'il fait : une classe que rien ne dessine ne dessine RIEN. Sans cette règle, un formulaire
+     * n'annonce pas ce qu'il exige, et l'utilisateur l'apprend en le soumettant. Vu sur tous les
+     * formulaires d'un projet consommateur le 2026-08-26 — `class="form-label required"` dans le
+     * DOM, `content: none` en style calculé.
+     *
+     * Le marqueur est ici plutôt que dans un gabarit parce que la classe l'est aussi : celui qui
+     * publie `.form-label` publie ce qui va avec.
+     */
+    .form-label.required::after {
+        @apply text-red-500;
+        content: '*';
+        margin-inline-start: 0.125rem;
+    }
+
     .form-control {
         @apply w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-accent-500;
     }

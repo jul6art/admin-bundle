@@ -1,13 +1,16 @@
 {#
-    Une entrée de menu. Attend `item` (un `NavItem`) et `current_route`.
+    Une entrée de menu. Attend `item` (un `NavItem`) et `active_item_route`.
 
-    L'état actif se décide sur un PRÉFIXE de nom de route, et non sur l'égalité : une page de
-    détail (`admin_user_show`) doit garder allumée l'entrée de la liste (`admin_user_index`), sinon
-    la barre latérale se vide dès qu'on ouvre une fiche. Le préfixe par défaut est le nom de la
-    route moins son `_index` final ; `NavItem::$activePrefix` sert aux cas qui n'entrent pas dans
-    cette convention.
+    L'état actif se décide toujours sur un PRÉFIXE de nom de route — une page de détail
+    (`admin_user_show`) garde allumée l'entrée de sa liste (`admin_user_index`), sinon la barre
+    latérale se vide dès qu'on ouvre une fiche —, mais l'arbitrage se fait EN AMONT, sur toutes les
+    entrées à la fois (`admin_active_item()`).
+
+    ⚠️ Comparer ici `current_route starts with item.activePrefix()` allumait DEUX entrées dès qu'un
+    nom de route préfixait un autre : `admin_asset` matche `admin_asset_type_index` autant que
+    `admin_asset_type`. Une entrée ne peut pas trancher seule — elle ne voit pas les autres.
 #}
-{% set _active = current_route starts with item.activePrefix() %}
+{% set _active = item.route == active_item_route %}
 <li>
     <a href="{{ path(item.route, item.routeParameters) }}"
        class="flex items-center gap-3 px-2 py-2 rounded-lg text-sm transition-colors

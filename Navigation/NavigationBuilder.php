@@ -84,15 +84,49 @@ final readonly class NavigationBuilder
      */
     public function activeSectionKey(string $currentRoute, ?array $sections = null): ?string
     {
+        return $this->activeItem($currentRoute, $sections)['section'];
+    }
+
+    /**
+     * The route of the active item: the one whose prefix matches AND is the **longest**.
+     *
+     * ⚠️ Length is what breaks the tie, and the tie is not exotic: as soon as one route name is a
+     * prefix of another — `admin_asset_index` and `admin_asset_type_index` — both prefixes match
+     * the more specific route, and two entries light up at once. No explicit `activePrefix` can
+     * fix it from the outside: every prefix covering the asset routes also covers the asset-type
+     * ones. The decision has to look at the items TOGETHER, which a per-item template cannot do.
+     *
+     * @param list<NavSection>|null $sections the already-built sections, so the layout does not
+     *                                        pay for a second pass of permission checks
+     */
+    public function activeItemRoute(string $currentRoute, ?array $sections = null): ?string
+    {
+        return $this->activeItem($currentRoute, $sections)['route'];
+    }
+
+    /**
+     * @param list<NavSection>|null $sections
+     *
+     * @return array{route: string|null, section: string|null}
+     */
+    private function activeItem(string $currentRoute, ?array $sections = null): array
+    {
+        $best = ['route' => null, 'section' => null];
+        $bestLength = -1;
+
         foreach ($sections ?? $this->build() as $section) {
             foreach ($section->items as $item) {
-                if (str_starts_with($currentRoute, $item->activePrefix())) {
-                    return $section->key;
+                $prefix = $item->activePrefix();
+                $length = \strlen($prefix);
+
+                if (str_starts_with($currentRoute, $prefix) && $length > $bestLength) {
+                    $best = ['route' => $item->route, 'section' => $section->key];
+                    $bestLength = $length;
                 }
             }
         }
 
-        return null;
+        return $best;
     }
 
     private function isVisible(?string $permission, ?string $feature): bool

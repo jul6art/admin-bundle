@@ -58,6 +58,7 @@
                 {% set _nav = admin_navigation() %}
                 {% set _current_route = app.request.attributes.get('_route') %}
                 {% set _active_section = admin_active_section(_current_route, _nav) %}
+                {% set _active_item = admin_active_item(_current_route, _nav) %}
                 {% for section in _nav %}
                     <div data-controller="ui--sidebar-section"
                          data-ui--sidebar-section-key-value="{{ section.key }}"
@@ -73,7 +74,7 @@
                         </button>
                         <ul class="space-y-0.5 mt-1 pl-1" data-ui--sidebar-section-target="content">
                             {% for item in section.items %}
-                                {{ include('@Admin/partials/_nav_item.html.twig', { item: item, current_route: _current_route }) }}
+                                {{ include('@Admin/partials/_nav_item.html.twig', { item: item, active_item_route: _active_item }) }}
                             {% endfor %}
                         </ul>
                     </div>

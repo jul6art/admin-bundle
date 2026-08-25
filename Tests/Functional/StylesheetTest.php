@@ -201,6 +201,32 @@ final class StylesheetTest extends TestCase
         self::assertMatchesRegularExpression('/\.form-help i \{[\s\S]*?top-1/', $css);
     }
 
+    /**
+     * Le marqueur d'obligation d'un champ EXISTE.
+     *
+     * ⚠️ Symfony pose la classe `required` sur le label d'un champ obligatoire — le thème de base
+     * le fait depuis toujours — mais une classe que personne ne dessine ne dessine rien. Sur
+     * wovex, le 2026-08-26, **aucun formulaire du back-office n'affichait d'astérisque** :
+     * `class="form-label required"` dans le DOM, `content: none` en style calculé, et zéro
+     * sélecteur `required` dans les deux feuilles chargées. Le formulaire ne disait plus ce qu'il
+     * exigeait, et rien ne le signalait.
+     *
+     * C'est la famille de défauts que ce bundle connaît déjà : publier un vocabulaire de classes
+     * sans le comportement qui va avec (`.dropzone-*` sans son contrôleur, le menu ⋮ sans sa
+     * fonction globale).
+     */
+    public function testARequiredLabelCarriesItsMarker(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/\.form-label\.required::after \{[^}]*content:\s*[\'"]\*[\'"][^}]*\}/s',
+            $css,
+            'Sans cette règle, un champ obligatoire ne se distingue pas d\'un champ facultatif.',
+        );
+        self::assertMatchesRegularExpression('/\.form-label\.required::after \{[^}]*text-red-500[^}]*\}/s', $css);
+    }
+
     private static function components(): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');
