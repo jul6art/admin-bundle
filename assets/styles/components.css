@@ -55,6 +55,35 @@
         @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-600;
     }
 
+    /*
+     * Les quatre variantes que `active` / `inactive` ne couvrent pas.
+     *
+     * ⚠️ Elles ne sont pas un ajout de confort : un projet consommateur écrivait déjà
+     * `badge-warning` pour un équipement « à remplacer », et cette classe n'existait nulle part —
+     * donc un `<span>` en texte nu au milieu d'une fiche stylée, sans que rien ne lève. Une
+     * machine à états à neuf états (work orders) rendait le manque intenable.
+     *
+     * Les palettes sont celles des boutons homologues — `.btn-warning` est `amber`, `.btn-danger`
+     * est `red` — pour qu'un ÉTAT et l'ACTION qui y mène portent la même couleur. C'est la règle
+     * « couleurs et icônes » des checklists, appliquée aux badges.
+     */
+    .badge-info {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 ring-sky-200 dark:ring-sky-800;
+    }
+
+    .badge-warning {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-200 dark:ring-amber-800;
+    }
+
+    .badge-danger {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 ring-red-200 dark:ring-red-800;
+    }
+
+    /* Le gris SOUTENU, à distinguer d'`inactive` : « en pause » n'est pas « désactivé ». */
+    .badge-neutral {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 ring-slate-300 dark:ring-slate-500;
+    }
+
     .form-panel {
         @apply panel p-6 sm:p-8;
     }

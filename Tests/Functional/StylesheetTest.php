@@ -202,6 +202,50 @@ final class StylesheetTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{0: string, 1: string}>
+     */
+    public static function badgeVariants(): iterable
+    {
+        yield 'active' => ['.badge-active', 'emerald'];
+        yield 'inactive' => ['.badge-inactive', 'slate'];
+        yield 'info' => ['.badge-info', 'sky'];
+        yield 'warning' => ['.badge-warning', 'amber'];
+        yield 'danger' => ['.badge-danger', 'red'];
+        yield 'neutral' => ['.badge-neutral', 'slate'];
+    }
+
+    /**
+     * Toutes les variantes de badge existent, et chacune peint.
+     *
+     * ⚠️ Une classe absente de la feuille ne lève RIEN : `<span class="badge-warning">` sort en
+     * texte nu au milieu d'une fiche stylée, et seul l'écran le montre. Le bundle ne publiait que
+     * `active` et `inactive` alors qu'un projet consommateur écrivait déjà `badge-warning` pour un
+     * équipement « à remplacer » (trouvé le 2026-08-26 en instrumentant une machine à états à neuf
+     * états). C'est la troisième fois que ce bundle publie un vocabulaire sans le comportement qui
+     * va avec — d'où ce test, qui ferme la famille plutôt qu'un cas.
+     *
+     * Les couleurs ne sont pas libres : elles sont celles des boutons homologues
+     * (`.btn-warning` en `amber`, `.btn-danger` en `red`), pour qu'un état et l'action qui y mène
+     * se lisent de la même couleur.
+     */
+    #[DataProvider('badgeVariants')]
+    public function testEveryBadgeVariantIsPainted(string $selector, string $palette): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            \sprintf('/%s \{[^}]*rounded-full[^}]*\}/s', preg_quote($selector, '/')),
+            $css,
+            \sprintf('%s n\'est pas déclarée : elle ne peindra rien, sans lever.', $selector),
+        );
+        self::assertMatchesRegularExpression(
+            \sprintf('/%s \{[^}]*%s-[0-9]{2,3}[^}]*\}/s', preg_quote($selector, '/'), $palette),
+            $css,
+            \sprintf('%s doit rester dans la palette %s, celle de son bouton homologue.', $selector, $palette),
+        );
+    }
+
+    /**
      * Le marqueur d'obligation d'un champ EXISTE.
      *
      * ⚠️ Symfony pose la classe `required` sur le label d'un champ obligatoire — le thème de base
