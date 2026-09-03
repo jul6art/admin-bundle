@@ -68,6 +68,113 @@ final class StylesheetTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{0: string, 1: string}>
+     */
+    public static function alertClasses(): iterable
+    {
+        yield 'alert-info' => ['.alert-info', 'sky'];
+        yield 'alert-success' => ['.alert-success', 'emerald'];
+        yield 'alert-warning' => ['.alert-warning', 'amber'];
+        yield 'alert-danger' => ['.alert-danger', 'red'];
+    }
+
+    /**
+     * Les quatre alertes existent, et c'est la leçon des variantes de badge répétée un cran plus
+     * loin : **écrire une classe ne la dessine pas**.
+     *
+     * Un produit consommateur a écrit `class="alert-warning"` en croyant la classe fournie. Elle
+     * n'existait nulle part — ni dans ce bundle, ni dans son propre CSS — donc la bannière
+     * s'affichait sans aucune mise en forme. Et le test qui la gardait,
+     * `assertSelectorExists('.alert-warning')`, passait très bien : **asserter la présence d'une
+     * classe dans le HTML ne dit rien de son existence en CSS.**
+     */
+    #[DataProvider('alertClasses')]
+    public function testAnAlertVariantIsDrawn(string $selector, string $palette): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/'.preg_quote($selector, '/').' \{[^}]*bg-'.$palette.'-50[^}]*\}/s',
+            $css,
+            $selector.' doit exister et porter la palette `'.$palette.'` de son badge homologue.',
+        );
+    }
+
+    /**
+     * ⚠️ Chaque alerte porte SES deux nuances sombres. C'est le défaut qui a suivi le premier :
+     * la bannière avait bien été écrite en Tailwind inline, mais deux de ses classes sombres
+     * n'avaient jamais été générées — donc `bg-amber-50` restait peint sur `border-amber-800`, un
+     * fond clair dans une bordure sombre. Mesuré au `getComputedStyle`, en mode sombre forcé.
+     */
+    #[DataProvider('alertClasses')]
+    public function testAnAlertVariantSurvivesDarkMode(string $selector, string $palette): void
+    {
+        $css = self::components();
+
+        foreach (['dark:bg-'.$palette.'-950', 'dark:border-'.$palette.'-800', 'dark:text-'.$palette.'-300'] as $needed) {
+            self::assertMatchesRegularExpression(
+                '/'.preg_quote($selector, '/').' \{[^}]*'.preg_quote($needed, '/').'[^}]*\}/s',
+                $css,
+                $selector.' doit porter `'.$needed.'` : sans ses trois nuances sombres, l\'alerte '
+                .'mélange un fond clair et une bordure sombre.',
+            );
+        }
+    }
+
+    /**
+     * L'icône est réservée comme sur les boutons, donc
+     * `<i class="fa-solid fa-triangle-exclamation"></i> <span>…</span>` suffit sans une classe de
+     * plus.
+     *
+     * `items-start` et non `items-center` : un message d'alerte tient souvent sur deux lignes, et
+     * l'icône doit rester à hauteur de la PREMIÈRE, pas flotter au milieu du bloc.
+     */
+    #[DataProvider('alertClasses')]
+    public function testAnAlertReservesTheGapItsIconNeedsAndKeepsItOnTheFirstLine(string $selector, string $palette): void
+    {
+        self::assertMatchesRegularExpression(
+            '/'.preg_quote($selector, '/').' \{[^}]*flex items-start gap-3[^}]*\}/s',
+            self::components(),
+            $selector.' doit porter `flex items-start gap-3`.',
+        );
+    }
+
+    /**
+     * ⚠️ **La cible tactile des boutons est écrite en CSS, et le relèvement est celui du MOBILE.**.
+     *
+     * Mesuré sur un produit consommateur : `.btn-secondary` rendait **32 px** de haut,
+     * `.btn-primary` 36 — le `py-2` de leur définition sur une police de 14 px. Le minimum tenable
+     * pour un doigt est 44.
+     *
+     * Deux propriétés que ce cas fixe, et qui ont chacune déjà été perdues une fois :
+     *
+     * 1. la règle est du **CSS écrit**, pas `@apply min-h-11` — un utilitaire, et surtout sa
+     *    variante `lg:`, n'existe que si le consommateur l'a dans son contenu scanné, et les
+     *    consommateurs ne scannent pas les gabarits de ce bundle. C'est exactement ce qui a fait
+     *    échouer le premier correctif de cible tactile (commit `4f6a11c`) ;
+     * 2. c'est le **mobile** qui monte et le palier `lg:` qui annule, jamais l'inverse : le rendu
+     *    de bureau des trois produits reste identique au pixel.
+     */
+    public function testTheButtonsCarryATouchTargetWrittenAsCss(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/\.btn-primary,\s*\.btn-secondary,\s*\.btn-danger,\s*\.btn-warning,\s*\.btn-success \{\s*min-height: 2\.75rem;/s',
+            $css,
+            'Les cinq boutons doivent porter `min-height: 2.75rem` en CSS écrit — 44 px, la cible '
+            .'tactile minimale. `@apply min-h-11` ne serait pas généré chez le consommateur.',
+        );
+        self::assertMatchesRegularExpression(
+            '/@media \(min-width: 1024px\) \{[\s\S]*?\.btn-success \{\s*min-height: 0;/s',
+            $css,
+            'Le palier `lg:` doit ANNULER le relèvement, pour que le rendu de bureau soit '
+            .'inchangé. Si c\'est le mobile qui annule, les trois produits changent d\'apparence '
+            .'là où ils sont le plus regardés.',
+        );
+    }
+
+    /**
      * Chaque bouton pose son propre anneau de focus et neutralise l'outline natif. Sans
      * `focus-visible:outline-none`, Chrome peint son `outline: auto` par-dessus : un double trait
      * bleu + halo blanc, illisible sur fond sombre.

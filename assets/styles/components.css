@@ -138,6 +138,44 @@
         @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-200 dark:ring-amber-800;
     }
 
+    /*
+     * Les blocs d'alerte — un avertissement qui RESTE sur la page.
+     *
+     * Le bundle publiait `.badge-*` (une pastille dans une ligne) et le partial `_toasts` (un
+     * message éphémère), et rien entre les deux. Or un état durable — « cet espace est fermé »,
+     * « cette facture est en litige » — n'est ni l'un ni l'autre : il doit rester visible tant que
+     * l'état dure.
+     *
+     * Les trois produits l'écrivaient donc chacun en Tailwind inline, et l'un d'eux a écrit
+     * `class="alert-warning"` en croyant la classe fournie : elle n'existait nulle part, la
+     * bannière s'affichait **sans aucune mise en forme**, et le test qui la gardait
+     * (`assertSelectorExists('.alert-warning')`) passait très bien. Écrire une classe ne la
+     * dessine pas — c'est la même leçon que les quatre variantes de badge, au même endroit.
+     *
+     * `flex items-start gap-3` : l'icône est réservée comme pour les boutons, donc
+     * `<i class="fa-solid fa-triangle-exclamation"></i> <span>…</span>` suffit. `items-start` et
+     * non `items-center`, parce qu'un message d'alerte tient souvent sur deux lignes et que
+     * l'icône doit rester à hauteur de la PREMIÈRE.
+     *
+     * La palette est celle des `.badge-*` correspondants : une même cause porte la même couleur
+     * partout où elle apparaît.
+     */
+    .alert-info {
+        @apply flex items-start gap-3 rounded-lg border p-4 text-sm bg-sky-50 dark:bg-sky-950 border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300;
+    }
+
+    .alert-success {
+        @apply flex items-start gap-3 rounded-lg border p-4 text-sm bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300;
+    }
+
+    .alert-warning {
+        @apply flex items-start gap-3 rounded-lg border p-4 text-sm bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300;
+    }
+
+    .alert-danger {
+        @apply flex items-start gap-3 rounded-lg border p-4 text-sm bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300;
+    }
+
     .badge-danger {
         @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 ring-red-200 dark:ring-red-800;
     }
@@ -525,7 +563,39 @@
  * media query dans une couche dépend de l'ordre de cascade que l'application choisit, et le
  * relèvement mobile doit être celui qui cède, jamais l'inverse.
  */
+/*
+ * La cible tactile des cinq boutons : 44 px sur un écran tactile.
+ *
+ * Mesuré sur un produit consommateur : `.btn-secondary` rendait **32 px** de haut et
+ * `.btn-primary` 36 — le `py-2` de leur définition, sur une police de 14 px. Le minimum tenable
+ * pour un doigt est 44, et une action qu'on rate est une action qu'on répète.
+ *
+ * ⚠️ **Écrit en CSS, pas en `@apply min-h-11`** : c'est la leçon de `.admin-touch-row` et de
+ * `.admin-logo-*`. Un utilitaire — et surtout sa variante `lg:` — n'existe que si le consommateur
+ * l'a dans son contenu scanné, et les consommateurs ne scannent pas les gabarits de ce bundle. Une
+ * règle écrite ne dépend de rien.
+ *
+ * ⚠️ **Et le relèvement est celui du MOBILE, que le palier `lg:` annule** — pas l'inverse. Le
+ * rendu de bureau reste donc identique au pixel, ce qui rend cette montée de version sans risque
+ * visuel là où les trois produits sont le plus regardés.
+ */
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-warning,
+.btn-success {
+    min-height: 2.75rem;
+}
+
 @media (min-width: 1024px) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .btn-warning,
+    .btn-success {
+        min-height: 0;
+    }
+
     .admin-touch-row {
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
