@@ -84,6 +84,9 @@ final class ConfigurationTest extends TestCase
             'branding' => [
                 'name' => 'Admin',
                 'logo' => '',
+                // Vide = une seule image rendue, sans classe de visibilité : le comportement
+                // d'avant l'ajout du nœud, à l'octet près.
+                'logo_dark' => '',
                 'favicon' => '',
                 'home_route' => 'admin_dashboard',
                 'logo_width' => null,

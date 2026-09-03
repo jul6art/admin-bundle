@@ -29,6 +29,23 @@ final readonly class NavSection
         public ?string $permission = null,
         public ?string $feature = null,
         public int $priority = 0,
+        /**
+         * L'espace connecté auquel cette section appartient, ou `null` pour « tous ».
+         *
+         * ⚠️ **Le registre de navigation est GLOBAL** : `NavigationBuilder` itère TOUS les
+         * fournisseurs taggés, sans notion d'espace. Une application qui a deux espaces connectés
+         * — un espace client et un back-office, par exemple — voyait donc les deux menus dans les
+         * deux, et un client pouvait cliquer une entrée qui quitte son espace. Constaté le
+         * 2026-09-03 : deux entrées au libellé IDENTIQUE côte à côte, indiscernables avant le clic
+         * et sur un tiroir de 360 px.
+         *
+         * ⚠️ **`null` = visible partout, donc le comportement d'AVANT à l'octet près.** Une
+         * application à un seul espace connecté — le cas de la plupart — n'a rien à changer.
+         *
+         * La chaîne elle-même n'a aucun sens pour le bundle : c'est l'application qui la nomme et
+         * qui la passe à `admin_navigation()`. Le bundle ne fait que comparer.
+         */
+        public ?string $space = null,
     ) {
     }
 
@@ -46,6 +63,10 @@ final readonly class NavSection
             $this->permission,
             $this->feature,
             $this->priority,
+            // ⚠️ À reporter : la copie est POSITIONNELLE, donc une propriété oubliée ici se perd
+            // silencieusement au filtrage — la section reviendrait sans son espace et
+            // réapparaîtrait partout, ce qui est exactement le défaut que `space` ferme.
+            $this->space,
         );
     }
 }

@@ -14,6 +14,37 @@
  */
 
 @layer components {
+    /*
+     * Les deux variantes du logo, quand `admin.branding.logo_dark` est renseigné : l'une est
+     * masquée selon le thème. Le gabarit rend les DEUX images et laisse le CSS trancher.
+     *
+     * ⚠️ **Des classes NOMMÉES et non `dark:hidden` / `dark:block`.** Les utilitaires Tailwind ne
+     * sont générés que s'ils apparaissent dans le contenu SCANNÉ, et les trois projets qui
+     * prennent ce socle ne mettent que `ui-bundle` dans leur `TEMPLATE_BUNDLES` : les gabarits
+     * d'`admin-bundle` ne sont pas scannés. Un `dark:hidden` écrit ici serait donc une classe
+     * inerte — balisage juste, aucune règle derrière, et le mauvais logo servi. Une règle écrite
+     * dans CETTE feuille est en revanche toujours émise, puisque la feuille est compilée.
+     *
+     * ⚠️ Pourquoi le CSS et non un choix en Twig : le script anti-FOUC de `base.html.twig` peut
+     * basculer la classe `dark` APRÈS le rendu serveur (un compte en thème « système » se résout
+     * dans le navigateur). Un choix fait en Twig serait alors le mauvais, et figé.
+     */
+    .admin-logo-light {
+        display: block;
+    }
+
+    .admin-logo-dark {
+        display: none;
+    }
+
+    .dark .admin-logo-light {
+        display: none;
+    }
+
+    .dark .admin-logo-dark {
+        display: block;
+    }
+
     .panel {
         @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
     }

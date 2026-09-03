@@ -46,10 +46,20 @@ final readonly class AdminUiExtension
     /**
      * @return list<NavSection>
      */
+    /**
+     * Le menu, éventuellement borné à un ESPACE connecté.
+     *
+     * ⚠️ Sans argument — ce que fait tout gabarit existant — le menu entier est rendu. Une
+     * application qui a DEUX espaces connectés passe le sien depuis chaque layout, et tague ses
+     * sections avec la même chaîne : `new NavSection(..., space: 'customer')`. Sans cela, le
+     * registre étant global, les deux menus apparaissent dans les deux espaces.
+     *
+     * @return list<NavSection>
+     */
     #[AsTwigFunction(name: 'admin_navigation')]
-    public function navigation(): array
+    public function navigation(?string $space = null): array
     {
-        return $this->navigation->build();
+        return $this->navigation->build($space);
     }
 
     /**

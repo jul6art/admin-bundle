@@ -271,6 +271,37 @@ final class StylesheetTest extends TestCase
         self::assertMatchesRegularExpression('/\.form-label\.required::after \{[^}]*text-red-500[^}]*\}/s', $css);
     }
 
+    /**
+     * Les deux variantes du logo ont leur règle de visibilité DANS cette feuille.
+     *
+     * ⚠️ **Des classes nommées et non `dark:hidden` / `dark:block`.** Un utilitaire Tailwind n'est
+     * généré que s'il apparaît dans le contenu SCANNÉ, et les projets qui prennent ce socle ne
+     * mettent que `ui-bundle` dans leur `TEMPLATE_BUNDLES` : les gabarits d'`admin-bundle` ne sont
+     * pas scannés. Un `dark:hidden` écrit dans un gabarit d'ici serait donc une classe inerte —
+     * balisage juste, aucune règle derrière, et le mauvais logo servi. Une règle écrite dans cette
+     * feuille est en revanche toujours émise, puisque la feuille est compilée.
+     *
+     * C'est la moitié qu'un test de balisage ne voit pas, et celle qui a manqué chez un
+     * consommateur le 2026-09-03.
+     */
+    public function testTheLogoVariantsCarryTheirVisibilityRules(): void
+    {
+        $css = self::components();
+
+        foreach ([
+            '.admin-logo-light',
+            '.admin-logo-dark',
+            '.dark .admin-logo-light',
+            '.dark .admin-logo-dark',
+        ] as $rule) {
+            self::assertStringContainsString(
+                $rule,
+                $css,
+                \sprintf('Sans « %s », le gabarit rend deux images et aucune n\'est masquée.', $rule),
+            );
+        }
+    }
+
     private static function components(): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');

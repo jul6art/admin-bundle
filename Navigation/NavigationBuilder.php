@@ -45,12 +45,21 @@ final readonly class NavigationBuilder
     /**
      * @return list<NavSection>
      */
-    public function build(): array
+    /**
+     * @param string|null $space l'espace connecté à servir, ou `null` pour ne rien filtrer
+     *
+     * @return list<NavSection>
+     */
+    public function build(?string $space = null): array
     {
         $sections = [];
 
         foreach ($this->providers as $provider) {
             foreach ($provider->sections() as $section) {
+                if (!self::servesSpace($section, $space)) {
+                    continue;
+                }
+
                 if (!$this->isVisible($section->permission, $section->feature)) {
                     continue;
                 }
@@ -127,6 +136,24 @@ final readonly class NavigationBuilder
         }
 
         return $best;
+    }
+
+    /**
+     * Une section est servie quand elle ne réclame aucun espace, ou quand c'est le bon.
+     *
+     * ⚠️ **Une section SANS espace apparaît partout** — c'est le comportement d'avant, et il doit
+     * rester le défaut : la plupart des applications n'ont qu'un espace connecté et ne nommeront
+     * jamais `space`.
+     *
+     * ⚠️ **Un appelant qui ne demande aucun espace reçoit TOUT**, y compris les sections d'un
+     * espace nommé. C'est délibéré : un `admin_navigation()` sans argument est ce que fait tout
+     * gabarit existant, et le faire soudain ne rien rendre casserait chaque projet à la mise à
+     * jour. Une application à deux espaces doit donc passer le sien dans les DEUX layouts — et si
+     * elle en oublie un, elle retrouve le défaut, pas une page vide.
+     */
+    private static function servesSpace(NavSection $section, ?string $space): bool
+    {
+        return null === $section->space || null === $space || $section->space === $space;
     }
 
     private function isVisible(?string $permission, ?string $feature): bool

@@ -38,9 +38,9 @@
                     {# `logo_width` fixe la largeur (un wordmark se dimensionne en largeur) ; sans
                        lui, la hauteur fixe historique s'applique et la largeur suit. #}
                     {% if admin_branding().logoWidth %}
-                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" style="width: {{ admin_branding().logoWidth }}px" class="h-auto">
+                        {{ include('@Admin/partials/_logo.html.twig', { class: 'h-auto', style: 'width: ' ~ admin_branding().logoWidth ~ 'px' }) }}
                     {% else %}
-                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="h-12 w-auto">
+                        {{ include('@Admin/partials/_logo.html.twig', { class: 'h-12 w-auto' }) }}
                     {% endif %}
                 </a>
             {% endif %}

@@ -40,7 +40,7 @@
                    d'un wordmark, qui écrit déjà le nom. #}
                 <a href="{{ path(admin_branding().homeRoute) }}" class="flex items-center gap-2 {{ admin_branding().showName ? '' : 'w-full' }}">
                     {% if admin_branding().hasLogo %}
-                        <img src="{{ asset(admin_branding().logo) }}" alt="{{ admin_branding().name }}" class="{{ admin_branding().showName ? 'h-9 w-auto' : 'h-auto max-h-10 w-full object-contain' }}">
+                        {{ include('@Admin/partials/_logo.html.twig', { class: admin_branding().showName ? 'h-9 w-auto' : 'h-auto max-h-10 w-full object-contain' }) }}
                     {% endif %}
                     {% if admin_branding().showName %}
                         <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ admin_branding().name }}</span>
@@ -65,7 +65,7 @@
                          data-ui--sidebar-section-active-value="{{ section.key == _active_section ? 'true' : 'false' }}">
                         <button type="button"
                                 data-action="click->ui--sidebar-section#toggle"
-                                class="w-full flex items-center justify-between px-2 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded">
+                                class="w-full flex items-center justify-between px-2 py-3 lg:py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded">
                             <span class="flex items-center gap-2">
                                 <i class="{{ section.icon }} w-4 text-center"></i>
                                 {{ section.labelKey|trans({}, section.labelDomain) }}
@@ -114,7 +114,7 @@
 
                 {% if app.user %}
                     <div class="relative" data-ui-dropdown>
-                        <button type="button" class="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
+                        <button type="button" class="flex items-center gap-2 rounded-xl px-2 py-2.5 lg:py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
                             {{ include('@Admin/partials/_avatar.html.twig', { user: app.user, size: 8 }) }}
                             <span class="hidden md:block text-sm text-slate-700 dark:text-slate-200">{{ admin_user_label(app.user) }}</span>
                             <i class="fa-solid fa-chevron-down text-xs text-slate-500 dark:text-slate-400"></i>
@@ -146,7 +146,7 @@
                             {% block admin_account_menu_extra %}{% endblock %}
 
                             {% if admin_route('logout') %}
-                                <a href="{{ path(admin_route('logout')) }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <a href="{{ path(admin_route('logout')) }}" class="flex items-center gap-2 px-3 py-3 lg:py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                                     <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> {{ 'nav.logout'|trans }}
                                 </a>
                             {% endif %}

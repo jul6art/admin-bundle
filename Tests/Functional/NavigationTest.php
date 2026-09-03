@@ -10,6 +10,7 @@ use Jul6Art\AdminBundle\Navigation\NavigationProviderInterface;
 use Jul6Art\AdminBundle\Navigation\NavItem;
 use Jul6Art\AdminBundle\Navigation\NavSection;
 use Jul6Art\AdminBundle\Tests\Fixtures\AlwaysOffFeatures;
+use Jul6Art\AdminBundle\Tests\Fixtures\SpacedNavigation;
 use Jul6Art\AdminBundle\Tests\Fixtures\WidgetNavigation;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Symfony\Component\Security\Core\Authorization\AccessDecision;
@@ -167,6 +168,92 @@ final class NavigationTest extends AbstractFunctionalTestCase
             }],
             $this->checker([]),
         );
+    }
+
+    /**
+     * Une section taguée d'un espace n'apparaît QUE dans cet espace.
+     *
+     * ⚠️ **Le défaut que `space` ferme** : le registre est GLOBAL — `build()` itère tous les
+     * fournisseurs taggés — donc une application à DEUX espaces connectés voyait les deux menus
+     * dans les deux. Constaté le 2026-09-03 chez un consommateur : l'espace client affichait deux
+     * entrées au libellé IDENTIQUE, l'une menant au back-office, indiscernables avant le clic.
+     */
+    public function testASectionTaggedWithASpaceAppearsOnlyThere(): void
+    {
+        $builder = new NavigationBuilder(
+            [new SpacedNavigation()],
+            $this->checker(['widget:list']),
+        );
+
+        self::assertSame(['customer'], self::keysOf($builder->build('customer')));
+        self::assertSame(['platform'], self::keysOf($builder->build('platform')));
+    }
+
+    /**
+     * ⚠️ Une section SANS espace apparaît partout — c'est le comportement d'avant, et il doit
+     * rester le défaut : la plupart des applications n'ont qu'un espace connecté et ne nommeront
+     * jamais `space`.
+     */
+    public function testASectionWithNoSpaceAppearsInEverySpace(): void
+    {
+        $builder = new NavigationBuilder([new WidgetNavigation()], $this->checker(['widget:list']));
+
+        self::assertNotSame([], $builder->build('customer'));
+        self::assertNotSame([], $builder->build('platform'));
+        self::assertNotSame([], $builder->build());
+    }
+
+    /**
+     * ⚠️ Un appelant qui ne demande AUCUN espace reçoit tout, sections taguées comprises.
+     *
+     * C'est délibéré, et c'est le sens de défaillance qui compte : un `admin_navigation()` sans
+     * argument est ce que fait tout gabarit existant, et le faire soudain ne rien rendre casserait
+     * chaque projet à la mise à jour. Une application qui oublie de passer son espace dans un
+     * layout retrouve donc le défaut d'origine — pas une page vide.
+     */
+    public function testAskingForNoSpaceReturnsEverything(): void
+    {
+        $builder = new NavigationBuilder([new SpacedNavigation()], $this->checker(['widget:list']));
+
+        self::assertSame(['customer', 'platform'], self::keysOf($builder->build()));
+    }
+
+    /**
+     * La section RENDUE porte encore son espace.
+     *
+     * ⚠️ `withItems()` recopie les propriétés POSITIONNELLEMENT, donc une propriété oubliée s'y
+     * perd en silence. Et cette perte est **invisible à travers `build()`** : le filtrage par
+     * espace a lieu AVANT la reconstruction, donc les bonnes sections sortent quand même. Vérifié
+     * le 2026-09-03 — retirer `$this->space` de `withItems()` laisse les trois autres cas de ce
+     * fichier au VERT.
+     *
+     * D'où une assertion sur la propriété elle-même, seul endroit où la perte s'observe. Ce qu'elle
+     * protège n'est pas le filtrage mais le gabarit d'un consommateur qui lit `section.space` pour
+     * décorer son menu — il recevrait `null` sans que rien ne l'explique.
+     */
+    public function testTheRenderedSectionStillCarriesItsSpace(): void
+    {
+        $builder = new NavigationBuilder([new SpacedNavigation()], $this->checker(['widget:list']));
+
+        $sections = $builder->build('customer');
+        self::assertCount(1, $sections);
+
+        self::assertSame(
+            'customer',
+            $sections[0]->space,
+            'La section reconstruite doit garder son espace : `withItems()` recopie '
+            .'positionnellement, et une propriété oubliée y disparaît sans bruit.',
+        );
+    }
+
+    /**
+     * @param list<NavSection> $sections
+     *
+     * @return list<string>
+     */
+    private static function keysOf(array $sections): array
+    {
+        return array_map(static fn (NavSection $s): string => $s->key, $sections);
     }
 
     /**

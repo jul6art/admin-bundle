@@ -45,6 +45,79 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * Les DEUX variantes du logo sont rendues quand `logo_dark` est renseigné, chacune avec sa
+     * classe de visibilité.
+     *
+     * ⚠️ **Le défaut que ce cas ferme** : un jeu de marque a souvent deux wordmarks, chacun
+     * illisible sur l'autre fond. Avec un seul nœud `logo`, un projet servait le wordmark BLANC
+     * sur un fond clair — le mot disparaissait, seule l'icône restait. Constaté à l'écran le
+     * 2026-09-03 sur la page de connexion d'un projet consommateur, et invisible pour toute la
+     * suite de tests : aucun test ne regarde une couleur.
+     *
+     * ⚠️ Les deux images sont rendues et l'une masquée par CSS, plutôt que choisies en Twig : le
+     * script anti-FOUC de `base.html.twig` peut basculer la classe `dark` APRÈS le rendu serveur
+     * (un compte en thème « système » se résout dans le navigateur), donc un choix fait en Twig
+     * serait le mauvais et figé.
+     */
+    public function testBothLogoVariantsAreRenderedWhenADarkOneIsConfigured(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', ['branding' => [
+            'name' => 'Acme Admin',
+            'logo' => 'img/logo-black.png',
+            'logo_dark' => 'img/logo-white.png',
+            'home_route' => 'admin_dashboard',
+        ]]);
+
+        self::assertMatchesRegularExpression(
+            '#<img[^>]*/img/logo-black\.png[^>]*admin-logo-light[^>]*>#s',
+            $html,
+            'La variante du thème CLAIR doit porter `admin-logo-light`.',
+        );
+        self::assertMatchesRegularExpression(
+            '#<img[^>]*/img/logo-white\.png[^>]*admin-logo-dark[^>]*>#s',
+            $html,
+            'La variante du thème SOMBRE doit porter `admin-logo-dark`.',
+        );
+    }
+
+    /**
+     * ⚠️ Sans `logo_dark`, le rendu est celui d'AVANT : une seule image, aucune classe de
+     * visibilité. C'est ce qui rend l'ajout indolore pour un projet qui n'a qu'un logo — et c'est
+     * l'assertion qui le prouve, plutôt que de l'espérer.
+     */
+    public function testASingleLogoIsRenderedUnchangedWhenNoDarkVariantIsConfigured(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING);
+
+        self::assertStringContainsString('/img/logo.png', $html);
+        self::assertStringNotContainsString('admin-logo-light', $html);
+        self::assertStringNotContainsString('admin-logo-dark', $html);
+    }
+
+    /** La carte d'authentification sert les deux variantes aussi — c'est l'écran où le défaut a été vu. */
+    public function testTheAuthenticationCardAlsoServesBothVariants(): void
+    {
+        $html = $this->render('@Admin/security/login.html.twig', ['branding' => [
+            'name' => 'Acme Admin',
+            'logo' => 'img/logo-black.png',
+            'logo_dark' => 'img/logo-white.png',
+            'logo_width' => 360,
+            'home_route' => 'admin_dashboard',
+        ]], route: 'admin_security_login');
+
+        self::assertStringContainsString('admin-logo-light', $html);
+        self::assertStringContainsString('admin-logo-dark', $html);
+
+        // ⚠️ `logo_width` doit s'appliquer aux DEUX : sinon la variante sombre saute de taille au
+        // changement de thème, et personne ne relie le symptôme à cette configuration.
+        self::assertSame(
+            2,
+            preg_match_all('/width: 360px/', $html),
+            'La largeur configurée doit être posée sur les deux variantes.',
+        );
+    }
+
+    /**
      * L'entrée de la liste reste allumée sur une page de détail. C'est un préfixe de nom de route
      * et non une égalité : sinon la barre latérale se vide dès qu'on ouvre une fiche.
      */

@@ -1,0 +1,27 @@
+{#
+    Le logo de la marque, dans la variante que le thème rend lisible.
+
+    Attend `class` (les utilitaires de dimension du site d'appel) et, optionnellement, `style`.
+
+    ⚠️ **Un seul fichier pour les trois sites d'appel** — l'en-tête de la barre latérale, la carte
+    d'authentification et le pied de la barre latérale. C'est la raison d'être de ce partial : sans
+    lui, un projet qui veut changer son logo doit surcharger trois blocs, et il en oublie un.
+
+    ⚠️ Quand `logo_dark` n'est pas renseigné, UNE seule image est rendue, sans classe de
+    visibilité — le comportement antérieur à l'octet près.
+#}
+{% if admin_branding().hasLogoDark %}
+    <img src="{{ asset(admin_branding().logo) }}"
+         alt="{{ admin_branding().name }}"
+         {% if style is defined %}style="{{ style }}"{% endif %}
+         class="{{ class|default('') }} admin-logo-light">
+    <img src="{{ asset(admin_branding().logoDark) }}"
+         alt="{{ admin_branding().name }}"
+         {% if style is defined %}style="{{ style }}"{% endif %}
+         class="{{ class|default('') }} admin-logo-dark">
+{% else %}
+    <img src="{{ asset(admin_branding().logo) }}"
+         alt="{{ admin_branding().name }}"
+         {% if style is defined %}style="{{ style }}"{% endif %}
+         class="{{ class|default('') }}">
+{% endif %}

@@ -24,6 +24,14 @@
                     <tr>
                         <td align="center" style="padding-bottom: 24px;">
                             {% if admin_branding().hasLogo %}
+                                {#
+                                    ⚠️ **Une seule variante ici, à dessein** : `logo`, celle du
+                                    thème clair. Un e-mail ne peut pas s'appuyer sur une classe
+                                    CSS — beaucoup de clients de messagerie retirent les feuilles
+                                    de style —, donc rendre les deux images en afficherait DEUX
+                                    chez la plupart. Le fond d'un e-mail est blanc dans la quasi-
+                                    totalité des clients : la variante à encre foncée est la bonne.
+                                #}
                                 <img src="{{ absolute_url(asset(admin_branding().logo)) }}" alt="{{ admin_branding().name }}" width="{{ admin_branding().logoWidth ?? 140 }}" style="width: {{ admin_branding().logoWidth ?? 140 }}px; height: auto; border: 0;">
                             {% endif %}
                             {% if admin_branding().showName %}
