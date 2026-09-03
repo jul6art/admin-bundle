@@ -1,18 +1,17 @@
 {#
-    ⚠️ **`py-3 lg:py-2` — 44 px au doigt, la densité d'origine à la souris.**
+    ⚠️ **`admin-touch-row` — 44 px au doigt, la densité d'origine à la souris.**
 
-    `py-2` seul donne **36 px** de haut (8 + 20 + 8), ce qui échoue le critère WCAG 2.5.5 (44 px)
-    et la checklist mobile de l'écosystème. Mesuré le 2026-09-03 chez un consommateur, sur un
-    tiroir de menu.
+    La règle vit dans `assets/styles/components.css`, pas ici, et la version qui écrivait
+    `py-3 lg:py-2` en utilitaires a été livrée puis REPRISE : un utilitaire Tailwind n'existe que
+    s'il apparaît dans le contenu SCANNÉ, et les consommateurs ne scannent pas les gabarits de ce
+    bundle. Mesuré le 2026-09-03 : `.py-3` existait chez un consommateur, `.lg\:py-2` était
+    ABSENT — le relèvement s'appliquait donc au bureau aussi, en silence.
 
-    ⚠️ Le relèvement est borné aux petites largeurs à dessein : au-dessus de `lg` le pointeur est
-    précis, et remonter la densité du bureau changerait le rendu des TROIS produits qui prennent
-    cette coquille — ce qui est une décision d'esthétique, pas une correction d'accessibilité.
-    En dessous, c'est un doigt, et 36 px est un piège tactile.
+    Dans un bundle, le CSS se livre en CSS.
 #}
 {# Une ligne du menu de compte. Attend `route`, `icon`, `label` ; `parameters` et `target` sont optionnels. #}
 <a href="{{ path(route, parameters|default({})) }}"{% if target is defined %} target="{{ target }}" rel="noopener noreferrer"{% endif %}
-   class="flex items-center gap-2 px-3 py-3 lg:py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+   class="flex items-center gap-2 px-3 admin-touch-row rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
     <i class="{{ icon }} w-4 text-center text-slate-400"></i> {{ label }}
     {% if target is defined %}<i class="fa-solid fa-arrow-up-right-from-square ml-auto text-[10px] text-slate-400"></i>{% endif %}
 </a>

@@ -1,14 +1,13 @@
 {#
-    ⚠️ **`py-3 lg:py-2` — 44 px au doigt, la densité d'origine à la souris.**
+    ⚠️ **`admin-touch-row` — 44 px au doigt, la densité d'origine à la souris.**
 
-    `py-2` seul donne **36 px** de haut (8 + 20 + 8), ce qui échoue le critère WCAG 2.5.5 (44 px)
-    et la checklist mobile de l'écosystème. Mesuré le 2026-09-03 chez un consommateur, sur un
-    tiroir de menu.
+    La règle vit dans `assets/styles/components.css`, pas ici, et la version qui écrivait
+    `py-3 lg:py-2` en utilitaires a été livrée puis REPRISE : un utilitaire Tailwind n'existe que
+    s'il apparaît dans le contenu SCANNÉ, et les consommateurs ne scannent pas les gabarits de ce
+    bundle. Mesuré le 2026-09-03 : `.py-3` existait chez un consommateur, `.lg\:py-2` était
+    ABSENT — le relèvement s'appliquait donc au bureau aussi, en silence.
 
-    ⚠️ Le relèvement est borné aux petites largeurs à dessein : au-dessus de `lg` le pointeur est
-    précis, et remonter la densité du bureau changerait le rendu des TROIS produits qui prennent
-    cette coquille — ce qui est une décision d'esthétique, pas une correction d'accessibilité.
-    En dessous, c'est un doigt, et 36 px est un piège tactile.
+    Dans un bundle, le CSS se livre en CSS.
 #}
 {#
     Une entrée de menu. Attend `item` (un `NavItem`) et `active_item_route`.
@@ -25,7 +24,7 @@
 {% set _active = item.route == active_item_route %}
 <li>
     <a href="{{ path(item.route, item.routeParameters) }}"
-       class="flex items-center gap-3 px-2 py-3 lg:py-2 rounded-lg text-sm transition-colors
+       class="flex items-center gap-3 px-2 admin-touch-row rounded-lg text-sm transition-colors
               {% if _active %}
                 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 border-l-2 border-accent-500 pl-[6px]
               {% else %}

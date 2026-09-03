@@ -45,6 +45,38 @@
         display: block;
     }
 
+    /*
+     * Les cibles tactiles des lignes cliquables de la coquille : entrée de menu, ligne du menu de
+     * compte, en-tête de section.
+     *
+     * ⚠️ **44 px au doigt, la densité d'origine à la souris.** `py-2` seul donne 36 px (8 + 20 + 8),
+     * ce qui échoue WCAG 2.5.5 et la checklist mobile de l'écosystème. Au-dessus de `lg` le
+     * pointeur est précis, et remonter la densité du bureau changerait le rendu de tous les
+     * produits qui prennent cette coquille — une décision d'esthétique, pas d'accessibilité.
+     *
+     * ⚠️ **Écrit en CSS et NON en `py-3 lg:py-2` dans les gabarits, et cette version-là a été
+     * livrée puis reprise.** Un utilitaire Tailwind n'existe que s'il apparaît dans le contenu
+     * SCANNÉ ; les consommateurs ne mettent que `ui-bundle` dans leur `TEMPLATE_BUNDLES`, donc les
+     * gabarits d'ici ne sont pas scannés. Mesuré chez un consommateur le 2026-09-03 : `.py-3`
+     * existait (utilisé ailleurs dans SES gabarits) mais `.lg\:py-2` **était absent** — le
+     * relèvement s'appliquait donc au bureau AUSSI, exactement l'effet qu'on voulait éviter, et
+     * en silence.
+     *
+     * La leçon est la même que pour `.admin-logo-*` juste au-dessus : **dans un bundle, le CSS se
+     * livre en CSS.** Un utilitaire dépend de la configuration du consommateur ; une règle écrite
+     * ne dépend de rien.
+     */
+    .admin-touch-row {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    /* La bascule du menu de compte, plus serrée : elle vit dans un en-tête de 56 px. */
+    .admin-touch-tight {
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+    }
+
     .panel {
         @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
     }
@@ -485,5 +517,22 @@
 
     .delivery-planning-tour-dropzone > .delivery-planning-item > .delivery-planning-item__date {
         @apply text-[10px] whitespace-nowrap;
+    }
+}
+
+/*
+ * Les densités de BUREAU des deux classes ci-dessus. Hors `@layer components` à dessein : une
+ * media query dans une couche dépend de l'ordre de cascade que l'application choisit, et le
+ * relèvement mobile doit être celui qui cède, jamais l'inverse.
+ */
+@media (min-width: 1024px) {
+    .admin-touch-row {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .admin-touch-tight {
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
     }
 }

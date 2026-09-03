@@ -302,6 +302,60 @@ final class StylesheetTest extends TestCase
         }
     }
 
+    /**
+     * Les cibles tactiles ont leur règle DANS cette feuille, densité de bureau comprise.
+     *
+     * ⚠️ **La version qui écrivait `py-3 lg:py-2` dans les gabarits a été livrée, puis reprise.**
+     * Un utilitaire Tailwind n'existe que s'il apparaît dans le contenu SCANNÉ, et les
+     * consommateurs ne mettent que `ui-bundle` dans leur `TEMPLATE_BUNDLES` : les gabarits d'ici
+     * ne sont pas scannés. Mesuré chez un consommateur le 2026-09-03 — `.py-3` était présent
+     * (utilisé ailleurs dans SES gabarits) et `.lg\:py-2` **absent**, donc le relèvement mobile
+     * s'appliquait au bureau aussi. En silence, et dans le sens qu'on voulait éviter.
+     *
+     * ⚠️ C'est le même défaut que celui du logo, commis dans le MÊME commit après en avoir écrit
+     * la leçon deux blocs plus haut. D'où ce test : la règle est vérifiable, la discipline non.
+     *
+     * ## Pourquoi il n'y a PAS de garde-fou général « aucune variante dans les gabarits »
+     *
+     * ⚠️ Il a été écrit, puis retiré : les gabarits de ce bundle contiennent des **centaines** de
+     * `dark:*`, et ils fonctionnent — tout consommateur en génère abondamment depuis ses propres
+     * gabarits, donc les utilitaires existent de toute façon.
+     *
+     * La distinction utile n'est pas mécanique : une variante COURANTE (`dark:text-slate-100`) est
+     * sûre en pratique, une variante RARE (`lg:py-2`, qu'aucun gabarit de consommateur n'écrivait)
+     * ne l'est pas. Un test qui exigerait de réécrire cinq cents lignes qui marchent n'est pas un
+     * garde-fou, c'est une exigence — d'où un test qui fige les deux règles dont ce bundle a
+     * réellement besoin, et cette note pour la prochaine personne qui aura la même idée.
+     */
+    public function testTheTouchTargetsCarryTheirOwnRules(): void
+    {
+        $css = self::components();
+
+        // ⚠️ La VALEUR, pas seulement le nom de la classe : retirer la règle mobile laisse le
+        // nom présent dans le bloc `@media` du bureau, et une assertion sur le nom seul reste
+        // verte — vérifié par mutation le 2026-09-03.
+        foreach (['.admin-touch-row' => '0.75rem', '.admin-touch-tight' => '0.625rem'] as $rule => $padding) {
+            self::assertMatchesRegularExpression(
+                \sprintf('/%s\s*\{[^}]*padding-top:\s*%s/', preg_quote($rule, '/'), preg_quote($padding, '/')),
+                $css,
+                \sprintf(
+                    'Sans son rembourrage de %s, « %s » ne fait pas 44 px au doigt — la ligne '
+                    .'cliquable retombe à la hauteur de son texte.',
+                    $padding,
+                    $rule,
+                ),
+            );
+        }
+
+        // ⚠️ Et la densité de BUREAU : sans son bloc, les 44 px du doigt s'appliquent partout.
+        self::assertMatchesRegularExpression(
+            '/@media \(min-width: 1024px\)[\s\S]*?\.admin-touch-row/',
+            $css,
+            'La densité de bureau doit vivre dans un bloc `@media (min-width: 1024px)` : sans lui, '
+            .'le relèvement tactile restyle tous les produits qui prennent cette coquille.',
+        );
+    }
+
     private static function components(): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');
