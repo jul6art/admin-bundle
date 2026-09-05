@@ -22,7 +22,7 @@
 {% block auth_footer %}
     {% if admin_route('login') %}
         {{ 'security.register.have_account'|trans }}
-        <a href="{{ path(admin_route('login')) }}" class="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
+        <a href="{{ path(admin_route('login')) }}" class="auth-link text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
             {{ 'security.register.sign_in'|trans }}
         </a>
     {% endif %}

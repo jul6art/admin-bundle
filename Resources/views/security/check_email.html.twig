@@ -18,7 +18,7 @@
 
 {% block auth_footer %}
     {% if admin_route('login') %}
-        <a href="{{ path(admin_route('login')) }}" class="text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
+        <a href="{{ path(admin_route('login')) }}" class="auth-link text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium">
             {{ 'security.reset_password.back_to_login'|trans }}
         </a>
     {% endif %}

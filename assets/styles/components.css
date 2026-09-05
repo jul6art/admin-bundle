@@ -587,13 +587,77 @@
     min-height: 2.75rem;
 }
 
+/*
+ * ⚠️ **Les CHAMPS aussi, et c'était le vrai manque de la v1.9.0.**
+ *
+ * On y avait relevé les boutons et rien d'autre. Mesuré à 360 px sur un produit consommateur le
+ * 2026-09-05 : `.form-control` rend **38 px** de haut. Un champ de saisie est une cible tactile —
+ * on tape dedans pour l'atteindre — et 38 px, c'est **chaque champ de chaque formulaire des trois
+ * produits** sous le minimum.
+ *
+ * ⚠️ Le défaut se propageait : le bouton « afficher le mot de passe » de l'écran de connexion est
+ * en `absolute inset-y-0`, donc il épouse la hauteur du champ. Il rendait 44 × **38** — et on
+ * aurait pu le corriger lui seul, en traitant le symptôme le plus visible sans toucher la cause.
+ * Relever le champ le corrige par construction, et corrige avec lui tous ceux qu'on n'a pas
+ * regardés.
+ */
+.form-control,
+.form-select {
+    min-height: 2.75rem;
+}
+
+/*
+ * L'interrupteur « se souvenir de moi » et les liens d'un écran d'authentification.
+ *
+ * `.toggle-row` rendait **40 px**, « Mot de passe oublié ? » 40, et « Créer un compte » **17** — un
+ * lien en ligne dans une phrase. Avec le champ et le bouton d'envoi, ce sont les seules cibles de
+ * ces écrans : les rater, c'est rater l'écran.
+ *
+ * ⚠️ `.auth-link` est `inline-flex` : un lien en ligne ne prend pas de hauteur, quelle que soit sa
+ * `min-height`. Sans le changement de `display`, la règle serait écrite, appliquée, et sans effet —
+ * la pire des trois situations, parce qu'elle a l'air corrigée.
+ */
+.toggle-row {
+    min-height: 2.75rem;
+}
+
+/*
+ * ⚠️ **`.admin-touch-row` portait un nom qu'elle ne tenait pas.**
+ *
+ * Elle existe pour donner une cible tactile aux en-têtes de section du menu, et elle ne donnait
+ * que du rembourrage : `0.75rem` × 2 sur un texte de 12 px font **40 px**. Mesuré à 360 px le
+ * 2026-09-05, sur les trois en-têtes du menu d'administration. Un rembourrage n'est pas une
+ * hauteur — il dépend du contenu, donc il tient ou non selon la police, la casse et l'interlignage.
+ *
+ * `min-height` ne dépend de rien de tout cela. Le rembourrage reste, pour l'espacement visuel.
+ */
+.admin-touch-row {
+    min-height: 2.75rem;
+}
+
+.auth-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+}
+
 @media (min-width: 1024px) {
     .btn-primary,
     .btn-secondary,
     .btn-danger,
     .btn-warning,
-    .btn-success {
+    .btn-success,
+    .form-control,
+    .form-select,
+    .toggle-row,
+    .auth-link,
+    .admin-touch-row {
         min-height: 0;
+    }
+
+    /* ⚠️ Le `display` revient aussi : sur un écran de bureau, un lien reste un lien en ligne. */
+    .auth-link {
+        display: inline;
     }
 
     .admin-touch-row {

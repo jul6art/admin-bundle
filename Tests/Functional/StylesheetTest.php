@@ -165,12 +165,136 @@ final class StylesheetTest extends TestCase
             'Les cinq boutons doivent porter `min-height: 2.75rem` en CSS écrit — 44 px, la cible '
             .'tactile minimale. `@apply min-h-11` ne serait pas généré chez le consommateur.',
         );
+        // ⚠️ Le motif s'ancre sur `.btn-success,` **avec sa virgule**, et pas sur « `.btn-success`
+        // suivi d'une accolade ». La première version supposait ce bouton DERNIER de son groupe :
+        // le jour où les champs l'ont rejoint dans la même media query (2026-09-05), le cas a rougi
+        // sur un CSS parfaitement correct. Un motif qui dépend de l'ordre des sélecteurs teste la
+        // mise en forme, pas la propriété.
         self::assertMatchesRegularExpression(
-            '/@media \(min-width: 1024px\) \{[\s\S]*?\.btn-success \{\s*min-height: 0;/s',
+            '/@media \(min-width: 1024px\) \{[\s\S]*?\.btn-success,[\s\S]*?min-height: 0;/s',
             $css,
             'Le palier `lg:` doit ANNULER le relèvement, pour que le rendu de bureau soit '
             .'inchangé. Si c\'est le mobile qui annule, les trois produits changent d\'apparence '
             .'là où ils sont le plus regardés.',
+        );
+    }
+
+    /**
+     * ⚠️ **Les CHAMPS portent la même cible tactile, et c'était le manque de la v1.9.0.**
+     *
+     * On y avait relevé les boutons, et rien d'autre. Mesuré à 360 px sur un produit consommateur
+     * le 2026-09-05 : `.form-control` rend **38 px**. Un champ de saisie est une cible tactile — on
+     * tape dedans — donc c'était **chaque champ de chaque formulaire des trois produits** sous le
+     * minimum, sans que le correctif précédent l'ait vu.
+     *
+     * ⚠️ **Le symptôme était ailleurs que la cause**, et c'est ce qui rend ce cas utile : le bouton
+     * « afficher le mot de passe » est en `absolute inset-y-0`, donc il épouse la hauteur du champ.
+     * Il mesurait 44 × 38, et on aurait pu le relever LUI — corrigeant l'écran regardé, laissant
+     * tous les autres.
+     */
+    public function testTheFieldsCarryTheSameTouchTargetAsTheButtons(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/\.form-control,\s*\.form-select \{\s*min-height: 2\.75rem;/s',
+            $css,
+            'Un champ de saisie est une cible tactile : il doit porter `min-height: 2.75rem` comme '
+            .'les boutons. À 38 px, c\'est tout formulaire de tout produit qui est sous le minimum.',
+        );
+        self::assertMatchesRegularExpression(
+            '/@media \(min-width: 1024px\) \{[\s\S]*?\.form-control,\s*\.form-select,[\s\S]*?min-height: 0;/s',
+            $css,
+            'Le palier `lg:` doit annuler le relèvement des champs aussi : la densité de bureau des '
+            .'formulaires ne change pas.',
+        );
+    }
+
+    /**
+     * ⚠️ **Un lien en ligne ne prend pas de hauteur, quelle que soit sa `min-height`.**
+     *
+     * `.auth-link` doit donc changer de `display`. Sans `inline-flex`, la règle serait écrite,
+     * appliquée, et **sans aucun effet** — le pire des trois cas, parce qu'elle a l'air corrigée et
+     * qu'on cesse de chercher. « Créer un compte » mesurait 123 × **17**.
+     */
+    public function testAnAuthLinkBecomesABlockToCarryItsTouchTarget(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/\.auth-link \{\s*display: inline-flex;\s*align-items: center;\s*min-height: 2\.75rem;/s',
+            $css,
+            'Sans `display: inline-flex`, la `min-height` d\'un lien en ligne est inopérante : la '
+            .'règle existe et ne fait rien.',
+        );
+        self::assertMatchesRegularExpression(
+            '/@media \(min-width: 1024px\) \{[\s\S]*?\.auth-link \{\s*display: inline;/s',
+            $css,
+            'Sur un écran de bureau, un lien redevient un lien en ligne — sinon la phrase « Pas '
+            .'encore de compte ? Créer un compte » se casse en deux blocs.',
+        );
+    }
+
+    /**
+     * ⚠️ **`.admin-touch-row` portait un nom qu'elle ne tenait pas.**
+     *
+     * Elle existe pour donner une cible tactile aux en-têtes de section du menu, et ne donnait que
+     * du rembourrage : `0.75rem` × 2 sur un texte de 12 px font **40 px** — mesuré à 360 px le
+     * 2026-09-05. Un rembourrage n'est pas une hauteur : il dépend de la police, de la casse et de
+     * l'interlignage, donc il tient par accident.
+     */
+    public function testTheTouchRowCarriesAHeightAndNotOnlyPadding(): void
+    {
+        self::assertMatchesRegularExpression(
+            '/\n\.admin-touch-row \{\s*min-height: 2\.75rem;/s',
+            self::components(),
+            'Une classe qui s\'appelle `admin-touch-row` doit porter une HAUTEUR. Le rembourrage '
+            .'seul donnait 40 px, et dépendait de la police du consommateur.',
+        );
+    }
+
+    /** ⚠️ L'interrupteur « se souvenir de moi » rendait 40 px — la seule autre cible de l'écran. */
+    public function testTheToggleRowCarriesATouchTarget(): void
+    {
+        self::assertMatchesRegularExpression(
+            '/\.toggle-row \{\s*min-height: 2\.75rem;/s',
+            self::components(),
+            '`.toggle-row` est la cible de l\'interrupteur : à 40 px, elle est sous le minimum.',
+        );
+    }
+
+    /**
+     * ⚠️ **La règle ne sert à rien si aucun gabarit ne porte la classe.**
+     *
+     * C'est le défaut symétrique du précédent : là, la règle était inopérante faute de `display` ;
+     * ici, elle serait inopérante faute d'appelant. Les cinq liens des écrans d'authentification
+     * sont comptés — un lien ajouté sans la classe se verra.
+     */
+    public function testEveryAuthLinkTemplateCarriesTheClass(): void
+    {
+        $vues = \dirname(__DIR__, 2).'/Resources/views/security';
+        $sansClasse = [];
+
+        foreach (glob($vues.'/*.twig') ?: [] as $fichier) {
+            $contenu = (string) file_get_contents($fichier);
+
+            preg_match_all('/<a\s[^>]*class="([^"]*text-accent-600[^"]*)"/', $contenu, $matches);
+
+            foreach ($matches[1] as $classes) {
+                if (!str_contains($classes, 'auth-link')) {
+                    $sansClasse[] = basename($fichier).' : '.$classes;
+                }
+            }
+        }
+
+        self::assertSame(
+            [],
+            $sansClasse,
+            sprintf(
+                "Ces liens d'authentification ne portent pas `auth-link`, donc aucune cible "
+                ."tactile :\n%s",
+                implode("\n", $sansClasse),
+            ),
         );
     }
 
