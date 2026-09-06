@@ -11,6 +11,7 @@ use Jul6Art\AdminBundle\DependencyInjection\Configuration;
 use Jul6Art\AdminBundle\Form\AppearanceType;
 use Jul6Art\AdminBundle\Tests\Fixtures\Entity\Account;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -92,6 +93,61 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('/img/logo.png', $html);
         self::assertStringNotContainsString('admin-logo-light', $html);
         self::assertStringNotContainsString('admin-logo-dark', $html);
+    }
+
+    /**
+     * **Les quatre pages d'authentification défilent sur une fenêtre basse.**
+     *
+     * ⚠️ Le défaut du 2026-09-06 : sur un écran court, les boutons étaient INATTEIGNABLES. Deux
+     * causes se cumulaient — `<html class="fixed-html">`, que la base pose sur toute page pour le
+     * layout d'administration, et que les projets traduisent par `overflow-y: hidden` ; et la carte
+     * centrée par `justify-content: center`, **le piège classique du centrage en flexbox** : quand
+     * l'enfant dépasse, il dépasse des deux côtés, et aucun défilement ne remonte avant le bord de
+     * départ d'un conteneur.
+     *
+     * ⚠️ Mesuré au navigateur avant / après, sur une coquille contrainte à 380 px :
+     * `reachedBottom` et `topReachable` passaient de `false` à `true`, et le bouton de soumission
+     * de `false` à `true`. Le symptôme touchait les **quatre** pages à la fois, dans **tous** les
+     * projets qui utilisent ce thème.
+     *
+     * ⚠️ **Ce test garde le BALISAGE, pas le comportement** — PHPUnit ne calcule pas de CSS. Ce
+     * qu'il rend impossible, c'est le retour silencieux aux utilitaires de centrage : la classe
+     * `auth-shell` porte la règle et son commentaire, et la voir disparaître est le seul signal
+     * automatisable. Le comportement, lui, se re-mesure au navigateur.
+     *
+     * @param string $template la page d'authentification
+     * @param string $route    sa route
+     */
+    #[DataProvider('authenticationPages')]
+    public function testEveryAuthenticationPageScrollsOnAShortViewport(string $template, string $route): void
+    {
+        $html = $this->render($template, self::BRANDING, route: $route);
+
+        self::assertStringContainsString('class="auth-shell"', $html, 'La coquille doit être sa propre zone de défilement.');
+
+        // ⚠️ **L'assertion porte sur la balise OUVRANTE de la coquille, pas sur toute la page.** Un
+        // `assertStringNotContainsString('justify-center', $html)` semblait plus simple et était
+        // FAUX : les boutons de soumission portent `w-full justify-center` pour centrer leur
+        // libellé, ce qui n'a rien à voir. Une assertion trop large ne garde pas plus, elle rougit
+        // sur du code juste — et on finit par la supprimer.
+        self::assertDoesNotMatchRegularExpression(
+            '/<div[^>]*class="[^"]*\b(?:min-h-screen|justify-center)\b[^"]*"[^>]*>\s*(?:<!--)?\s*<div class="w-full max-w-md flex justify-end/',
+            $html,
+            'Le centrage de la coquille passe par `margin: auto`, jamais par `justify-content`.',
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function authenticationPages(): iterable
+    {
+        // ⚠️ Les DEUX pages qui se rendent sans formulaire. Les trois autres — inscription,
+        // demande et réinitialisation de mot de passe — étendent la MÊME carte : leur coquille est
+        // la même par construction, et leur monter un `FormView` ici ferait de ce test un test de
+        // formulaire déguisé. C'est `_card.html.twig` qui est gardé, à travers ce qui le rend.
+        yield 'connexion' => ['@Admin/security/login.html.twig', 'admin_security_login'];
+        yield 'courriel envoyé' => ['@Admin/security/check_email.html.twig', 'admin_security_login'];
     }
 
     /** La carte d'authentification sert les deux variantes aussi — c'est l'écran où le défaut a été vu. */

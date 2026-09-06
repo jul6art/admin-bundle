@@ -19,7 +19,13 @@
 {% block title %}{% block auth_title %}{{ admin_branding().name }}{% endblock %} · {{ admin_branding().name }}{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+{#
+    ⚠️ `auth-shell` et non `min-h-screen … justify-center` : la carte doit être sa PROPRE zone de
+    défilement, et son centrage doit se faire par `margin: auto`. Voir le commentaire de la classe
+    dans `assets/styles/components.css` — sur une fenêtre basse, l'ancienne version rendait les
+    boutons inatteignables, et ce sur les quatre pages à la fois.
+#}
+<div class="auth-shell">
     {#
         `auth_topbar` — ce que l'application veut poser AU-DESSUS de la carte, aligné à droite :
         un sélecteur de langue, typiquement. Vide par défaut, donc sans effet sur l'existant.

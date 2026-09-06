@@ -81,6 +81,52 @@
         @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
     }
 
+    /*
+     * La coquille des quatre pages d'AUTHENTIFICATION — et le seul endroit du thème qui doit
+     * défiler tout seul.
+     *
+     * ⚠️ **Le défaut corrigé (2026-09-06) : sur une fenêtre basse, les boutons étaient
+     * inatteignables.** Deux causes se cumulaient, et il fallait les deux pour que ça casse :
+     *
+     * 1. `<html class="fixed-html">` — que la base de ce bundle pose sur TOUTE page — est là pour
+     *    le layout d'administration, qui gère son propre défilement dans ses colonnes. Les projets
+     *    la traduisent par `max-height: 100vh; overflow-y: hidden`. La page ne défile donc pas.
+     * 2. La carte était centrée par `justify-content: center`. ⚠️ **C'est le piège classique du
+     *    centrage en flexbox** : quand l'enfant dépasse, il dépasse des DEUX côtés, et le
+     *    dépassement du HAUT n'est pas atteignable — aucun défilement ne remonte avant le bord de
+     *    départ d'un conteneur. Même dans une zone défilante, le haut de la carte reste coupé.
+     *
+     * ⚠️ Le correctif tient en deux décisions. La coquille devient sa PROPRE zone de défilement
+     * (`overflow-y: auto`), ce qui la rend indépendante de ce que `fixed-html` fait au document —
+     * donc valable dans tous les projets, quels que soient leurs réglages. Et le centrage passe par
+     * `margin: auto` sur l'enfant plutôt que par `justify-content` : `margin: auto` centre quand il
+     * reste de la place et se réduit à zéro quand il n'y en a plus, ce qui laisse la totalité du
+     * contenu accessible au défilement.
+     *
+     * ⚠️ `100dvh` et non `100vh` : sur mobile, `100vh` compte la barre d'adresse comme si elle
+     * n'existait pas, et ampute la hauteur utile de la valeur exacte qu'on cherche à mesurer.
+     * `100vh` reste en repli pour les navigateurs qui ignorent l'unité dynamique.
+     */
+    .auth-shell {
+        @apply flex flex-col items-center px-4 py-12;
+
+        max-height: 100vh;
+        max-height: 100dvh;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow-y: auto;
+    }
+
+    /*
+     * ⚠️ `margin-block: auto` sur les enfants DIRECTS — c'est ce qui remplace `justify-center`.
+     * Posé sur la coquille, il ne centrerait rien ; posé ici, il répartit l'espace restant au-dessus
+     * et au-dessous, et disparaît dès que le contenu réclame toute la hauteur.
+     */
+    .auth-shell > * {
+        margin-block: auto;
+        flex-shrink: 0;
+    }
+
     /* All buttons share a consistent accent focus ring; `focus-visible:outline-none`
      * suppresses the browser's native `outline: auto` ring, which Chrome renders
      * as a two-tone blue + white halo on dark backgrounds (rapport 2026-06-06 § btn).
