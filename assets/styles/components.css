@@ -571,9 +571,25 @@
         @apply font-mono text-sm uppercase text-slate-700 dark:text-slate-200 font-semibold tracking-wide;
     }
 
+    /* Le champ grandit avec ce qu'on y écrit : `field-sizing: content` fait le travail, et
+       `resize-none` retire alors la poignée, devenue inutile. `max-h` borne la croissance —
+       sans elle, un message long pousse le bouton d'envoi hors de l'écran. */
     textarea {
         @apply resize-none overflow-y-auto min-h-[3rem] max-h-[24rem];
         field-sizing: content;
+    }
+
+    /* ⚠️ LE REPLI, et il n'est pas décoratif : `field-sizing` n'est pas implémenté partout.
+       Là où il manque, la règle ci-dessus laissait un champ figé à 3 rem ET sans poignée —
+       c'est-à-dire moins utilisable qu'un `textarea` par défaut. La poignée revient donc
+       exactement là où l'agrandissement automatique n'a pas lieu, et nulle part ailleurs.
+
+       Signalé par cegeta le 2026-09-07. Le défaut touchait les trois produits, et il ne se
+       voyait pas depuis un navigateur qui implémente la propriété. */
+    @supports not (field-sizing: content) {
+        textarea {
+            @apply resize-y;
+        }
     }
 
     .popup-impersonate {
