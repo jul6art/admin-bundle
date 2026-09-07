@@ -185,6 +185,35 @@
     }
 
     /*
+     * Les trois dernières, ajoutées le 2026-09-06 — et le motif est EXACTEMENT celui décrit
+     * quatre classes plus haut.
+     *
+     * ⚠️ Un projet consommateur écrivait `badge-success` dans ONZE énumérations, `badge-violet` et
+     * `badge-accent` dans une douzième, et aucune des trois n'existait : des `<span>` nus au milieu
+     * de fiches stylées, sans que rien ne lève. La famille `.badge-*` était incomplète, et
+     * l'incomplétude d'une famille se paie chez ceux qui l'utilisent.
+     *
+     * ⚠️ **Le défaut ne se voyait que sur les FICHES.** Les tables passent par le rendu JavaScript
+     * du datatable-bundle, qui a sa propre palette et fonctionne : une même valeur portait donc une
+     * pastille dans la liste et rien du tout sur la fiche.
+     *
+     * `badge-success` est le vert d'`.badge-active` — c'est délibéré : « actif » et « réussi »
+     * partagent une couleur dans tous les produits, et deux verts différents pour deux idées
+     * voisines se liraient comme une erreur.
+     */
+    .badge-success {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800;
+    }
+
+    .badge-violet {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 ring-violet-200 dark:ring-violet-800;
+    }
+
+    .badge-accent {
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 ring-accent-200 dark:ring-accent-800;
+    }
+
+    /*
      * Les blocs d'alerte — un avertissement qui RESTE sur la page.
      *
      * Le bundle publiait `.badge-*` (une pastille dans une ligne) et le partial `_toasts` (un

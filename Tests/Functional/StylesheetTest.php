@@ -180,7 +180,7 @@ final class StylesheetTest extends TestCase
     }
 
     /**
-     * ⚠️ **Les CHAMPS portent la même cible tactile, et c'était le manque de la v1.9.0.**
+     * ⚠️ **Les CHAMPS portent la même cible tactile, et c'était le manque de la v1.9.0.**.
      *
      * On y avait relevé les boutons, et rien d'autre. Mesuré à 360 px sur un produit consommateur
      * le 2026-09-05 : `.form-control` rend **38 px**. Un champ de saisie est une cible tactile — on
@@ -211,7 +211,7 @@ final class StylesheetTest extends TestCase
     }
 
     /**
-     * ⚠️ **Un lien en ligne ne prend pas de hauteur, quelle que soit sa `min-height`.**
+     * ⚠️ **Un lien en ligne ne prend pas de hauteur, quelle que soit sa `min-height`.**.
      *
      * `.auth-link` doit donc changer de `display`. Sans `inline-flex`, la règle serait écrite,
      * appliquée, et **sans aucun effet** — le pire des trois cas, parce qu'elle a l'air corrigée et
@@ -236,7 +236,7 @@ final class StylesheetTest extends TestCase
     }
 
     /**
-     * ⚠️ **`.admin-touch-row` portait un nom qu'elle ne tenait pas.**
+     * ⚠️ **`.admin-touch-row` portait un nom qu'elle ne tenait pas.**.
      *
      * Elle existe pour donner une cible tactile aux en-têtes de section du menu, et ne donnait que
      * du rembourrage : `0.75rem` × 2 sur un texte de 12 px font **40 px** — mesuré à 360 px le
@@ -264,7 +264,7 @@ final class StylesheetTest extends TestCase
     }
 
     /**
-     * ⚠️ **La règle ne sert à rien si aucun gabarit ne porte la classe.**
+     * ⚠️ **La règle ne sert à rien si aucun gabarit ne porte la classe.**.
      *
      * C'est le défaut symétrique du précédent : là, la règle était inopérante faute de `display` ;
      * ici, elle serait inopérante faute d'appelant. Les cinq liens des écrans d'authentification
@@ -290,7 +290,7 @@ final class StylesheetTest extends TestCase
         self::assertSame(
             [],
             $sansClasse,
-            sprintf(
+            \sprintf(
                 "Ces liens d'authentification ne portent pas `auth-link`, donc aucune cible "
                 ."tactile :\n%s",
                 implode("\n", $sansClasse),
@@ -443,6 +443,54 @@ final class StylesheetTest extends TestCase
         yield 'warning' => ['.badge-warning', 'amber'];
         yield 'danger' => ['.badge-danger', 'red'];
         yield 'neutral' => ['.badge-neutral', 'slate'];
+        // ⚠️ Les trois ajoutées le 2026-09-06, et la raison est la MÊME que celle des quatre
+        // précédentes : un projet consommateur les écrivait déjà — `badge-success` dans onze
+        // énumérations — et aucune n'existait. C'est la quatrième fois. Voir le garde de
+        // complétude juste en dessous, qui empêche la cinquième.
+        yield 'success' => ['.badge-success', 'emerald'];
+        yield 'violet' => ['.badge-violet', 'violet'];
+        yield 'accent' => ['.badge-accent', 'accent'];
+    }
+
+    /**
+     * Toute classe `.badge-*` de la feuille est ÉPROUVÉE par le fournisseur ci-dessus.
+     *
+     * ## Pourquoi ce garde-là, en plus de l'autre
+     *
+     * ⚠️ `testEveryBadgeVariantIsPainted` prouve que les classes ATTENDUES sont peintes ; il ne dit
+     * rien de celles que la feuille contient et que personne n'a inscrites. Une variante ajoutée
+     * sans son entrée dans le fournisseur serait publiée sans test — et le fournisseur est un
+     * inventaire écrit à la main, donc exactement le genre de liste qui vieillit.
+     *
+     * ⚠️ Il ne peut pas, en revanche, détecter les classes MANQUANTES : le bundle ne connaît pas le
+     * vocabulaire qu'un consommateur écrit. C'est au projet consommateur de croiser ce qu'il écrit
+     * avec ce qui est défini — quatre fois ce bundle a publié un vocabulaire incomplet, et quatre
+     * fois c'est un consommateur qui l'a découvert à l'écran.
+     */
+    public function testEveryBadgeClassOfTheSheetIsCovered(): void
+    {
+        preg_match_all('/\.(badge-[a-z][a-z0-9-]*)\s*\{/', self::components(), $matches);
+
+        $declared = array_values(array_unique($matches[1]));
+        sort($declared);
+
+        $covered = [];
+
+        foreach (self::badgeVariants() as [$selector]) {
+            $covered[] = ltrim($selector, '.');
+        }
+
+        sort($covered);
+
+        self::assertSame($covered, $declared, \sprintf(
+            "La feuille déclare des badges que le fournisseur n'éprouve pas, ou l'inverse :\n"
+            ."  feuille      : %s\n  fournisseur  : %s\n\n"
+            .'Une variante publiée sans son entrée ici est une variante sans test — et le '
+            .'fournisseur est un inventaire écrit à la main, donc exactement le genre de liste qui '
+            .'vieillit en silence.',
+            implode(', ', $declared),
+            implode(', ', $covered),
+        ));
     }
 
     /**

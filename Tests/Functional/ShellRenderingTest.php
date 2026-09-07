@@ -96,7 +96,7 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
-     * **Les quatre pages d'authentification défilent sur une fenêtre basse.**
+     * **Les quatre pages d'authentification défilent sur une fenêtre basse.**.
      *
      * ⚠️ Le défaut du 2026-09-06 : sur un écran court, les boutons étaient INATTEIGNABLES. Deux
      * causes se cumulaient — `<html class="fixed-html">`, que la base pose sur toute page pour le
