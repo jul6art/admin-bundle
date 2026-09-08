@@ -8,9 +8,24 @@ namespace Jul6Art\AdminBundle\Appearance;
  * Per-user accent colour. Drives the `--accent-*` CSS custom properties through the `data-accent`
  * attribute the layout writes on `<html>`.
  *
- * Every value is pre-checked for AA contrast on both the light and the dark background, which is
- * why the set is closed: an accent picked freely is an accent that will eventually be unreadable
- * on one of the two themes, and nobody tests that.
+ * ## What "pre-checked" means here, exactly
+ *
+ * ⚠️ **This paragraph used to claim more than the catalogue delivered, and the gap was measurable.**
+ * It said "every value is pre-checked for AA contrast on both the light and the dark background".
+ * Measured on 2026-09-08 — reported by a consumer, verified independently — `text-white` on
+ * `bg-accent-600`, which is what `.btn-primary` renders, gave **4.10 for `sky`, 3.77 for
+ * `emerald`, 3.74 for `teal` and 3.19 for `amber`**: four of seven below the 4.5 AA threshold, on
+ * the most used control in the product.
+ *
+ * A consumer had relied on the sentence, and it nearly served as an excuse — "3.87 is better than
+ * four of the seven shipped accents, so it is defensible". A claim a consumer leans on has to be
+ * true or absent.
+ *
+ * The four step-600 values were therefore darkened to the real threshold, step 500 left untouched,
+ * and the claim is now enforced rather than asserted: {@see \Jul6Art\AdminBundle\Tests\Unit\AccentContrastTest}
+ * measures every accent on the pairs `components.css` actually renders. The set stays closed for
+ * the original reason — an accent picked freely is an accent that will eventually be unreadable on
+ * one of the two themes, and nobody tests that — except that now somebody does.
  *
  * ## ⚠️ `Brand` is the DEFAULT, and the bundle defines no ramp for it
  *

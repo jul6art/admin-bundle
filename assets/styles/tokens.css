@@ -10,6 +10,24 @@
 
 /* ── Accent colour (RGB triplets consumed by Tailwind's `accent-*`) ──
  *
+ * ⚠️ **Four of the seven step-600 values were DARKENED on 2026-09-08, and the reason is a
+ * measurement.** `.btn-primary` renders `text-white` on `bg-accent-600`, and that pair was below
+ * the 4.5 AA threshold for `sky` (4.10), `emerald` (3.77), `teal` (3.74) and `amber` (3.19) — on
+ * the most used control in the product, while `AccentColor`'s header claimed every value was
+ * pre-checked. Reported by the cereezer consumer, verified independently.
+ *
+ * ⚠️ **Step 500 was NOT touched**, and that is the whole point: 500 carries the impression of the
+ * colour — it is the hover state of the button and the focus ring — while 600 is a button
+ * background half a step darker, which nobody reads as a departure from the palette. Three of the
+ * four moved 2.6 % to 5.1 % in luminance, imperceptible; `amber` moved 10.4 % and is visible.
+ *
+ * ⚠️ And the ramp's ORDER survives: 500 stays lighter than 600, which stays lighter than 700, in
+ * all four. A ramp that stops decreasing renders a hover state darker than its resting state.
+ *
+ * ⚠️ `AccentContrastTest` now measures every accent on the pairs this file's own `components.css`
+ * renders. The claim is no longer an assertion in a docblock — it is a test, and it was not one.
+
+ *
  * ⚠️ `[data-accent='brand']` is DELIBERATELY absent from this file, and that absence is the
  * feature. `AccentColor::Brand` is the default, so `<html data-accent="brand">` is what a fresh
  * account gets — and each consumer declares its own ramp for it:
@@ -44,7 +62,7 @@
 [data-accent='emerald'] {
     --accent-50: 236 253 245;  --accent-100: 209 250 229; --accent-200: 167 243 208;
     --accent-300: 110 231 183; --accent-400: 52 211 153;  --accent-500: 16 185 129;
-    --accent-600: 5 150 105;   --accent-700: 4 120 87;    --accent-800: 6 95 70; --accent-900: 6 78 59;
+    --accent-600: 4 135 94;   --accent-700: 4 120 87;    --accent-800: 6 95 70; --accent-900: 6 78 59;
 }
 [data-accent='rose'] {
     --accent-50: 255 241 242;  --accent-100: 255 228 230; --accent-200: 254 205 211;
@@ -54,12 +72,12 @@
 [data-accent='amber'] {
     --accent-50: 255 251 235;  --accent-100: 254 243 199; --accent-200: 253 230 138;
     --accent-300: 252 211 77;  --accent-400: 251 191 36;  --accent-500: 245 158 11;
-    --accent-600: 217 119 6;   --accent-700: 180 83 9;    --accent-800: 146 64 14; --accent-900: 120 53 15;
+    --accent-600: 176 96 5;   --accent-700: 180 83 9;    --accent-800: 146 64 14; --accent-900: 120 53 15;
 }
 [data-accent='sky'] {
     --accent-50: 240 249 255;  --accent-100: 224 242 254; --accent-200: 186 230 253;
     --accent-300: 125 211 252; --accent-400: 56 189 248;  --accent-500: 14 165 233;
-    --accent-600: 2 132 199;   --accent-700: 3 105 161;   --accent-800: 7 89 133; --accent-900: 12 74 110;
+    --accent-600: 2 124 187;   --accent-700: 3 105 161;   --accent-800: 7 89 133; --accent-900: 12 74 110;
 }
 [data-accent='violet'] {
     --accent-50: 245 243 255;  --accent-100: 237 233 254; --accent-200: 221 214 254;
@@ -69,7 +87,7 @@
 [data-accent='teal'] {
     --accent-50: 240 253 250;  --accent-100: 204 251 241; --accent-200: 153 246 228;
     --accent-300: 94 234 212;  --accent-400: 45 212 191;  --accent-500: 20 184 166;
-    --accent-600: 13 148 136;  --accent-700: 15 118 110;  --accent-800: 17 94 89; --accent-900: 19 78 74;
+    --accent-600: 12 132 121;  --accent-700: 15 118 110;  --accent-800: 17 94 89; --accent-900: 19 78 74;
 }
 
 /* ── Display density ──
