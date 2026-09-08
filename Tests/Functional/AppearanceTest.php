@@ -55,14 +55,17 @@ final class AppearanceTest extends AbstractFunctionalTestCase
     {
         $account = new Account();
 
-        self::assertSame(AccentColor::Indigo, $account->getAccent());
+        // ⚠️ `Brand` depuis le 2026-09-08, et non `Indigo` : l'ancien défaut faisait écrire
+        // `data-accent` sur TOUT compte de tout produit, donc la rampe de marque qu'un
+        // consommateur déclare sur `:root` ne s'appliquait jamais. Voir le docbloc du trait.
+        self::assertSame(AccentColor::Brand, $account->getAccent());
         self::assertSame(DisplayDensity::Comfortable, $account->getDensity());
         self::assertSame(FontScale::Md, $account->getFontScale());
         self::assertFalse($account->isHighContrast());
         self::assertFalse($account->isReducedMotion());
 
         $metadata = $this->entityManager()->getClassMetadata(Account::class);
-        self::assertSame('indigo', $this->columnDefault($metadata, 'accent'));
+        self::assertSame('brand', $this->columnDefault($metadata, 'accent'));
         self::assertSame('comfortable', $this->columnDefault($metadata, 'density'));
         self::assertSame('md', $this->columnDefault($metadata, 'fontScale'));
     }
@@ -112,11 +115,49 @@ final class AppearanceTest extends AbstractFunctionalTestCase
         self::assertSame(ColorMode::System, ColorMode::fromStorage('system'));
     }
 
+    /**
+     * ⚠️ **`Brand` est l'EXCEPTION, et elle est nommée** : le bundle ne peut pas connaître la
+     * couleur d'un produit, donc son échantillon est une propriété personnalisée que le
+     * consommateur déclare, avec l'indigo du bundle en repli — la même valeur vers laquelle la
+     * rampe `:root` retombe, pour qu'un produit qui ne déclare ni l'une ni l'autre reste cohérent.
+     *
+     * ⚠️ Le repli est vérifié comme une VRAIE couleur : un `var()` sans repli rendrait l'échantillon
+     * transparent chez un consommateur qui n'a rien déclaré, et un point invisible dans un
+     * sélecteur de couleur se lit comme un défaut d'affichage.
+     */
     public function testEveryAccentCarriesAReferenceSwatch(): void
     {
         foreach (AccentColor::cases() as $accent) {
+            if (AccentColor::Brand === $accent) {
+                self::assertSame('var(--brand-swatch, #6366f1)', $accent->swatch());
+
+                continue;
+            }
+
             self::assertMatchesRegularExpression('/^#[0-9a-f]{6}$/', $accent->swatch(), $accent->value);
         }
+    }
+
+    /**
+     * ⚠️ **Le bundle ne déclare AUCUNE rampe pour `brand`**, et c'est la propriété qui rend le cas
+     * utile : si une version future en ajoutait une, chaque consommateur se verrait imposer une
+     * couleur au lieu de déclarer la sienne — exactement le défaut que `Brand` existe pour
+     * corriger. Le repli est la rampe `:root`, qui reste indigo.
+     */
+    public function testTheBundleShipsNoRampForTheBrandAccent(): void
+    {
+        $tokens = (string) file_get_contents(__DIR__.'/../../assets/styles/tokens.css');
+
+        // ⚠️ Les commentaires sont retirés d'abord : le fichier EXPLIQUE cette absence, et un
+        // garde-fou satisfait — ou accusé — par la prose qui le documente est circulaire.
+        $regles = (string) preg_replace('!/\*.*?\*/!s', '', $tokens);
+
+        self::assertStringNotContainsString("[data-accent='brand']", $regles);
+        self::assertStringNotContainsString('[data-accent="brand"]', $regles);
+
+        // ⚠️ Et la rampe de repli DOIT exister : sans elle, un consommateur qui ne déclare rien
+        // n'aurait aucune couleur d'accent du tout.
+        self::assertStringContainsString('--accent-500:', $regles);
     }
 
     /**

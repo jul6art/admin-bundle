@@ -42,9 +42,26 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 trait AppearancePreferencesTrait
 {
-    #[ORM\Column(name: 'appearance_accent', length: 16, enumType: AccentColor::class, options: ['default' => 'indigo'])]
+    /**
+     * ⚠️ **`Brand` and not `Indigo`, and this changed on 2026-09-08.**.
+     *
+     * The old default meant `data-accent` was ALWAYS written on `<html>`, for every account of
+     * every product — so a consumer's own brand ramp declared on `:root` applied nowhere, the
+     * attribute rule always winning. cegeta measured it: indigo throughout `/app` and `/admin`,
+     * next to a green logo.
+     *
+     * ⚠️ The SQL default moves with it, and it has to: the column default is what a row inserted by
+     * anything other than this ORM gets, and leaving it at `'indigo'` would make new rows disagree
+     * with new objects — a divergence that only shows up in the one product that imports data.
+     *
+     * ⚠️ **Existing rows are NOT migrated by this bundle**, and that is a decision each consumer
+     * owns. Nobody CHOSE indigo — it was imposed — but nothing distinguishes "chose it" from "never
+     * opened the screen", so a blanket update would silently overwrite a real preference. The
+     * consumers that want it write the one-line migration themselves.
+     */
+    #[ORM\Column(name: 'appearance_accent', length: 16, enumType: AccentColor::class, options: ['default' => 'brand'])]
     #[Assert\NotNull]
-    private AccentColor $accent = AccentColor::Indigo;
+    private AccentColor $accent = AccentColor::Brand;
 
     #[ORM\Column(name: 'appearance_density', length: 16, enumType: DisplayDensity::class, options: ['default' => 'comfortable'])]
     #[Assert\NotNull]

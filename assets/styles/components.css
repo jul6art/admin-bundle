@@ -298,6 +298,29 @@
         @apply w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-accent-500;
     }
 
+    /* ⚠️ **iOS ZOOME sur tout champ de moins de 16 px**, à chaque mise au point — comportement
+     * natif de Safari, pas un réglage. `.form-control` est en `text-sm` (14 px), donc chaque
+     * champ de `/app` et `/admin` faisait sauter la page et laissait l'utilisateur à un niveau de
+     * zoom qu'il devait défaire à la main. Signalé par cegeta le 2026-09-08.
+     *
+     * ⚠️ **Ciblé sur `pointer: coarse`, et non appliqué partout.** Le zoom n'arrive que sur un
+     * appareil tactile ; passer les 14 px à 16 px sur tous les écrans changerait la densité de
+     * chaque formulaire des trois produits pour corriger un défaut qui ne s'y produit pas. La
+     * requête média dit exactement où le défaut existe.
+     *
+     * ⚠️ `16px` en dur et non `text-base` : Tailwind pourrait recalculer `text-base` selon
+     * l'échelle de police du compte (`--font-scale`), et une échelle « petite » ramènerait sous
+     * les 16 px — donc rétablirait le zoom, pour les seuls comptes qui ont choisi de petits
+     * caractères. Le seuil de Safari est absolu, la valeur doit l'être aussi. */
+    @media (pointer: coarse) {
+        .form-control,
+        .form-control[type="text"],
+        select.form-control,
+        textarea.form-control {
+            font-size: 16px;
+        }
+    }
+
     /* When a checkbox is rendered inside a `_erp_lines_collection` cell the
      * partial blindly applies `.form-control` — the default width:100% turns
      * the box into a stretched rectangle. Restore native checkbox sizing. */

@@ -8,7 +8,22 @@
  * Cf. docs/analyse/theming.md § 5.2.
  */
 
-/* ── Accent colour (RGB triplets consumed by Tailwind's `accent-*`) ── */
+/* ── Accent colour (RGB triplets consumed by Tailwind's `accent-*`) ──
+ *
+ * ⚠️ `[data-accent='brand']` is DELIBERATELY absent from this file, and that absence is the
+ * feature. `AccentColor::Brand` is the default, so `<html data-accent="brand">` is what a fresh
+ * account gets — and each consumer declares its own ramp for it:
+ *
+ *     [data-accent='brand'] {
+ *         --accent-500: 29 158 117;   ⚠️ RGB triplets, no commas: Tailwind consumes them as
+ *         ...                            `rgb(var(--accent-500) / <alpha>)`, and a hex value
+ *     }                                  breaks the opacity without breaking the colour.
+ *     :root { --brand-swatch: #1d9e75; } ⚠️ the dot in the accent picker (see AccentColor::swatch)
+ *
+ * A consumer that declares neither keeps this file's indigo, because the `:root` ramp below stays
+ * the fallback for any unknown accent. Nothing breaks by omission — it just stays indigo, which is
+ * exactly what happened to cegeta before 2026-09-08, and why `Brand` exists.
+ */
 :root {
     --accent-50: 238 242 255;
     --accent-100: 224 231 255;
