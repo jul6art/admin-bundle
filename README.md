@@ -2,13 +2,13 @@
     <a href="https://devinthehood.com"><img src="https://github.com/jul6art/symfony-skeleton-generator/blob/master/public/img/logo.png?raw=true" alt="logo dev in the hood" width="400"></a>
 </p>
 
+Symfony admin backoffice bundle
+===============================
+
 <p align="left">
     <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
     <img src="https://img.shields.io/static/v1?label=stable&message=v1&color=0ea5e9" alt="Version">
 </p>
-
-Symfony admin backoffice bundle
-===============================
 
 The shell of a back office: a sidebar layout, a theme, per-user appearance, the sign-in pages, and
 a navigation contract the application fills.
