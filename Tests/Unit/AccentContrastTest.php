@@ -123,21 +123,21 @@ final class AccentContrastTest extends TestCase
      */
     public function testThePairsMeasuredAreStillThePairsRendered(): void
     {
-        $components = self::sansCommentaires((string) \file_get_contents(
+        $components = self::sansCommentaires((string) file_get_contents(
             \dirname(__DIR__, 2).'/assets/styles/components.css',
         ));
 
-        self::assertSame(
-            1,
-            \preg_match('/\.btn-primary[^}]*bg-accent-600[^}]*text-white/s', $components),
+        self::assertMatchesRegularExpression(
+            '/\.btn-primary[^}]*bg-accent-600[^}]*text-white/s',
+            $components,
             '`.btn-primary` no longer renders `text-white` on `bg-accent-600`: the pair measured '
             .'above is not the pair rendered, so the contrast is guarded on a component that no '
             .'longer exists in that form.',
         );
 
-        self::assertSame(
-            1,
-            \preg_match('/\.badge-accent[^}]*bg-accent-50[^}]*text-accent-700/s', $components),
+        self::assertMatchesRegularExpression(
+            '/\.badge-accent[^}]*bg-accent-50[^}]*text-accent-700/s',
+            $components,
             '`.badge-accent` no longer renders `text-accent-700` on `bg-accent-50`.',
         );
     }
@@ -157,7 +157,7 @@ final class AccentContrastTest extends TestCase
      */
     private static function ramp(string $accent): array
     {
-        return self::stepsOf('/\[data-accent=\''.\preg_quote($accent, '/').'\'\]\s*\{(.*?)\}/s');
+        return self::stepsOf('/\[data-accent=\''.preg_quote($accent, '/').'\'\]\s*\{(.*?)\}/s');
     }
 
     /**
@@ -167,15 +167,15 @@ final class AccentContrastTest extends TestCase
     {
         // ⚠️ Comments first. The header of `tokens.css` carries an example `:root` block for
         // consumers, holding zero steps — a naive reader finds it before the real one.
-        $tokens = self::sansCommentaires((string) \file_get_contents(
+        $tokens = self::sansCommentaires((string) file_get_contents(
             \dirname(__DIR__, 2).'/assets/styles/tokens.css',
         ));
 
-        if (1 !== \preg_match($motif, $tokens, $bloc)) {
+        if (1 !== preg_match($motif, $tokens, $bloc)) {
             return [];
         }
 
-        \preg_match_all('/--accent-(\d+)\s*:\s*(\d+)\s+(\d+)\s+(\d+)\s*;/', $bloc[1], $lignes, \PREG_SET_ORDER);
+        preg_match_all('/--accent-(\d+)\s*:\s*(\d+)\s+(\d+)\s+(\d+)\s*;/', $bloc[1], $lignes, \PREG_SET_ORDER);
 
         $ramp = [];
 
@@ -195,7 +195,7 @@ final class AccentContrastTest extends TestCase
         $a = self::luminance($front);
         $b = self::luminance($back);
 
-        return (\max($a, $b) + 0.05) / (\min($a, $b) + 0.05);
+        return (max($a, $b) + 0.05) / (min($a, $b) + 0.05);
     }
 
     /**
@@ -206,7 +206,7 @@ final class AccentContrastTest extends TestCase
      */
     private static function luminance(array $rgb): float
     {
-        $canaux = \array_map(
+        $canaux = array_map(
             static function (int $composante): float {
                 $c = $composante / 255;
 
@@ -220,6 +220,6 @@ final class AccentContrastTest extends TestCase
 
     private static function sansCommentaires(string $contenu): string
     {
-        return (string) \preg_replace('!/\*.*?\*/!s', '', $contenu);
+        return (string) preg_replace('!/\*.*?\*/!s', '', $contenu);
     }
 }
