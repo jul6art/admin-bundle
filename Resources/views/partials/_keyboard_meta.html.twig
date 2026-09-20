@@ -6,9 +6,15 @@
     Stimulus devrait être recopiée sur chaque formulaire ; une balise de tête se lit d'où que l'on
     soit, et une seule fois.
 
-    ⚠️ **Rien n'est émis quand la combinaison vaut son défaut.** Le contrôleur connaît ses défauts ;
-    une balise qui les répéterait ferait croire à une personnalisation là où il n'y en a pas, et
-    c'est exactement ce que l'écran de réglage doit pouvoir distinguer.
+    ⚠️ **Toutes les combinaisons EN FORCE sont émises, défauts compris** — et le commentaire disait
+    l'inverse jusqu'au 2026-09-20, où une revue à l'écran a montré les trois balises présentes sur
+    une application sans magasin. La boucle teste `combo`, qui est toujours renseigné : un défaut
+    EST une combinaison en force.
+
+    ⚠️ C'est le bon comportement, et pas seulement l'existant : il rend `_readCombo(nom, défaut)`
+    du routeur trivialement juste, et il évite de faire dépendre le balisage d'une comparaison avec
+    un catalogue que le gabarit n'a pas. Ce qui distingue « personnalisé » de « d'usine » est
+    l'écran de réglage, qui lit le magasin — jamais une balise de tête.
 #}
 {% for code, combo in keyboard_shortcuts() %}
     {% if combo %}<meta name="kb.{{ code }}" content="{{ combo }}">{% endif %}
