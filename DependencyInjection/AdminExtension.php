@@ -74,6 +74,18 @@ class AdminExtension extends Extension
 
         if (class_exists(Environment::class)) {
             $loader->load('twig.yaml');
+
+            // ⚠️ Le clavier ne se charge qu'AVEC Twig, et c'est exact plutôt que prudent : ses
+            // trois services n'existent que pour trois fonctions de gabarit. Une application qui
+            // rend sa coquille autrement n'a rien à router.
+            $keyboard = \is_array($config['keyboard'] ?? null) ? $config['keyboard'] : [];
+
+            if (!\is_bool($keyboard['enabled'] ?? null) || $keyboard['enabled']) {
+                /** @var array<string, array{default: string, label: string}> $actions */
+                $actions = \is_array($keyboard['actions'] ?? null) ? $keyboard['actions'] : [];
+                $container->setParameter('admin.keyboard.actions', $actions);
+                $loader->load('keyboard.yaml');
+            }
         }
 
         // L'écran du profileur vient de `jul6art/core-bundle`, que ce bundle ne requiert pas :

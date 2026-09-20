@@ -283,7 +283,70 @@ module.exports = {
 
 Eleven Stimulus controllers ship with it (`appearance`, `theme`, `dropdown`, `collapsible`, `tabs`,
 `sidebar-section`, `toast`, `locale-switcher`, `cookie-consent`, `sidebar`, `password`). Register
-them under `ui--<name>`, which is what the templates address.
+them under `ui--<name>`, which is what the templates address. Four more come with the keyboard
+bricks below, under `core--` and `form--`.
+
+### Keyboard shortcuts
+
+Fast data entry for whoever types a hundred records in a row: open a creation screen, land on the
+right field, save, start the next one — without reaching for the mouse.
+
+```twig
+{# your base template #}
+{% block body_attr %} data-controller="core--keyboard"{% endblock %}
+{% block head %}{{ include('@Admin/partials/_keyboard_meta.html.twig') }}{% endblock %}
+```
+
+```twig
+{# an index screen: the shortcut goes on the button that already passed the permission check #}
+<a href="{{ path('app_customer_new') }}" class="btn-primary"
+   data-shortcut="{{ keyboard_shortcut('global.new') }}"
+   data-shortcut-label="{{ 'customer.list.create'|trans }}">
+
+{# an entry form #}
+{{ form_start(form, { attr: { 'data-controller': 'form--autofocus form--submit-shortcut' } }) }}
+```
+
+| Key | Effect |
+|---|---|
+| `n` | clicks the visible `[data-shortcut="n"]` — typically the "New X" button |
+| `?` | opens the cheat-sheet, listing what the current page offers |
+| `Esc` | closes it, or goes back to the list you came from |
+| `Ctrl`/`⌘` + `Enter` | submits the form |
+| `Ctrl`/`⌘` + `Shift` + `Enter` | submits it through the `data-secondary` button ("save and add another") |
+
+Four Stimulus controllers ship with it. Register them under the identifiers the templates address:
+`core--keyboard`, `form--autofocus`, `form--submit-shortcut`, `form--shortcut-capture`.
+
+> ⚠️ **`data-shortcut-label` is what puts an entry in the cheat-sheet.** A combo without one still
+> fires, and `?` does not mention it — a shortcut nobody can discover.
+
+> ⚠️ **A button your template withholds is a shortcut that does not exist.** The router clicks a
+> node; it knows nothing about roles. Which is exactly why this is an attribute rather than a
+> registry — the `is_granted()` that decides whether to render the button has already run.
+
+Add your own actions by configuration; the three above belong to the shell, everything else belongs
+to a product:
+
+```yaml
+admin:
+    keyboard:
+        actions:
+            erp.lines.add: { default: 'l', label: 'keyboard.action.erp_lines_add' }
+```
+
+Letting people change their own combos is optional. Implement `KeyboardShortcutStoreInterface` and
+alias it; the resolver picks it up, and a settings screen can read `keyboard_actions()` and render
+each field with `form--shortcut-capture`.
+
+> ⚠️ **Not implementing it is a supported state**, and it degrades toward *the factory shortcuts
+> work* — never toward *no shortcuts*. This is deliberately the opposite of the datatable bundle's
+> preference port, whose absence removes the feature silently: a back-office that stopped answering
+> `Ctrl+Enter` because nobody wired a database would be indistinguishable from a broken one.
+
+The cheat-sheet reads its labels from the browser catalogue, so hand
+`Translation\DeclaredTranslationKeys` to your JavaScript translation guard — otherwise it reports
+every one of them as dead and the next tidy-up deletes them.
 
 ### The sign-in pages
 

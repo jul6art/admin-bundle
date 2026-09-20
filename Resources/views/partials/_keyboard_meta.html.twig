@@ -1,0 +1,15 @@
+{#
+    Les combinaisons EN FORCE, remises au navigateur.
+
+    ⚠️ **Des `<meta>` et non des valeurs Stimulus**, parce que deux contrôleurs distincts en ont
+    besoin : le routeur monté sur `<body>` et chaque `form--submit-shortcut` de la page. Une valeur
+    Stimulus devrait être recopiée sur chaque formulaire ; une balise de tête se lit d'où que l'on
+    soit, et une seule fois.
+
+    ⚠️ **Rien n'est émis quand la combinaison vaut son défaut.** Le contrôleur connaît ses défauts ;
+    une balise qui les répéterait ferait croire à une personnalisation là où il n'y en a pas, et
+    c'est exactement ce que l'écran de réglage doit pouvoir distinguer.
+#}
+{% for code, combo in keyboard_shortcuts() %}
+    {% if combo %}<meta name="kb.{{ code }}" content="{{ combo }}">{% endif %}
+{% endfor %}

@@ -105,6 +105,12 @@ final class ConfigurationTest extends TestCase
                 'appearance' => 'admin_account_appearance_edit',
                 'privacy' => '',
             ],
+            // ⚠️ Le clavier est ACTIF par défaut et son catalogue d'extension est vide : le socle
+            // apporte ses trois actions, et une application n'en déclare que si elle en a.
+            'keyboard' => [
+                'enabled' => true,
+                'actions' => [],
+            ],
             'mercure' => [
                 'hub_url' => '',
                 'token_route' => '',

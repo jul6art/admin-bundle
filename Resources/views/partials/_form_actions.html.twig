@@ -1,0 +1,43 @@
+{#
+    Les boutons d'un formulaire de saisie, et les raccourcis qui les déclenchent.
+
+    ```twig
+    {{ include('@Admin/partials/_form_actions.html.twig', {
+        save_label: 'action.save'|trans,
+        cancel_url: path('admin_customer_index'),
+        save_and_new: true,
+    }) }}
+    ```
+
+    ⚠️ **`name="_after_save"` porte l'intention jusqu'au serveur**, et c'est la raison d'être du
+    second bouton. `requestSubmit(bouton)` transmet le `name`/`value` du déclencheur dans la charge
+    utile : le contrôleur lit `_after_save` et redirige vers la fiche ou vers un nouveau formulaire,
+    sans champ caché supplémentaire et sans deviner.
+
+    ⚠️ **`data-secondary` est ce que `form--submit-shortcut` cherche** pour distinguer les deux
+    boutons. Le retirer ne casse rien de visible : `Ctrl+Shift+Entrée` retombe simplement sur le
+    bouton primaire, donc « enregistrer et créer un nouveau » enregistre et affiche la fiche. Un
+    défaut qui ne se voit qu'à la trentième saisie d'affilée.
+#}
+{% set save_and_new = save_and_new|default(false) %}
+{% set cancel_url = cancel_url|default(null) %}
+
+<div class="form-actions">
+    <button type="submit" name="_after_save" value="show" class="btn-primary"
+            data-shortcut-hint="{{ keyboard_shortcut('form.save') }}">
+        <i class="fa-solid fa-floppy-disk"></i> {{ save_label }}
+    </button>
+
+    {% if save_and_new %}
+        <button type="submit" name="_after_save" value="new" class="btn-secondary" data-secondary
+                data-shortcut-hint="{{ keyboard_shortcut('form.save_and_new') }}">
+            <i class="fa-solid fa-plus"></i> {{ save_and_new_label }}
+        </button>
+    {% endif %}
+
+    {% if cancel_url %}
+        <a href="{{ cancel_url }}" class="btn-secondary">
+            <i class="fa-solid fa-xmark"></i> {{ cancel_label }}
+        </a>
+    {% endif %}
+</div>

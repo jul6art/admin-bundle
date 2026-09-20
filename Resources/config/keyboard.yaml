@@ -1,0 +1,33 @@
+# Chargé quand `admin.keyboard.enabled` vaut `true` ET que Twig est présent — les trois fonctions
+# n'ont de sens que dans un gabarit. Cf. `DependencyInjection/AdminExtension.php`.
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Jul6Art\AdminBundle\Keyboard\KeyboardComboNormalizer: ~
+
+    # ⚠️ Le catalogue est construit à partir de la configuration, pas découvert : les actions que le
+    # socle connaît sont celles de la COQUILLE (créer, enregistrer, enregistrer et recommencer), et
+    # tout le reste appartient à un produit.
+    Jul6Art\AdminBundle\Keyboard\KeyboardCatalogue:
+        arguments:
+            $extra: '%admin.keyboard.actions%'
+
+    # ⚠️ **Le magasin est FACULTATIF, et son absence est un état supporté.** Sans alias vers
+    # `KeyboardShortcutStoreInterface`, l'argument reste `null` et le résolveur sert les
+    # combinaisons d'usine : ce qui disparaît alors, c'est la PERSONNALISATION, jamais les
+    # raccourcis. C'est le contraire du port des préférences de tableau, dont l'absence retire la
+    # fonctionnalité en silence — un piège qui a déjà coûté un diagnostic à cet écosystème.
+    # ⚠️ L'argument est déclaré ici et RETIRÉ par `KeyboardStorePass` quand rien n'implémente le
+    # port. Une passe, et non l'extension : l'extension s'exécute avant que les autres bundles
+    # n'aient rien configuré, donc `$container->has()` y répond toujours « non ». Même dispositif
+    # que `FeatureVisibilityPass`.
+    Jul6Art\AdminBundle\Keyboard\KeyboardShortcutResolver: ~
+
+    Jul6Art\AdminBundle\Twig\KeyboardExtension: ~
+
+    # ⚠️ Les clés que le NAVIGATEUR lit, déclarées pour le garde de traduction du projet. Sans
+    # cela, il les signale toutes « lues par personne » — et le prochain qui range le catalogue
+    # supprime les libellés des raccourcis.
+    Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys: ~
