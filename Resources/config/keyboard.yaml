@@ -30,4 +30,9 @@ services:
     # ⚠️ Les clés que le NAVIGATEUR lit, déclarées pour le garde de traduction du projet. Sans
     # cela, il les signale toutes « lues par personne » — et le prochain qui range le catalogue
     # supprime les libellés des raccourcis.
-    Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys: ~
+    # ⚠️ **Public, contrairement à tout le reste ici.** Le garde de traduction d'un consommateur va
+    # le chercher dans le conteneur, depuis un TEST — `getContainer()->get(...)` —, et un service
+    # privé répond « has been removed or inlined » : un message qui se lit comme un défaut du
+    # bundle et n'en est pas. Même dispositif que `dataflow-bundle`.
+    Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys:
+        public: true
