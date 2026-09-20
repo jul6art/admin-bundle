@@ -344,9 +344,13 @@ each field with `form--shortcut-capture`.
 > preference port, whose absence removes the feature silently: a back-office that stopped answering
 > `Ctrl+Enter` because nobody wired a database would be indistinguishable from a broken one.
 
-The cheat-sheet reads its labels from the browser catalogue, so hand
+The cheat-sheet and the capture widget read their labels from the browser catalogue, so hand
 `Translation\DeclaredTranslationKeys` to your JavaScript translation guard — otherwise it reports
 every one of them as dead and the next tidy-up deletes them.
+
+> ⚠️ **The action labels are NOT among them.** `KeyboardAction::$labelKey` is read by a settings
+> screen, server-side, in that screen's own domain — putting it in the browser catalogue would
+> bless a dead entry as alive.
 
 ### The sign-in pages
 
