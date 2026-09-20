@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Jul6Art\AdminBundle\Translation;
 
-use Jul6Art\AdminBundle\Keyboard\KeyboardCatalogue;
-
 /**
  * The catalogue entries this bundle's JavaScript reads without naming them in a way a scanner can
  * see — handed to a project's `AbstractJsTranslationTestCase` so its guard knows they are alive.
@@ -22,12 +20,22 @@ use Jul6Art\AdminBundle\Keyboard\KeyboardCatalogue;
  *
  * ## Why a declaration is needed at all
  *
- * ⚠️ The cheat-sheet's labels are read through `this.t('keyboard.cheatsheet.…')`, which a scanner
- * does see. **The ACTION labels are not**: they come from `data-shortcut-label`, written by a
- * template from a key the application chose. And the labels of the configured actions are read by
- * a settings screen from `KeyboardAction::$labelKey` — a value, not a literal. A guard that only
- * scanned source would report every one of them as dead, and the next person to tidy the catalogue
- * would delete the labels of the shortcuts.
+ * The cheat-sheet reads `this.t('keyboard.cheatsheet.…')` and the capture widget
+ * `this.t('keyboard.capture.…')` — literals a scanner does see, but only if it scans this bundle's
+ * `assets/`, which a consumer's guard has to be told to do. Declaring them is what makes the
+ * consumer's catalogue authoritative rather than approximate.
+ *
+ * ## ⚠️ What is deliberately NOT here: the action labels
+ *
+ * `KeyboardAction::$labelKey` is read by a SETTINGS SCREEN, server-side, in whatever domain that
+ * screen uses — and by nothing in the browser. The cheat-sheet's contextual section reads
+ * `data-shortcut-label`, an already-rendered string, not a key.
+ *
+ * ⚠️ Listing them here was the first version, and it was wrong in the way that costs the most: the
+ * guard would have blessed them as browser keys, so a consumer would have added them to the
+ * browser catalogue where nothing reads them — a dead entry certified alive. It is the exact
+ * mistake `jul6art/dataflow-bundle` warns about in its own declaration (« c'est `keys()`, jamais
+ * `templateKeys()` »), and the first consumer to wire this hit it within the hour.
  */
 final readonly class DeclaredTranslationKeys
 {
@@ -58,21 +66,10 @@ final readonly class DeclaredTranslationKeys
         'keyboard.cheatsheet.title',
     ];
 
-    public function __construct(
-        private KeyboardCatalogue $catalogue,
-    ) {
-    }
-
-    /** @return list<string> sorted and deduplicated */
+    /** @return list<string> sorted */
     public function keys(): array
     {
         $keys = self::CONTROLLER_KEYS;
-
-        foreach ($this->catalogue->all() as $action) {
-            $keys[] = $action->labelKey;
-        }
-
-        $keys = \array_values(\array_unique($keys));
         \sort($keys);
 
         return $keys;

@@ -71,10 +71,13 @@ final class KeyboardWiringTest extends AbstractFunctionalTestCase
     }
 
     /**
-     * ⚠️ Le libellé d'une action déclarée par l'application entre dans les clés DÉCLARÉES : il est
-     * lu par le navigateur depuis une valeur, jamais depuis un littéral qu'un scanner verrait.
+     * ⚠️ **Le libellé d'une action n'entre PAS dans les clés déclarées**, et c'est le point de ce
+     * cas. Il est lu par un écran de RÉGLAGE, côté serveur, dans le domaine de cet écran — et par
+     * rien dans le navigateur. L'y mettre ferait bénir comme clé de navigateur une entrée que
+     * personne n'y lit : une clé morte certifiée vivante. Même piège que celui que
+     * `dataflow-bundle` décrit dans sa propre déclaration.
      */
-    public function testADeclaredActionLabelIsAnnouncedToTheTranslationGuard(): void
+    public function testOnlyTheKeysTheBrowserReadsAreAnnouncedToTheTranslationGuard(): void
     {
         $container = $this->boot('test', [
             'keyboard' => [
@@ -89,8 +92,13 @@ final class KeyboardWiringTest extends AbstractFunctionalTestCase
 
         $keys = $declared->keys();
 
-        self::assertContains('keyboard.action.erp_lines_add', $keys);
+        self::assertNotContains(
+            'keyboard.action.erp_lines_add',
+            $keys,
+            'Le libellé d\'une action est lu côté SERVEUR : le déclarer ici le ferait ajouter au catalogue du navigateur, où rien ne le lit.',
+        );
         self::assertContains('keyboard.cheatsheet.title', $keys);
+        self::assertContains('keyboard.capture.press', $keys);
         self::assertContains(
             'keyboard.cheatsheet.global.back',
             $keys,
