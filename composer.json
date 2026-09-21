@@ -83,11 +83,7 @@
             "@rector-check",
             "@phpstan",
             "@test"
-        ],
-        "auto-scripts": {
-            "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
-        }
+        ]
     },
     "suggest": {
         "twig/twig": "La coquille, les pages d'authentification et l'\u00e9cran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entit\u00e9.",
