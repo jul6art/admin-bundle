@@ -99,7 +99,20 @@
 
     {# ── Contenu ─────────────────────────────────────────────── #}
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-0">
-        <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-4 z-10">
+        {#
+            The top bar has ONE layout, written here; a project only fills the slots.
+
+            - `admin_topbar_center` sits in the shell's own container: it grows, centres its content
+              from `md` up (at the end, next to the icons, below), and may shrink below its content.
+              A project that wrapped its field in a `w-full` div used to push it to the left and
+              crush the account button.
+            - On the right, in this order: `admin_topbar_locale`, `admin_topbar_actions` (the
+              notification bell…), then the account menu. Two back-offices on this theme used to
+              show the bell and the language picker in opposite orders, each ordering its own slot.
+            - `relative` on the header: the mobile search row of `partials/_global_search.html.twig`
+              is positioned against it, full width, right below it.
+        #}
+        <header class="relative h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-4 z-10">
             <div class="flex items-center gap-3">
                 <button type="button" data-ui-sidebar-toggle class="lg:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
                     <i class="fa-solid fa-bars text-lg"></i>
@@ -107,16 +120,19 @@
                 {% block admin_topbar_left %}{% endblock %}
             </div>
 
-            {% block admin_topbar_center %}<div></div>{% endblock %}
+            <div class="flex-1 flex justify-end md:justify-center min-w-0">{% block admin_topbar_center %}{% endblock %}</div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-shrink-0">
+                {% block admin_topbar_locale %}{% endblock %}
                 {% block admin_topbar_actions %}{% endblock %}
 
                 {% if app.user %}
                     <div class="relative" data-ui-dropdown>
-                        <button type="button" class="flex items-center gap-2 rounded-xl px-2 admin-touch-tight hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
+                        {# The name stays on one line: a reasonable one fits in 14rem, a longer one is
+                           cut — never wrapped — and read in full from its `title`. #}
+                        <button type="button" class="flex flex-shrink-0 items-center gap-2 rounded-xl px-2 admin-touch-tight hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
                             {{ include('@Admin/partials/_avatar.html.twig', { user: app.user, size: 8 }) }}
-                            <span class="hidden md:block text-sm text-slate-700 dark:text-slate-200">{{ admin_user_label(app.user) }}</span>
+                            <span class="hidden md:block text-sm text-slate-700 dark:text-slate-200 whitespace-nowrap truncate max-w-[14rem]" title="{{ admin_user_label(app.user) }}">{{ admin_user_label(app.user) }}</span>
                             <i class="fa-solid fa-chevron-down text-xs text-slate-500 dark:text-slate-400"></i>
                         </button>
 

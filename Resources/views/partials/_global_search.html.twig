@@ -1,0 +1,68 @@
+{#
+    The header's global search — the field, its result panel, and its mobile form.
+
+    Put it in `admin_topbar_center`; the shell's container centres it. The project keeps the ROUTE
+    and what is searched (its own engine, its own permissions); this partial is the shell around it.
+
+    ```twig
+    {% block admin_topbar_center %}
+        {{ include('@Admin/partials/_global_search.html.twig', {
+            url: path('admin_search_query'),
+            labels: { customer: 'search.group.customer'|trans({}, 'search'), … },
+            empty: 'search.empty'|trans({}, 'search'),
+            more: 'search.more'|trans({ '%total%': '%total%' }, 'search'),
+            placeholder: 'search.placeholder'|trans({}, 'search'),
+            label: 'search.label'|trans({}, 'search'),
+            close: 'search.close'|trans({}, 'search'),
+        }) }}
+    {% endblock %}
+    ```
+
+    Parameters, all RENDERED strings — the controller translates nothing, so a missing word cannot
+    surface as a raw key in the browser:
+    - `url`         the route answering `?q=<term>` with `{ group: { results: [{label, url}], total } }`
+    - `labels`      group key → its heading
+    - `empty`       the line shown when nothing matches
+    - `more`        the "N results" hint, `%total%` replaced in the browser
+    - `placeholder` / `label` / `close`  the field's placeholder, its accessible name, the mobile close button
+
+    ⚠️ **Below `md` the field is not squeezed, it is replaced.** Next to the menu button, the bell,
+    the language picker and the avatar, a phone left it 71 px — one letter of the placeholder, and a
+    result panel 71 px wide cutting every name into one-word lines. A magnifier opens a row right
+    below the header, full width (`absolute inset-x-0 top-14` against the header, which is
+    `relative`), focused; Escape, a tap outside or the × close it. From `md` up the same markup is a
+    plain inline field (`md:static`).
+
+    The controller is `search--global`: register it under that identifier, re-exporting
+    `@jul6art/admin-bundle/controllers/global-search_controller`.
+#}
+<div class="md:relative md:w-full md:max-w-md" data-controller="search--global"
+     data-search--global-url-value="{{ url }}"
+     data-search--global-empty-value="{{ empty }}"
+     data-search--global-more-value="{{ more }}"
+     data-search--global-labels-value="{{ labels|json_encode }}">
+    <button type="button" class="md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
+            aria-label="{{ label }}" data-search--global-target="toggle" data-action="search--global#open">
+        <i class="fa-solid fa-magnifying-glass text-lg" aria-hidden="true"></i>
+    </button>
+
+    <div data-search--global-target="bar" class="hidden absolute inset-x-0 top-14 z-20 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 md:block md:static md:border-0 md:bg-transparent md:p-0">
+        <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+                <label for="global-search" class="sr-only">{{ label }}</label>
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" aria-hidden="true"></i>
+                <input id="global-search" type="search" autocomplete="off"
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-1.5 pl-9 pr-3 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600"
+                       placeholder="{{ placeholder }}"
+                       data-search--global-target="input"
+                       data-action="input->search--global#search blur->search--global#close keydown.esc->search--global#dismiss">
+            </div>
+            <button type="button" class="md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    aria-label="{{ close }}" data-action="search--global#dismiss">
+                <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="absolute z-20 left-4 right-4 md:left-0 md:right-0 mt-1 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg"
+             data-search--global-target="panel" hidden></div>
+    </div>
+</div>

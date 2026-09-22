@@ -173,13 +173,64 @@ Usage
 | `admin_sidebar_brand` | the sidebar header, logo included |
 | `admin_sidebar_nav` | the menu — by default, the providers' |
 | `admin_sidebar_footer` | the account block at the bottom |
-| `admin_topbar_left` | left of the top bar, after the mobile toggle |
-| `admin_topbar_center` | centre — an impersonation banner, a search field |
-| `admin_topbar_actions` | right, BEFORE the account menu — a bell, a locale switcher |
+| `admin_topbar_left` | left of the top bar, after the mobile toggle — an impersonation banner |
+| `admin_topbar_center` | centre — the global search field (see below); the shell's container centres it |
+| `admin_topbar_locale` | right, FIRST — the language picker |
+| `admin_topbar_actions` | right, after the locale and BEFORE the account menu — a notification bell |
 | `admin_account_menu_extra` | extra entries in the account menu |
 | `admin_body_end` | after `<main>` — a global JS variable, a floating widget |
 | `container_class` | the content's max width |
 | `content` | the page |
+
+#### The top bar is one norm, written by the shell (1.15)
+
+Every back-office on this theme shows the same bar, because the shell writes its layout and a
+project only fills slots:
+
+- **the search is centred** — `admin_topbar_center` sits in the shell's own container (`flex-1`,
+  centred from `md` up, allowed to shrink). Put the field in it, not a `w-full` wrapper: a
+  wrapper that claims the whole width pushes the field to the left and crushes the account button;
+- **the language picker is left of the bell** — `admin_topbar_locale`, then `admin_topbar_actions`,
+  then the account menu. Before 1.15 a single slot held both, and two products ordered them
+  oppositely;
+- **the account name stays on one line** — up to `14rem`, cut beyond it (never wrapped), the full
+  name in its `title`; the button does not shrink.
+
+Projects that put the language picker in `admin_topbar_actions` still render — move it to
+`admin_topbar_locale` to follow the norm.
+
+#### The global search field
+
+```twig
+{% block admin_topbar_center %}
+    {{ include('@Admin/partials/_global_search.html.twig', {
+        url: path('app_search_query'),        # answers ?q=<term> — see below
+        labels: { customer: 'search.group.customer'|trans({}, 'search') },
+        empty: 'search.empty'|trans({}, 'search'),
+        more: 'search.more'|trans({ '%total%': '%total%' }, 'search'),
+        placeholder: 'search.placeholder'|trans({}, 'search'),
+        label: 'search.label'|trans({}, 'search'),
+        close: 'search.close'|trans({}, 'search'),
+    }) }}
+{% endblock %}
+```
+
+Register the controller as `search--global`:
+
+```js
+// assets/controllers/search/global_controller.js
+export { default } from '@jul6art/admin-bundle/controllers/global-search_controller';
+```
+
+The route and what it searches stay in the project — its families, its permissions. It answers
+`?q=<term>` with a JSON object keyed by family, each a `Jul6Art\AdminBundle\Search\SearchGroup`
+(`results`: a list of `SearchResult {label, url}`, `total`: the real count, so the panel can say
+"5 of 47"). All strings reach the browser already rendered: the controller translates nothing.
+
+The controller debounces (250 ms), searches from two characters (enforce it on the server too),
+aborts the request in flight, escapes every label, and opens on `/` unless a field has the focus.
+**Below `md`** the field would be crushed to a few pixels next to the icons: a magnifier replaces
+it and opens a full-width row under the header, closed by Escape, the × or a tap outside.
 
 ### The menu
 
@@ -309,7 +360,7 @@ right field, save, start the next one — without reaching for the mouse.
 
 | Key | Effect |
 |---|---|
-| `n` | clicks the visible `[data-shortcut="n"]` — typically the "New X" button |
+| `n` | clicks the visible element whose `data-shortcut` is the combo in force for `global.new` (`n` by default) — typically the "New X" button. Render it with `keyboard_shortcut('global.new')`, never a literal `"n"`: an organisation's override would otherwise never reach the button |
 | `?` | opens the cheat-sheet, listing what the current page offers |
 | `Esc` | closes it, or goes back to the list you came from |
 | `Ctrl`/`⌘` + `Enter` | submits the form |

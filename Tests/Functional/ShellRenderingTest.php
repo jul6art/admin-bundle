@@ -438,6 +438,86 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * **The top bar has ONE order, written by the shell**: the language picker, then the project's
+     * actions (the notification bell), then the account menu.
+     *
+     * ⚠️ Before 1.15 the shell offered a single `admin_topbar_actions` slot and each project ordered
+     * its own content: two back-offices on the same theme showed the bell and the language picker in
+     * opposite orders. The fixture writes its blocks in the reverse of the norm — the rendered order
+     * must not care.
+     */
+    public function testTheTopBarPutsTheLocaleBeforeTheActionsAndTheActionsBeforeTheAccount(): void
+    {
+        $html = $this->render('topbar_layout.html.twig', self::BRANDING, user: self::account());
+
+        $locale = strpos($html, 'data-project-locale');
+        $actions = strpos($html, 'data-project-actions');
+        $account = strpos($html, 'data-ui-dropdown-toggle');
+
+        self::assertIsInt($locale);
+        self::assertIsInt($actions);
+        self::assertIsInt($account);
+        self::assertLessThan($actions, $locale, 'La langue doit précéder la cloche.');
+        self::assertLessThan($account, $actions, 'Les actions doivent précéder le menu de compte.');
+    }
+
+    /**
+     * **The search slot is centred by the shell**, not by the project.
+     *
+     * ⚠️ A project that wrapped its field in a `w-full` div pushed it to the left edge of the free
+     * space and crushed the account button (superp, report 2026-09-22 § P2). The container is now the
+     * shell's own: it grows, centres, and may shrink below its content.
+     */
+    public function testTheSearchSlotSitsInACentredContainerOfTheShell(): void
+    {
+        $html = $this->render('topbar_layout.html.twig', self::BRANDING, user: self::account());
+
+        self::assertMatchesRegularExpression(
+            '#<div class="[^"]*\bflex-1\b[^"]*\bmd:justify-center\b[^"]*\bmin-w-0\b[^"]*"[^>]*>\s*<span data-project-search>#',
+            $html,
+        );
+    }
+
+    /**
+     * **A reasonable name stays on one line**, and a long one is cut rather than wrapped.
+     *
+     * Measured with the same name in two back-offices: one line at 1280 px in one, two lines in the
+     * other, two lines in both at 1024 px. The label now refuses to wrap, keeps a maximum width,
+     * truncates beyond it, and carries the full name in its `title`.
+     */
+    public function testTheAccountNameStaysOnOneLineAndKeepsItsFullFormInItsTitle(): void
+    {
+        $html = $this->render('topbar_layout.html.twig', self::BRANDING, user: self::account());
+
+        self::assertMatchesRegularExpression(
+            '#<span class="[^"]*\bwhitespace-nowrap\b[^"]*\btruncate\b[^"]*\bmax-w-\[14rem\][^"]*" title="Ada Lovelace">Ada Lovelace</span>#',
+            $html,
+        );
+        self::assertMatchesRegularExpression('#<button[^>]*class="[^"]*\bflex-shrink-0\b[^"]*"[^>]*data-ui-dropdown-toggle#', $html, 'Le bouton de compte ne doit pas être écrasé.');
+    }
+
+    /**
+     * The global search partial carries its settings to the `search--global` controller and offers,
+     * below `md`, a magnifier that opens a full-width row instead of a field crushed to 71 px.
+     */
+    public function testTheGlobalSearchPartialWiresItsControllerAndItsMobileRow(): void
+    {
+        $html = $this->render('global_search.html.twig', self::BRANDING);
+
+        self::assertStringContainsString('data-controller="search--global"', $html);
+        self::assertStringContainsString('data-search--global-url-value="/search"', $html);
+        self::assertStringContainsString('data-search--global-labels-value="{&quot;customer&quot;:&quot;Customers&quot;,&quot;site&quot;:&quot;Sites&quot;}"', $html);
+        self::assertMatchesRegularExpression('#<button[^>]*class="[^"]*\bmd:hidden\b[^"]*"[^>]*data-action="search--global\#open"#', $html, 'Une loupe doit ouvrir la recherche en mobile.');
+        self::assertMatchesRegularExpression('#data-search--global-target="bar"[^>]*class="[^"]*\babsolute\b[^"]*\binset-x-0\b[^"]*\bmd:static\b#', $html, 'La recherche mobile doit occuper toute la largeur, sous la barre.');
+        self::assertStringContainsString('placeholder="Search…"', $html);
+    }
+
+    private static function account(): Account
+    {
+        return new Account()->setEmail('ada@example.test')->setFullName('Ada Lovelace');
+    }
+
+    /**
      * @param array<string, mixed> $bundleConfig
      */
     private function render(string $template, array $bundleConfig, ?Account $user = null, string $route = 'admin_widget_index'): string

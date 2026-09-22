@@ -1,0 +1,10 @@
+{#
+    A project filling the three slots of the top bar — locale, actions, search. What the shell must
+    guarantee is where they land, whatever order the project writes its blocks in: the blocks
+    below are written in the REVERSE of the norm on purpose.
+#}
+{% extends '@Admin/layout.html.twig' %}
+
+{% block admin_topbar_actions %}<span data-project-actions>BELL</span>{% endblock %}
+{% block admin_topbar_locale %}<span data-project-locale>LOCALE</span>{% endblock %}
+{% block admin_topbar_center %}<span data-project-search>SEARCH</span>{% endblock %}

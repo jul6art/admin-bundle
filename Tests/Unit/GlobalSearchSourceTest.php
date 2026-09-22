@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Jul6Art\AdminBundle\Tests\Unit;
+
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * The decisions of the global search controller that a rewrite could silently undo.
+ *
+ * Same reasoning as `KeyboardBehaviourSourceTest`: no JavaScript runner ships with this bundle, and
+ * what is pinned is that each decision is still MADE in the file. They come from the two products
+ * that ran this controller as twins before it moved here (cereezer ADR-0031, superp ADR-0012).
+ */
+#[CoversNothing]
+final class GlobalSearchSourceTest extends TestCase
+{
+    /**
+     * **A debounce.** Without it, a word typed at normal speed fires one request per keystroke,
+     * each costing several queries on the server.
+     */
+    public function testTheSearchIsDebounced(): void
+    {
+        self::assertMatchesRegularExpression('/setTimeout\(\(\) => this\.#run\(\), \d{3}\)/', self::source());
+    }
+
+    /**
+     * **The request in flight is aborted.** Two close keystrokes fire two requests; without an
+     * `AbortController` the slower may answer last and show the results of a term already erased.
+     */
+    public function testTheRequestInFlightIsAborted(): void
+    {
+        $source = self::source();
+
+        self::assertStringContainsString('this.pending?.abort()', $source);
+        self::assertStringContainsString('new AbortController()', $source);
+        self::assertStringContainsString("'AbortError'", $source, 'Une requête annulée n\'est pas une erreur.');
+    }
+
+    /**
+     * **A threshold of two characters.** The server doubles it — this file can be bypassed, the
+     * route cannot.
+     */
+    public function testNothingIsSearchedBelowTwoCharacters(): void
+    {
+        self::assertMatchesRegularExpression('/term\.length < 2/', self::source());
+    }
+
+    /**
+     * **A label comes from the database**: a customer named `<script>` must not be injected as is
+     * into `innerHTML`.
+     */
+    public function testEveryLabelIsEscaped(): void
+    {
+        self::assertStringContainsString('this.#escape(result.label)', self::source());
+    }
+
+    /**
+     * **The `/` shortcut spares a field being typed in** — otherwise typing `/` in a description
+     * would open the search instead of writing a character.
+     */
+    public function testTheSlashShortcutSparesAFieldBeingTypedIn(): void
+    {
+        self::assertMatchesRegularExpression("/\\['INPUT', 'TEXTAREA', 'SELECT'\\]\\.includes/", self::source());
+    }
+
+    /**
+     * **The mobile row closes** on Escape, on the × and on a tap outside — a full-width row that
+     * could not be dismissed would hide the page below the header.
+     */
+    public function testTheMobileRowCanBeDismissed(): void
+    {
+        $source = self::source();
+
+        self::assertMatchesRegularExpression('/dismiss\(\)\s*\{/', $source);
+        self::assertMatchesRegularExpression('/document\.addEventListener\(\'(pointerdown|click)\'/', $source, 'Un appui hors de la zone doit la fermer.');
+    }
+
+    private static function source(): string
+    {
+        $path = \dirname(__DIR__, 2).'/assets/controllers/global-search_controller.js';
+
+        self::assertFileExists($path);
+
+        return (string) file_get_contents($path);
+    }
+}

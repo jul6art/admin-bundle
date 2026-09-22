@@ -1,0 +1,9 @@
+{{ include('@Admin/partials/_global_search.html.twig', {
+    url: '/search',
+    labels: { customer: 'Customers', site: 'Sites' },
+    empty: 'Nothing found',
+    more: '%total% results',
+    placeholder: 'Search…',
+    label: 'Global search',
+    close: 'Close',
+}) }}
