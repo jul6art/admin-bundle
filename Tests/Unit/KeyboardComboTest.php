@@ -133,9 +133,9 @@ final class KeyboardComboTest extends TestCase
     /** @param array<string, string> $overrides */
     private function resolverWith(array $overrides): KeyboardShortcutResolver
     {
-        $store = new class($overrides) implements KeyboardShortcutStoreInterface {
+        $store = new readonly class($overrides) implements KeyboardShortcutStoreInterface {
             /** @param array<string, string> $overrides */
-            public function __construct(private readonly array $overrides)
+            public function __construct(private array $overrides)
             {
             }
 
