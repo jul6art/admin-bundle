@@ -58,6 +58,19 @@ final class GlobalSearchSourceTest extends TestCase
     }
 
     /**
+     * **A family may name where "see all" leads** (`SearchGroup::$url`): the "N results" hint then
+     * becomes a link to the family's own list, filtered by the same term — the panel points, the
+     * list is where one sorts and acts (cegeta ADR-0037). Without a URL it stays a plain hint.
+     */
+    public function testTheMoreHintLinksToTheFamilyListWhenItHasAUrl(): void
+    {
+        $source = self::source();
+
+        self::assertStringContainsString('group.url', $source);
+        self::assertMatchesRegularExpression('/<a href="\$\{this\.#escape\(group\.url\)\}"/', $source);
+    }
+
+    /**
      * **The `/` shortcut spares a field being typed in** — otherwise typing `/` in a description
      * would open the search instead of writing a character.
      */

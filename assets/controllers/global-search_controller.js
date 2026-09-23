@@ -146,10 +146,14 @@ export default class extends Controller {
                     .join('');
 
                 // The total is recalled only when it EXCEEDS what is shown: "3 of 3" is noise,
-                // "5 of 47" is what sends the user to the full screen.
+                // "5 of 47" is what sends the user to the full screen. With a `url` (since 1.16) the
+                // hint IS the way there: the family's own list, filtered by the same term.
+                const hint = this.#escape(this.moreValue.replace('%total%', group.total));
                 const more =
                     group.total > group.results.length
-                        ? `<span class="text-xs text-slate-400">${this.#escape(this.moreValue.replace('%total%', group.total))}</span>`
+                        ? group.url
+                            ? `<a href="${this.#escape(group.url)}" class="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">${hint}</a>`
+                            : `<span class="text-xs text-slate-400">${hint}</span>`
                         : '';
 
                 return `<div class="py-1">

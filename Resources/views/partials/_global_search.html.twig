@@ -20,7 +20,8 @@
 
     Parameters, all RENDERED strings — the controller translates nothing, so a missing word cannot
     surface as a raw key in the browser:
-    - `url`         the route answering `?q=<term>` with `{ group: { results: [{label, url}], total } }`
+    - `url`         the route answering `?q=<term>` with `{ group: { results: [{label, url}], total, url? } }`
+                    — a group's own `url` (since 1.16) turns its "N results" hint into a "see all" link
     - `labels`      group key → its heading
     - `empty`       the line shown when nothing matches
     - `more`        the "N results" hint, `%total%` replaced in the browser

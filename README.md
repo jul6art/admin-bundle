@@ -225,7 +225,8 @@ export { default } from '@jul6art/admin-bundle/controllers/global-search_control
 The route and what it searches stay in the project — its families, its permissions. It answers
 `?q=<term>` with a JSON object keyed by family, each a `Jul6Art\AdminBundle\Search\SearchGroup`
 (`results`: a list of `SearchResult {label, url}`, `total`: the real count, so the panel can say
-"5 of 47"). All strings reach the browser already rendered: the controller translates nothing.
+"5 of 47", and — since 1.16 — an optional `url`: where "see all" leads, which turns that hint into a
+link to the family's own list filtered by the same term). All strings reach the browser already rendered: the controller translates nothing.
 
 The controller debounces (250 ms), searches from two characters (enforce it on the server too),
 aborts the request in flight, escapes every label, and opens on `/` unless a field has the focus.
