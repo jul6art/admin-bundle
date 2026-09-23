@@ -388,6 +388,19 @@ admin:
             erp.lines.add: { default: 'l', label: 'keyboard.action.erp_lines_add' }
 ```
 
+A product action can sit on the cancel link of `_form_actions` — "back to the list" on a key —
+without copying the partial (since 1.18):
+
+```twig
+{{ include('@Admin/partials/_form_actions.html.twig', { …,
+    cancel_shortcut: 'form.back',                       # declared under admin.keyboard.actions
+    cancel_shortcut_label: 'keyboard.action.form_back'|trans({}, 'keyboard'),
+}) }}
+```
+
+The link carries the combo in force, so an override reaches it; without `cancel_shortcut` it renders
+exactly as before.
+
 Letting people change their own combos is optional. Implement `KeyboardShortcutStoreInterface` and
 alias it; the resolver picks it up, and a settings screen can read `keyboard_actions()` and render
 each field with `form--shortcut-capture`.
