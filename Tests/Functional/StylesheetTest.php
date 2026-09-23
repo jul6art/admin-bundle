@@ -354,8 +354,98 @@ final class StylesheetTest extends TestCase
 
         self::assertStringContainsString('--density-panel-p', $css);
         self::assertMatchesRegularExpression(
-            "/\[data-density='cozy'\] \.panel,\s*\[data-density='compact'\] \.panel \{\s*padding: var\(--density-panel-p\);/",
+            "/\[data-density='cozy'\] \.panel:not\(\[class~='p-0'\], \.dt-container, :has\(> table, > \.dt-container\)\),\s*"
+            ."\[data-density='compact'\] \.panel:not\(\[class~='p-0'\], \.dt-container, :has\(> table, > \.dt-container\)\) \{\s*padding: var\(--density-panel-p\);/",
             $css,
+            'Cozy and compact must retune every panel except a flush one: a panel hosting a table '
+            .'has rows that carry their own gutter, and padding it doubles that gutter.',
+        );
+    }
+
+    /**
+     * ⚠️ **The DEFAULT density pads a panel too** — it did not until 2026-09-23.
+     *
+     * `--density-panel-p` was declared for comfortable and applied only to cozy and compact, so a
+     * `.panel` without its own `p-*` rendered its text against the border — every panel of a
+     * consumer's customer space, found by its review. The value is read, not only the property: a
+     * `:root` token of `0` would be the same defect with the rule still written.
+     */
+    public function testAPanelIsPaddedInTheDefaultDensityAndAFlushOneIsNot(): void
+    {
+        $css = self::withoutComments(self::components());
+
+        self::assertSame(1, preg_match('/\n    \.panel \{([^}]*)\}/', $css, $panel), '`.panel` is not found in the sheet.');
+        self::assertMatchesRegularExpression(
+            '/^\s*@apply [^;]+;\s*padding: var\(--density-panel-p\);\s*$/',
+            $panel[1],
+            '`.panel` must carry the density padding itself, inside the layer — so a `p-*` utility on '
+            .'the element still wins — and declare nothing else: a `display` or a margin here would '
+            .'land on every panel of three products.',
+        );
+
+        self::assertSame(1, preg_match('/:root\s*\{[^}]*--density-panel-p:\s*([0-9.]+)rem;/', self::tokens(), $token));
+        self::assertGreaterThanOrEqual(1.0, (float) $token[1], 'The comfortable panel padding is the widest of the three densities.');
+
+        self::assertMatchesRegularExpression(
+            '/\.panel:where\(\.dt-container, :has\(> table, > \.dt-container\)\) \{\s*padding: 0;\s*\}/',
+            $css,
+            'A panel hosting a table stays flush in the default density, at the weight of `.panel` '
+            .'alone (`:where`), so a `p-*` utility still overrides the exemption.',
+        );
+    }
+
+    /**
+     * ⚠️ **iOS Safari zooms on any field under 16 px** — on focus, every time, and leaves the page
+     * zoomed. `.form-control` is `text-sm` (14 px) for the desktop density, so a phone must get 16.
+     *
+     * The rule existed since 2026-09-08 under `pointer: coarse` only, and a review measured 14 px
+     * at 360 px on 2026-09-23 in a window whose pointer was fine. The query is EVALUATED here, for
+     * a 360-px viewport with a fine pointer and for a 1280-px one: a regex on the rule's text
+     * would stay green while the query no longer matched a phone.
+     */
+    public function testAFieldIsSixteenPixelsOnAPhoneAndKeepsTheDesktopDensity(): void
+    {
+        $css = self::withoutComments(self::components());
+        $phone = [];
+        $desktop = [];
+
+        preg_match_all('/@media ([^{]+)\{\s*((?:[^{}]+\{[^{}]*\}\s*)+)\}/', $css, $blocks, \PREG_SET_ORDER);
+
+        foreach ($blocks as [, $query, $body]) {
+            preg_match_all('/([^{}]+)\{([^{}]*)\}/', $body, $rules, \PREG_SET_ORDER);
+
+            foreach ($rules as [, $selectors, $declarations]) {
+                if (1 !== preg_match('/font-size:\s*(\d+)px/', $declarations, $size)) {
+                    continue;
+                }
+
+                foreach (array_map(trim(...), explode(',', $selectors)) as $selector) {
+                    if (self::queryMatches($query, 360, false)) {
+                        $phone[$selector] = max($phone[$selector] ?? 0, (int) $size[1]);
+                    }
+
+                    if (self::queryMatches($query, 1280, false)) {
+                        $desktop[$selector] = (int) $size[1];
+                    }
+                }
+            }
+        }
+
+        // ⚠️ `input.` / `select.` / `textarea.`: one element of specificity above a `text-sm`
+        // utility, so a template writing `form-control text-sm` cannot bring the zoom back.
+        foreach (['input.form-control', 'select.form-control', 'textarea.form-control', 'input.admin-search-input'] as $selector) {
+            self::assertGreaterThanOrEqual(16, $phone[$selector] ?? 0, \sprintf(
+                '`%s` is under 16 px on a 360-px screen: Safari zooms on every focus.',
+                $selector,
+            ));
+            self::assertArrayNotHasKey($selector, $desktop, \sprintf('`%s` must keep the desktop density above `lg`.', $selector));
+        }
+
+        self::assertMatchesRegularExpression('/\.form-control \{\s*@apply [^;]*\btext-sm\b/', $css, 'The desktop field is 14 px.');
+        self::assertStringContainsString(
+            'class="admin-search-input ',
+            (string) file_get_contents(\dirname(__DIR__, 2).'/Resources/views/partials/_global_search.html.twig'),
+            'The header search field must carry the class the 16-px rule targets.',
         );
     }
 
@@ -549,7 +639,8 @@ final class StylesheetTest extends TestCase
             $css,
             'Sans cette règle, un champ obligatoire ne se distingue pas d\'un champ facultatif.',
         );
-        self::assertMatchesRegularExpression('/\.form-label\.required::after \{[^}]*text-red-500[^}]*\}/s', $css);
+        // Its colour is not pinned here: `SemanticContrastTest` reads it and measures it, in both
+        // themes — a step written in two places is the one that stays behind.
     }
 
     /**
@@ -670,6 +761,39 @@ final class StylesheetTest extends TestCase
             $css,
             'La densité de bureau revient au-dessus de `lg`.',
         );
+    }
+
+    /**
+     * Whether a media query list matches a viewport — the three features this sheet uses.
+     */
+    private static function queryMatches(string $query, int $width, bool $coarse): bool
+    {
+        foreach (explode(',', $query) as $alternative) {
+            preg_match_all('/\(\s*([a-z-]+)\s*:\s*([^)]+?)\s*\)/', $alternative, $features, \PREG_SET_ORDER);
+            self::assertNotSame([], $features, \sprintf('`@media %s`: no feature read.', trim($query)));
+
+            $matches = true;
+
+            foreach ($features as [, $feature, $value]) {
+                $matches = $matches && match ($feature) {
+                    'max-width' => $width <= (int) $value,
+                    'min-width' => $width >= (int) $value,
+                    'pointer' => ('coarse' === $value) === $coarse,
+                    default => self::fail(\sprintf('`%s` is a media feature this guard does not evaluate.', $feature)),
+                };
+            }
+
+            if ($matches) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function withoutComments(string $css): string
+    {
+        return (string) preg_replace('!/\*.*?\*/!s', '', $css);
     }
 
     private static function components(): string

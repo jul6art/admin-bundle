@@ -9,8 +9,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Every `.btn-*`, `.badge-*` and `.alert-*` of `components.css` holds AA contrast between its text
- * and its background, in both themes and in every state it declares a colour for.
+ * Every `.btn-*`, `.badge-*` and `.alert-*` of `components.css` — and the two red inks of a form,
+ * the required marker and the error message — holds AA contrast between its text and its
+ * background, in both themes and in every state it declares a colour for.
  *
  * ## Why this file exists
  *
@@ -19,6 +20,11 @@ use PHPUnit\Framework\TestCase;
  * on `amber-500`, at **2.15**; its hover (`amber-400`) was **1.67**. The same survey found
  * `.btn-success` at 3.77 (hover 2.54), the hover of `.btn-danger` at 3.76 and `.badge-inactive` at
  * 4.34 in light and 4.04 in dark. Five controls below 4.5, shipped to three products.
+ *
+ * The same day, the required marker of a label (`.form-label.required::after`) was measured at
+ * **3.76** on a white panel: `red-500`, in both themes, with no dark step of its own (3.89 on a dark
+ * panel). It is text — an asterisk a user reads to know what a form demands — so it is read here
+ * with its neighbour `.form-error`, over the page and the panel like any rule without a background.
  *
  * ## What is measured, and why it is READ
  *
@@ -42,7 +48,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversNothing]
 final class SemanticContrastTest extends TestCase
 {
-    /** The WCAG 2.1 threshold for normal text — every label of these families is 12 to 14 px. */
+    /** The WCAG 2.1 threshold for normal text — every label of these rules is 12 to 14 px. */
     private const float AA = 4.5;
 
     /** The rules whose colour is the accent: `AccentContrastTest` measures them, per accent. */
@@ -118,7 +124,7 @@ final class SemanticContrastTest extends TestCase
     {
         $rules = array_keys(self::rules());
 
-        foreach (['btn-danger', 'btn-warning', 'btn-success', 'badge-warning', 'alert-warning'] as $expected) {
+        foreach (['btn-danger', 'btn-warning', 'btn-success', 'badge-warning', 'alert-warning', 'form-label.required::after', 'form-error'] as $expected) {
             self::assertContains($expected, $rules, \sprintf('`.%s` is not read out of `components.css`: the survey reads the wrong rules.', $expected));
         }
 
@@ -133,14 +139,14 @@ final class SemanticContrastTest extends TestCase
     }
 
     /**
-     * The `@apply` rules of the three families, keyed by class name.
+     * The `@apply` rules of the three families and the two form inks, keyed by selector.
      *
      * @return array<string, list<string>>
      */
     private static function rules(): array
     {
         preg_match_all(
-            '/\.((?:btn|badge|alert)-[a-z][a-z0-9-]*)\s*\{\s*@apply\s+([^;]+);/',
+            '/\.((?:btn|badge|alert)-[a-z][a-z0-9-]*|form-error|form-label\.required::after)\s*\{\s*@apply\s+([^;]+);/',
             self::components(),
             $matches,
             \PREG_SET_ORDER,

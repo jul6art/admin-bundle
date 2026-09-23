@@ -79,6 +79,28 @@
 
     .panel {
         @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
+        padding: var(--density-panel-p);
+    }
+
+    /*
+     * ⚠️ **A panel had NO padding in the default density** — reported by a cegeta review on
+     * 2026-09-23: not one `.panel` of its customer space had any. `--density-panel-p` was declared
+     * for all three densities, and only cozy and compact applied it (`tokens.css`); comfortable
+     * relied on each template writing its own `p-*`, and a template that did not rendered its text
+     * against the border.
+     *
+     * The padding is written HERE, inside the layer, and that is the point: a `p-*` utility on the
+     * element still wins (utilities come after components), so `panel p-4` keeps its 16 px and
+     * nothing that already chose a padding moves.
+     *
+     * ⚠️ **A panel that hosts a table stays flush**: its rows carry their own padding
+     * (`.dt-layout-row` is `px-4 py-3`, a cell has its `px-*`) and its borders run edge to edge.
+     * Padding the panel would double the gutter and inset every rule line. `:where()` keeps the
+     * exemption at the weight of `.panel` alone, so a `p-*` utility still overrides it. A flush
+     * panel of another shape (a header strip, a calendar grid) says so with `p-0`.
+     */
+    .panel:where(.dt-container, :has(> table, > .dt-container)) {
+        padding: 0;
     }
 
     /*
@@ -319,9 +341,17 @@
      *
      * Le marqueur est ici plutôt que dans un gabarit parce que la classe l'est aussi : celui qui
      * publie `.form-label` publie ce qui va avec.
+     *
+     * ⚠️ **Its ink is measured, like any text** (`SemanticContrastTest`). It was `red-500` in both
+     * themes: 3.76 on a white panel, 3.44 on the page, 3.89 on a dark panel — below AA everywhere.
+     * `red-600` passes on a panel (4.83) and not on the page (4.41), where a filter bar puts its
+     * labels; `red-700` holds 5.91 or more on both. The dark theme needs its own step, since a
+     * darker red only loses contrast on slate: `red-400`, 5.29 on a dark panel. These are the two
+     * steps `.form-error` already uses, so the marker and the message a refused field shows are
+     * the same red.
      */
     .form-label.required::after {
-        @apply text-red-500;
+        @apply text-red-700 dark:text-red-400;
         content: '*';
         margin-inline-start: 0.125rem;
     }
@@ -340,15 +370,28 @@
      * chaque formulaire des trois produits pour corriger un défaut qui ne s'y produit pas. La
      * requête média dit exactement où le défaut existe.
      *
+     * ⚠️ **…and below `lg` as well (2026-09-23).** `pointer: coarse` alone left the rule invisible
+     * to every check made in a narrowed desktop window or an emulator with a fine pointer — a
+     * review measured 14 px at 360 px and could not tell the fix existed. The mobile width is the
+     * same `lg` step the touch targets below use, so a phone-sized layout gets phone-sized fields
+     * whatever the pointer says, and the desktop density — the reason for the 14 px — is kept.
+     *
+     * ⚠️ **`input.` / `select.` / `textarea.` and not the bare class**: one element more of
+     * specificity than a `text-sm` utility, so a template that writes `form-control text-sm`
+     * cannot bring the zoom back. The header search field is in the list for the same reason — it
+     * is an `<input>` like any other, and Safari zooms on it too.
+     *
      * ⚠️ `16px` en dur et non `text-base` : Tailwind pourrait recalculer `text-base` selon
      * l'échelle de police du compte (`--font-scale`), et une échelle « petite » ramènerait sous
      * les 16 px — donc rétablirait le zoom, pour les seuls comptes qui ont choisi de petits
      * caractères. Le seuil de Safari est absolu, la valeur doit l'être aussi. */
-    @media (pointer: coarse) {
+    @media (pointer: coarse), (max-width: 1023px) {
         .form-control,
+        input.form-control,
         .form-control[type="text"],
         select.form-control,
-        textarea.form-control {
+        textarea.form-control,
+        input.admin-search-input {
             font-size: 16px;
         }
     }

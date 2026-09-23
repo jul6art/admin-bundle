@@ -106,11 +106,21 @@
     padding-bottom: var(--density-cell-py);
 }
 
-/* Panel padding follows the density token. Scoped to cozy/compact so the
- * comfortable default leaves the Tailwind `p-*` utilities untouched. The
- * descendant selector outranks the single-class `p-*` utilities. */
-[data-density='cozy'] .panel,
-[data-density='compact'] .panel {
+/* Panel padding follows the density token. The comfortable default is
+ * `.panel` itself (components.css), which a `p-*` utility overrides; cozy and
+ * compact must shrink a `panel p-6` too, so here the descendant selector
+ * outranks the single-class utilities.
+ *
+ * ⚠️ The exemptions are the ones of components.css, plus an explicit `p-0`:
+ * a panel that hosts a table, or that says it is flush, keeps no padding in
+ * any density. Without them this rule padded every datatable panel in cozy
+ * and compact — the table rows carry their own gutter, so it was doubled.
+ *
+ * ⚠️ `[class~='p-0']` and not `.p-0`: Tailwind reads a class selector as part
+ * of that utility, and copied this whole rule into every rule that
+ * `@apply`s `p-0` (seen on `.form-control[type="checkbox"]`). */
+[data-density='cozy'] .panel:not([class~='p-0'], .dt-container, :has(> table, > .dt-container)),
+[data-density='compact'] .panel:not([class~='p-0'], .dt-container, :has(> table, > .dt-container)) {
     padding: var(--density-panel-p);
 }
 
