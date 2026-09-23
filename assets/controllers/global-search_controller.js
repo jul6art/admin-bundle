@@ -39,6 +39,9 @@ export default class extends Controller {
         labels: Object,
         empty: String,
         more: String,
+        // The `/` shortcut. On by default; a product whose keyboard policy refuses it turns it off
+        // (`shortcut: false` on the partial) — no keydown listener is then attached at all.
+        shortcut: { type: Boolean, default: true },
     };
 
     connect() {
@@ -50,7 +53,9 @@ export default class extends Controller {
                 this.dismiss();
             }
         };
-        document.addEventListener('keydown', this.onKeydown);
+        if (this.shortcutValue) {
+            document.addEventListener('keydown', this.onKeydown);
+        }
         document.addEventListener('pointerdown', this.onOutside);
     }
 

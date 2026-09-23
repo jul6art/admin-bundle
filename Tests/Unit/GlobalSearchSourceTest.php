@@ -80,6 +80,22 @@ final class GlobalSearchSourceTest extends TestCase
     }
 
     /**
+     * **The `/` shortcut can be turned off** — a product whose keyboard policy refuses it (cegeta
+     * ADR-0036/0037) must be able to take the search without the shortcut. On by default: the two
+     * products that had it keep it.
+     */
+    public function testTheSlashShortcutCanBeTurnedOff(): void
+    {
+        $source = self::source();
+
+        self::assertMatchesRegularExpression('/shortcut:\s*\{\s*type:\s*Boolean,\s*default:\s*true\s*\}/', $source);
+        self::assertMatchesRegularExpression('/if\s*\(this\.shortcutValue\)\s*\{\s*document\.addEventListener\(\'keydown\'/', $source, 'Sans la valeur, aucun écouteur clavier n\'est posé.');
+
+        $partial = (string) file_get_contents(\dirname(__DIR__, 2).'/Resources/views/partials/_global_search.html.twig');
+        self::assertStringContainsString('data-search--global-shortcut-value="{{ (shortcut ?? true) ? \'true\' : \'false\' }}"', $partial);
+    }
+
+    /**
      * **The mobile row closes** on Escape, on the × and on a tap outside — a full-width row that
      * could not be dismissed would hide the page below the header.
      */

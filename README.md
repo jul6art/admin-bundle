@@ -229,7 +229,8 @@ The route and what it searches stay in the project — its families, its permiss
 link to the family's own list filtered by the same term). All strings reach the browser already rendered: the controller translates nothing.
 
 The controller debounces (250 ms), searches from two characters (enforce it on the server too),
-aborts the request in flight, escapes every label, and opens on `/` unless a field has the focus.
+aborts the request in flight, escapes every label, and opens on `/` unless a field has the focus —
+pass `shortcut: false` to the partial (since 1.17) where the product's keyboard policy refuses it.
 **Below `md`** the field would be crushed to a few pixels next to the icons: a magnifier replaces
 it and opens a full-width row under the header, closed by Escape, the × or a tap outside.
 
