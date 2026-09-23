@@ -42,7 +42,7 @@
      data-search--global-empty-value="{{ empty }}"
      data-search--global-more-value="{{ more }}"
      data-search--global-labels-value="{{ labels|json_encode }}">
-    <button type="button" class="md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
+    <button type="button" class="admin-search-target md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
             aria-label="{{ label }}" data-search--global-target="toggle" data-action="search--global#open">
         <i class="fa-solid fa-magnifying-glass text-lg" aria-hidden="true"></i>
     </button>
@@ -58,7 +58,7 @@
                        data-search--global-target="input"
                        data-action="input->search--global#search blur->search--global#close keydown.esc->search--global#dismiss">
             </div>
-            <button type="button" class="md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
+            <button type="button" class="admin-search-target md:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700"
                     aria-label="{{ close }}" data-action="search--global#dismiss">
                 <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
             </button>

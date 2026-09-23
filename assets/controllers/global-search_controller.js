@@ -141,7 +141,7 @@ export default class extends Controller {
                 const rows = group.results
                     .map(
                         (result) =>
-                            `<a href="${this.#escape(result.url)}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">${this.#escape(result.label)}</a>`,
+                            `<a href="${this.#escape(result.url)}" class="admin-search-row px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">${this.#escape(result.label)}</a>`,
                     )
                     .join('');
 
@@ -152,7 +152,7 @@ export default class extends Controller {
                 const more =
                     group.total > group.results.length
                         ? group.url
-                            ? `<a href="${this.#escape(group.url)}" class="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">${hint}</a>`
+                            ? `<a href="${this.#escape(group.url)}" class="admin-search-row text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">${hint}</a>`
                             : `<span class="text-xs text-slate-400">${hint}</span>`
                         : '';
 

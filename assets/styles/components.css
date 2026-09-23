@@ -755,6 +755,34 @@
     min-height: 2.75rem;
 }
 
+/*
+ * Les cibles de la recherche d'en-tête : la loupe et la croix de la rangée mobile, et chaque ligne
+ * du panneau — un résultat, « voir tout ».
+ *
+ * Mesuré à 360 px chez cegeta le 2026-09-23 (ADR-0037) : les lignes de résultat rendaient
+ * **36 px**, « voir tout » **16** (un lien en ligne), la loupe et la croix **38,5 px de large** —
+ * le `p-2` autour d'une icône. Aucune des cinq cibles du panneau n'atteignait 44.
+ *
+ * ⚠️ Écrit en CSS pour une raison de plus que `.admin-touch-row` : les lignes du panneau sont
+ * construites par `global-search_controller.js`, qu'AUCUN scanner Tailwind ne lit — un utilitaire
+ * qui n'apparaîtrait que là n'existerait chez aucun consommateur.
+ */
+/*
+ * ⚠️ **Pas de `display` ici** : ces règles sont hors couche, donc AU-DESSUS des utilitaires dans la
+ * cascade — un `display: inline-flex` écraserait le `md:hidden` des deux boutons, et la loupe
+ * reviendrait sur le bureau à côté du champ. Un bouton centre déjà son icône.
+ */
+.admin-search-target {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+}
+
+.admin-search-row {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+}
+
 @media (min-width: 1024px) {
     .btn-primary,
     .btn-secondary,
@@ -765,8 +793,14 @@
     .form-select,
     .toggle-row,
     .auth-link,
-    .admin-touch-row {
+    .admin-touch-row,
+    .admin-search-row {
         min-height: 0;
+    }
+
+    .admin-search-target {
+        min-height: 0;
+        min-width: 0;
     }
 
     /* ⚠️ Le `display` revient aussi : sur un écran de bureau, un lien reste un lien en ligne. */

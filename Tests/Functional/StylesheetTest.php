@@ -635,6 +635,41 @@ final class StylesheetTest extends TestCase
         );
     }
 
+    /**
+     * The header search's targets: 44 px to a finger, the desktop density above `lg`.
+     *
+     * Measured at 360 px in cegeta on 2026-09-23 (ADR-0037): the result rows rendered **36 px**,
+     * the "see all" link **16**, the magnifier and the × **38.5 wide**. Written as CSS for the
+     * reason `.admin-touch-row` is: the consumers do not scan this bundle's templates, and the
+     * result rows are built by a Stimulus controller no scanner reads at all.
+     */
+    public function testTheSearchTargetsCarryTheirOwnRules(): void
+    {
+        $css = self::components();
+
+        self::assertMatchesRegularExpression(
+            '/\n\.admin-search-target\s*\{[^}]*min-height:\s*2\.75rem;[^}]*min-width:\s*2\.75rem;/',
+            $css,
+            'La loupe et la croix de la recherche doivent faire 44 × 44 px au doigt.',
+        );
+        self::assertDoesNotMatchRegularExpression(
+            '/\n\.admin-search-target\s*\{[^}]*display:/',
+            $css,
+            'Hors couche, un `display` sur la cible écraserait le `md:hidden` des deux boutons.',
+        );
+        self::assertMatchesRegularExpression(
+            '/\n\.admin-search-row\s*\{[^}]*display:\s*flex;[^}]*min-height:\s*2\.75rem;/',
+            $css,
+            'Chaque ligne du panneau — un résultat, « voir tout » — doit faire 44 px de haut ; '
+            .'`flex`, sinon un lien en ligne ne prend pas de hauteur.',
+        );
+        self::assertMatchesRegularExpression(
+            '/@media \(min-width: 1024px\)[\s\S]*?\.admin-search-row[\s\S]*?min-height:\s*0/',
+            $css,
+            'La densité de bureau revient au-dessus de `lg`.',
+        );
+    }
+
     private static function components(): string
     {
         return (string) file_get_contents(\dirname(__DIR__, 2).'/assets/styles/components.css');

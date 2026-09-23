@@ -91,6 +91,29 @@ final class GlobalSearchSourceTest extends TestCase
         self::assertMatchesRegularExpression('/document\.addEventListener\(\'(pointerdown|click)\'/', $source, 'Un appui hors de la zone doit la fermer.');
     }
 
+    /**
+     * Each row the controller builds — a result, the "see all" link — carries the touch rule
+     * (44 px measured 36 and 16 at 360 px, cegeta 2026-09-23).
+     */
+    public function testEveryRowTheControllerBuildsIsATouchTarget(): void
+    {
+        self::assertSame(
+            2,
+            substr_count(self::source(), 'admin-search-row'),
+            'Le lien de résultat ET le lien « voir tout » doivent porter `admin-search-row`.',
+        );
+    }
+
+    /**
+     * The magnifier and the × of the mobile row (38.5 px wide at 360 px, cegeta 2026-09-23).
+     */
+    public function testTheMobileButtonsAreTouchTargets(): void
+    {
+        $partial = (string) file_get_contents(\dirname(__DIR__, 2).'/Resources/views/partials/_global_search.html.twig');
+
+        self::assertSame(2, substr_count($partial, 'admin-search-target'), 'La loupe ET la croix doivent porter `admin-search-target`.');
+    }
+
     private static function source(): string
     {
         $path = \dirname(__DIR__, 2).'/assets/controllers/global-search_controller.js';
