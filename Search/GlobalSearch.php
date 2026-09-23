@@ -17,8 +17,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  *
  * - **two characters, on the server** — the Stimulus controller has its own threshold, the route
  *   can be called by hand;
- * - **the comparison of `api-bundle`'s `OrSearchFilter`** — `LOWER(field) LIKE LOWER('%term%')`, so
- *   a panel and the list its "see all" opens count alike. `%` and `_` are not escaped, for the same
+ * - **the comparison of `api-bundle`'s `OrSearchFilter`** on text columns — `LOWER(field) LIKE
+ *   LOWER('%term%')`, so a panel and the list its "see all" opens count alike. Unlike the filter it
+ *   casts no number: declare text fields only (see `SearchFamily::$fields`). `%` and `_` are not escaped, for the same
  *   reason: escaping here only would make the two counts diverge;
  * - **five rows, ordered case-insensitively** like `CaseInsensitiveOrderFilter` orders the list;
  * - **a `COUNT` only when a family is saturated** — three rows out of five asked, the total IS three;

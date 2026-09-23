@@ -76,6 +76,18 @@ final class GlobalSearchTest extends AbstractFunctionalTestCase
         self::assertSame([], $this->engine($this->source())->search('nobody'), 'Une famille vide est omise.');
     }
 
+    /**
+     * ⚠️ **The comparison lowers BOTH sides**, and it has to be read from the query: the test
+     * database is SQLite, whose `LIKE` already ignores ASCII case — removing both `LOWER()` keeps
+     * every case above green there and breaks every uppercase keystroke on PostgreSQL.
+     */
+    public function testTheComparisonLowersTheFieldAndTheTerm(): void
+    {
+        $source = (string) file_get_contents(\dirname(__DIR__, 2).'/Search/GlobalSearch.php');
+
+        self::assertStringContainsString("'LOWER(e.%s) LIKE LOWER(:term)'", $source);
+    }
+
     public function testFiveRowsAtMostTheRealTotalAndAnOrderedPanel(): void
     {
         $rows = [];

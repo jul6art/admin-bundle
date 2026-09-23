@@ -224,7 +224,8 @@ export { default } from '@jul6art/admin-bundle/controllers/global-search_control
 
 **The engine is the bundle's** (since 1.19, with Doctrine ORM): `Jul6Art\AdminBundle\Search\GlobalSearch`
 searches from two characters (on the server), with the comparison of `api-bundle`'s `OrSearchFilter`
-(`LOWER(field) LIKE LOWER('%term%')`, so a panel and its list count alike), five rows per family
+(`LOWER(field) LIKE LOWER('%term%')`, so a panel and its list count alike — on **text** columns only:
+it casts no number, and `LOWER()` on an integer is a type error on PostgreSQL), five rows per family
 ordered case-insensitively, a `COUNT` only when a family is saturated, label and URL only — and keeps
 nothing. **What is searched, and for whom, is the project's**: implement `GlobalSearchSourceInterface`
 and alias it.

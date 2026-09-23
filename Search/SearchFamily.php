@@ -16,7 +16,10 @@ final readonly class SearchFamily
     /**
      * @param string       $key        the group's key in the JSON — and the one the partial's `labels` translate
      * @param class-string $entityClass
-     * @param list<string> $fields     searched with OR, on the root alias `e` (`address.city` works: embeddables are paths)
+     * @param list<string> $fields     searched with OR, on the root alias `e` (`address.city` works: embeddables are paths).
+     *                                 ⚠️ TEXT columns only: unlike `OrSearchFilter`, the engine does not cast
+     *                                 numbers, and `LOWER()` on an integer or a decimal is a type error on
+     *                                 PostgreSQL — on every keystroke
      * @param string       $showRoute  where a result leads, called with `['id' => …]`
      * @param string       $label      a DQL expression over `e` — `e.name`, or `CONCAT(e.firstName, ' ', e.lastName)`
      * @param string|null  $listRoute  where "see all" leads, called with `['search' => term]` — the list must
