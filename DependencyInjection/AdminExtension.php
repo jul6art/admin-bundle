@@ -91,6 +91,10 @@ class AdminExtension extends Extension
         // L'écran du profileur vient de `jul6art/core-bundle`, que ce bundle ne requiert pas :
         // une application peut prendre la coquille sans la brique de profilage. Le pass affine
         // ensuite — la classe peut exister sans que le service soit enregistré.
+        if (interface_exists(EntityManagerInterface::class)) {
+            $loader->load('search.yaml');
+        }
+
         if (interface_exists(PerformanceStoreInterface::class)) {
             $loader->load('performance.yaml');
         }

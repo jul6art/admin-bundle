@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Jul6Art\AdminBundle\AdminBundle;
 use Jul6Art\AdminBundle\Keyboard\KeyboardShortcutResolver;
 use Jul6Art\AdminBundle\Navigation\NavigationBuilder;
+use Jul6Art\AdminBundle\Search\GlobalSearch;
 use Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys;
 use Jul6Art\AdminBundle\Twig\AdminUiExtension;
 use Jul6Art\AdminBundle\Twig\KeyboardExtension;
@@ -145,6 +146,7 @@ final class TestKernel extends Kernel
                     KeyboardShortcutResolver::class,
                     KeyboardExtension::class,
                     DeclaredTranslationKeys::class,
+                    GlobalSearch::class,
                 ];
 
                 foreach ($container->getDefinitions() as $id => $definition) {

@@ -1,0 +1,11 @@
+# Chargé quand Doctrine ORM est présent — le moteur de la recherche d'en-tête interroge des entités.
+# Cf. `DependencyInjection/AdminExtension.php`.
+services:
+    # ⚠️ **La source est FACULTATIVE** (`@?`) : sans alias vers `GlobalSearchSourceInterface`, le
+    # moteur existe et ne cherche rien. Il ne devine aucune famille — c'est le produit qui dit quoi
+    # chercher, et pour qui.
+    Jul6Art\AdminBundle\Search\GlobalSearch:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $urls: '@router'
+            $source: '@?Jul6Art\AdminBundle\Search\GlobalSearchSourceInterface'

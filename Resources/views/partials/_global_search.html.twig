@@ -1,8 +1,9 @@
 {#
     The header's global search — the field, its result panel, and its mobile form.
 
-    Put it in `admin_topbar_center`; the shell's container centres it. The project keeps the ROUTE
-    and what is searched (its own engine, its own permissions); this partial is the shell around it.
+    Put it in `admin_topbar_center`; the shell's container centres it. The engine is the bundle's
+    (`Search\GlobalSearch`, since 1.19); the project keeps the ROUTE and what is searched, for whom
+    (`Search\GlobalSearchSourceInterface`). This partial is the shell around it.
 
     ```twig
     {% block admin_topbar_center %}

@@ -222,11 +222,49 @@ Register the controller as `search--global`:
 export { default } from '@jul6art/admin-bundle/controllers/global-search_controller';
 ```
 
-The route and what it searches stay in the project — its families, its permissions. It answers
-`?q=<term>` with a JSON object keyed by family, each a `Jul6Art\AdminBundle\Search\SearchGroup`
-(`results`: a list of `SearchResult {label, url}`, `total`: the real count, so the panel can say
-"5 of 47", and — since 1.16 — an optional `url`: where "see all" leads, which turns that hint into a
-link to the family's own list filtered by the same term). All strings reach the browser already rendered: the controller translates nothing.
+**The engine is the bundle's** (since 1.19, with Doctrine ORM): `Jul6Art\AdminBundle\Search\GlobalSearch`
+searches from two characters (on the server), with the comparison of `api-bundle`'s `OrSearchFilter`
+(`LOWER(field) LIKE LOWER('%term%')`, so a panel and its list count alike), five rows per family
+ordered case-insensitively, a `COUNT` only when a family is saturated, label and URL only — and keeps
+nothing. **What is searched, and for whom, is the project's**: implement `GlobalSearchSourceInterface`
+and alias it.
+
+```php
+final readonly class SearchSource implements GlobalSearchSourceInterface
+{
+    public function families(): iterable              // only what the CURRENT actor may open
+    {
+        if ($this->security->isGranted('customer:read')) {
+            yield new SearchFamily('customer', Customer::class, ['name', 'vatNumber'], 'app_customer_show',
+                listRoute: 'app_customer_index');   // "see all" → ?search=<term>, if the list reads it
+        }
+    }
+
+    public function scope(SearchFamily $family, QueryBuilder $builder): void
+    {
+        $builder->andWhere('e.organization = :tenant')->setParameter('tenant', $this->tenant());
+    }
+}
+```
+
+> ⚠️ **Write the tenant in `scope()`**, even behind a Doctrine tenant filter: such filters are often
+> off for a platform account, and a search that relied on one reads every tenant for exactly the
+> account nobody tests.
+
+The route stays the project's too — its path and its access decision — and is three lines:
+
+```php
+#[Route('/app/search', name: 'app_search_query', methods: ['GET'])]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
+public function query(Request $request, GlobalSearch $search): JsonResponse
+{
+    return $search->respond((string) $request->query->get('q', ''));
+}
+```
+
+`respond()` answers a JSON object keyed by family — `{ total, url, results: [{label, url}] }`, the
+`SearchGroup` / `SearchResult` value objects — or `[]`. Without a source the engine searches nothing.
+All strings reach the browser already rendered: the Stimulus controller translates nothing.
 
 The controller debounces (250 ms), searches from two characters (enforce it on the server too),
 aborts the request in flight, escapes every label, and opens on `/` unless a field has the focus —

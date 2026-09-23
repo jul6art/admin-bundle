@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle;
 
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\AppearanceControllerPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\FeatureVisibilityPass;
+use Jul6Art\AdminBundle\DependencyInjection\Compiler\GlobalSearchPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\KeyboardStorePass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\PerformanceControllerPass;
 use Jul6Art\AdminBundle\Navigation\NavigationProviderInterface;
@@ -34,6 +35,9 @@ class AdminBundle extends Bundle
         // Même question, même réponse : le port des raccourcis est FACULTATIF, et son absence
         // laisse les combinaisons d'usine en place plutôt que de retirer la fonctionnalité.
         $container->addCompilerPass(new KeyboardStorePass());
+        // Le moteur de la recherche d'en-tête, retiré quand Doctrine n'est pas là (même question que
+        // l'écran d'apparence, sans l'enjeu de priorité : aucun locator ne le référence).
+        $container->addCompilerPass(new GlobalSearchPass());
         // ⚠️ La priorité n'est pas décorative. `RegisterControllerArgumentLocatorsPass` de
         // FrameworkBundle tourne dans la même phase et, à priorité égale, avant le nôtre puisque
         // son bundle est enregistré en premier : il aurait déjà construit le locator d'arguments
