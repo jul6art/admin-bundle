@@ -82,6 +82,21 @@ export default class extends Controller {
             return;
         }
 
+        // ⚠️ **A keystroke a control already handled is not routed.** In a Trix editor `Ctrl+B` makes
+        // text bold and calls `preventDefault()`; routing it anyway clicked Cancel, and the page left
+        // with everything typed (REVIEWER, 2026-09-23).
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        // ⚠️ **On macOS, `Ctrl` + a letter in a text field is the system's**: the Emacs bindings
+        // (`Ctrl+B` moves the caret back, `Ctrl+A`/`E` to the line's ends…). Routing `Ctrl+B` there
+        // left the form mid-sentence (decider, 2026-09-23). Without Shift or Alt only: `Ctrl+Enter`
+        // and a `Ctrl+Shift+…` override still fire, and outside a field `Ctrl+B` works as anywhere.
+        if (this._isMac() && event.ctrlKey && !event.shiftKey && !event.altKey && /^[a-z]$/i.test(event.key) && this._isTextEntry(event.target)) {
+            return;
+        }
+
         if (event.key === 'Escape') {
             this._onEscape(event);
 
@@ -111,6 +126,12 @@ export default class extends Controller {
         const target = this._findTarget(combo);
 
         if (!target) {
+            return;
+        }
+
+        // ⚠️ **No navigation from a rich editor**, even one that does not cancel the keystroke: the
+        // page would leave with its content. The same shortcut works from a plain field.
+        if (event.target instanceof HTMLElement && event.target.isContentEditable && this._navigates(target)) {
             return;
         }
 
@@ -174,14 +195,67 @@ export default class extends Controller {
         return parts.join('+');
     }
 
+    /**
+     * The visible element carrying the combo — inside the open overlay when there is one.
+     *
+     * ⚠️ **An open modal, or the cheat-sheet, confines the shortcuts to itself.** `Ctrl+B` under a
+     * confirmation dialog clicked the Cancel link of the page behind it.
+     */
     _findTarget(combo) {
-        for (const element of document.querySelectorAll(`[data-shortcut="${CSS.escape(combo)}"]`)) {
+        const scope = this._openOverlay() || document;
+
+        for (const element of scope.querySelectorAll(`[data-shortcut="${CSS.escape(combo)}"]`)) {
             if (this._isVisible(element) && !element.disabled && element.getAttribute('aria-disabled') !== 'true') {
                 return element;
             }
         }
 
         return null;
+    }
+
+    /**
+     * The topmost open overlay, or `null`. A modal is recognised by the markers the ecosystem uses:
+     * `aria-modal`, a native `<dialog open>`, and the `[data-backdrop]` of datatable-bundle's
+     * confirmation modal — which carries nothing else. The cheat-sheet is `aria-modal` itself.
+     */
+    _openOverlay() {
+        const markers = document.querySelectorAll('[aria-modal="true"], dialog[open], [data-backdrop]');
+
+        for (let index = markers.length - 1; index >= 0; index--) {
+            const marker = markers[index];
+
+            if (marker.tagName === 'DIALOG' || this._isVisible(marker)) {
+                return marker.hasAttribute('data-backdrop') ? marker.parentElement : marker;
+            }
+        }
+
+        return null;
+    }
+
+    _isMac() {
+        const platform = navigator.userAgentData?.platform || navigator.platform || '';
+
+        return /mac/i.test(platform);
+    }
+
+    /**
+     * A field where the caret types text — where the system's Ctrl bindings live.
+     */
+    _isTextEntry(node) {
+        if (!(node instanceof HTMLElement)) {
+            return false;
+        }
+
+        if (node.isContentEditable || node.tagName === 'TEXTAREA') {
+            return true;
+        }
+
+        return node.tagName === 'INPUT'
+            && ['text', 'search', 'email', 'url', 'tel', 'password', 'number'].includes((node.getAttribute('type') || 'text').toLowerCase());
+    }
+
+    _navigates(element) {
+        return element.tagName === 'A' && element.hasAttribute('href');
     }
 
     _isEditable(node) {
@@ -202,15 +276,19 @@ export default class extends Controller {
     _openCheatsheet() {
         this._previouslyFocused = document.activeElement;
 
+        const contextual = this._collectContextual();
+        // ⚠️ **The page's own words win.** A combo the page offers is listed with the page's label
+        // ("New invoice", "Cancel") and its generic global row is left out — never the other way
+        // round, which hid the specific label behind the generic one.
+        const pageCombos = new Set(contextual.map(([combo]) => combo));
+
         const global = [
             [this._combos.globalNew, this.t('keyboard.cheatsheet.global.new')],
             ['?', this.t('keyboard.cheatsheet.global.help')],
             [this._combos.formSave, this.t('keyboard.cheatsheet.global.save')],
             [this._combos.formSaveAndNew, this.t('keyboard.cheatsheet.global.save_and_new')],
             [this._combos.formBack, this.t('keyboard.cheatsheet.global.back')],
-        ];
-
-        const contextual = this._collectContextual();
+        ].filter(([combo]) => !pageCombos.has(combo));
 
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4';
@@ -279,15 +357,12 @@ export default class extends Controller {
     _collectContextual() {
         const rows = [];
         const seen = new Set();
-        // A combo already in the global section is not listed twice: the Cancel link Ctrl+B clicks
-        // carries a label of its own, and so does the "New" button `n` clicks.
-        const globalCombos = new Set(Object.values(this._combos || {}));
 
         for (const element of document.querySelectorAll('[data-shortcut][data-shortcut-label]')) {
             const combo = element.getAttribute('data-shortcut');
             const label = element.getAttribute('data-shortcut-label');
 
-            if (!combo || !label || globalCombos.has(combo) || !this._isVisible(element) || seen.has(`${combo}::${label}`)) {
+            if (!combo || !label || !this._isVisible(element) || seen.has(`${combo}::${label}`)) {
                 continue;
             }
 

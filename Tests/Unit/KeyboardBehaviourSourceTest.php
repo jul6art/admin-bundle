@@ -80,8 +80,62 @@ final class KeyboardBehaviourSourceTest extends TestCase
     }
 
     /**
-     * **`Ctrl+B` is in the cheat-sheet**, with the combo in force, and the page section does not list
-     * it a second time because the Cancel link it clicks carries a label too.
+     * **A keystroke a control already handled is not routed** (REVIEWER, 2026-09-23). In a Trix
+     * editor `Ctrl+B` makes text bold and calls `preventDefault()`; the router then clicked Cancel
+     * and the page left with everything typed.
+     */
+    public function testAHandledKeystrokeIsNotRouted(): void
+    {
+        self::assertMatchesRegularExpression('/_onKeydown\(event\)\s*\{[\s\S]{0,600}?if\s*\(event\.defaultPrevented\)\s*\{?\s*return/', self::read('keyboard'));
+    }
+
+    /**
+     * **On macOS, `Ctrl` + a letter in a text field is the system's** (decider, 2026-09-23): the
+     * Emacs bindings — `Ctrl+B` moves the caret back one character. Without Shift or Alt only, so
+     * `Ctrl+Enter` and a `Ctrl+Shift+…` override still fire.
+     */
+    public function testMacTextFieldsKeepTheirCtrlLetterBindings(): void
+    {
+        $source = self::read('keyboard');
+
+        self::assertStringContainsString('_isMac()', $source);
+        self::assertMatchesRegularExpression('/this\._isMac\(\)\s*&&\s*event\.ctrlKey\s*&&\s*!event\.shiftKey\s*&&\s*!event\.altKey\s*&&\s*\/\^\[a-z\]\$\/i\.test\(event\.key\)\s*&&\s*this\._isTextEntry\(event\.target\)/', $source);
+    }
+
+    /**
+     * **No NAVIGATION from a rich editor**: an editor that does not cancel `Ctrl+B` would still lose
+     * its content. From a `contenteditable`, a shortcut whose target is a link does nothing.
+     */
+    public function testARichEditorNeverNavigates(): void
+    {
+        self::assertMatchesRegularExpression('/isContentEditable[\s\S]{0,200}?_navigates\(target\)/', self::read('keyboard'));
+    }
+
+    /**
+     * **An open modal, or the cheat-sheet, confines the shortcuts to itself** — `Ctrl+B` under a
+     * confirmation dialog clicked the Cancel link of the page behind it.
+     */
+    public function testAnOpenOverlayConfinesTheShortcuts(): void
+    {
+        $source = self::read('keyboard');
+
+        self::assertStringContainsString('_openOverlay()', $source);
+        self::assertStringContainsString('[aria-modal="true"]', $source);
+        self::assertStringContainsString('dialog[open]', $source);
+        self::assertStringContainsString('[data-backdrop]', $source, 'datatable-bundle\'s confirmation modal carries only this marker.');
+    }
+
+    /**
+     * **The cheat-sheet keeps the page's own words**: a combo the page offers is listed with the
+     * page's label ("New invoice"), and the generic global row for it is left out.
+     */
+    public function testThePageLabelWinsOverTheGenericGlobalRow(): void
+    {
+        self::assertMatchesRegularExpression('/\]\.filter\(\(\[combo\]\)\s*=>\s*!pageCombos\.has\(combo\)\)/', self::read('keyboard'));
+    }
+
+    /**
+     * **`Ctrl+B` is in the cheat-sheet**, with the combo in force.
      */
     public function testTheBackShortcutIsListedOnce(): void
     {
@@ -89,7 +143,6 @@ final class KeyboardBehaviourSourceTest extends TestCase
 
         self::assertStringContainsString("_readCombo('kb.form.back', 'ctrl+b')", $source);
         self::assertStringContainsString('[this._combos.formBack,', $source);
-        self::assertMatchesRegularExpression('/globalCombos\.has\(combo\)/', $source, 'La section « page » ne répète pas une combinaison déjà listée en global.');
     }
 
     /**

@@ -424,6 +424,19 @@ Four Stimulus controllers ship with it. Register them under the identifiers the 
 > `data-shortcut="{{ keyboard_shortcut('form.back') }}"`; `cancel_shortcut: false` takes it off the
 > partial's.
 
+Four rules keep a shortcut from firing where it would do harm (1.20.1):
+
+- a keystroke a control already handled (`preventDefault()`) is not routed — `Ctrl+B` in a Trix
+  editor makes text bold, it does not leave the page;
+- from a rich editor (`contenteditable`), a shortcut whose target is a link does nothing;
+- an open modal (`aria-modal`, `<dialog open>`, datatable-bundle's `[data-backdrop]`) or the
+  cheat-sheet confines the shortcuts to itself;
+- on macOS, `Ctrl` + a letter in a text field keeps its system meaning (`Ctrl+B` moves the caret
+  back) — outside a field, and with Shift or Alt, shortcuts fire as anywhere.
+
+The cheat-sheet lists a combo the page offers under the page's own label, and leaves out the
+generic global row for it.
+
 Add your own actions by configuration; the four above belong to the shell, everything else belongs
 to a product:
 
