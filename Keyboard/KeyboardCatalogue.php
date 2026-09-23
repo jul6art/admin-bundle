@@ -25,6 +25,15 @@ final readonly class KeyboardCatalogue
     public const string FORM_SAVE = 'form.save';
     public const string FORM_SAVE_AND_NEW = 'form.save_and_new';
 
+    /**
+     * Back to the list from an entry form: clicks the form's Cancel link (`_form_actions`).
+     *
+     * ⚠️ It replaced the `Esc` back-jump (decider, 2026-09-23), which only worked after arriving
+     * through a shortcut, could not be overridden, and competed with every control that owns `Esc`.
+     * A modifier combo so it fires from inside a field, where one is when one wants to leave.
+     */
+    public const string FORM_BACK = 'form.back';
+
     /** @var array<string, KeyboardAction> */
     private array $actions;
 
@@ -39,6 +48,7 @@ final readonly class KeyboardCatalogue
             new KeyboardAction(self::GLOBAL_NEW, 'n', 'keyboard.action.global_new'),
             new KeyboardAction(self::FORM_SAVE, 'ctrl+enter', 'keyboard.action.form_save'),
             new KeyboardAction(self::FORM_SAVE_AND_NEW, 'ctrl+shift+enter', 'keyboard.action.form_save_and_new'),
+            new KeyboardAction(self::FORM_BACK, 'ctrl+b', 'keyboard.action.form_back'),
         ] as $action) {
             $actions[$action->code] = $action;
         }

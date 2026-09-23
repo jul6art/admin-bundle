@@ -63,25 +63,33 @@ final class KeyboardBehaviourSourceTest extends TestCase
     }
 
     /**
-     * **`Escape` keeps its native meaning only where it has one** (superp, report 2026-06-06 § P1).
+     * **`Escape` no longer navigates** (decider, 2026-09-23): it only closes the cheat-sheet.
      *
-     * A blanket "inside a field, do nothing" guard also swallowed `Escape` in plain text inputs,
-     * where it has NO native action — removing the way back for exactly the people who navigate by
-     * keyboard. The four controls that genuinely own `Escape` are named instead.
+     * It used to jump back to "the list one arrived from" — but only when one had arrived through a
+     * shortcut, so a mouse user pressed it for nothing; it could not be overridden; and `Escape` is
+     * the key every Select2, modal and picker already owns, so one press too many left a half-filled
+     * form. `Ctrl+B` (`form.back`) replaces it: explicit, listed, overridable.
      */
-    public function testEscapeYieldsOnlyToControlsThatOwnIt(): void
+    public function testEscapeNoLongerNavigates(): void
     {
         $source = self::read('keyboard');
 
-        self::assertStringContainsString('_escapeHasNativeMeaning', $source);
-        self::assertStringContainsString("=== 'SELECT'", $source);
-        self::assertStringContainsString('select2-container--open', $source);
-        self::assertStringContainsString('isContentEditable', $source);
-        self::assertMatchesRegularExpression(
-            "/'date', 'datetime-local', 'month', 'week', 'time', 'color'/",
-            $source,
-            'Les pickers natifs possèdent Escape : le lui retirer ferme la mauvaise chose.',
-        );
+        self::assertStringNotContainsString('location.assign', $source, 'Échap ne doit plus quitter la page.');
+        self::assertStringNotContainsString('kb.originUrl', $source, 'Plus aucune origine mémorisée : rien ne la relit.');
+        self::assertMatchesRegularExpression('/_onEscape\(event\)\s*\{\s*if\s*\(this\._cheatsheet\)/', $source, 'Échap ferme encore l\'antisèche.');
+    }
+
+    /**
+     * **`Ctrl+B` is in the cheat-sheet**, with the combo in force, and the page section does not list
+     * it a second time because the Cancel link it clicks carries a label too.
+     */
+    public function testTheBackShortcutIsListedOnce(): void
+    {
+        $source = self::read('keyboard');
+
+        self::assertStringContainsString("_readCombo('kb.form.back', 'ctrl+b')", $source);
+        self::assertStringContainsString('[this._combos.formBack,', $source);
+        self::assertMatchesRegularExpression('/globalCombos\.has\(combo\)/', $source, 'La section « page » ne répète pas une combinaison déjà listée en global.');
     }
 
     /**

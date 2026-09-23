@@ -37,7 +37,7 @@ final class KeyboardWiringTest extends AbstractFunctionalTestCase
 
         self::assertSame('n', $resolver->resolve(KeyboardCatalogue::GLOBAL_NEW));
         self::assertSame(
-            ['global.new' => 'n', 'form.save' => 'ctrl+enter', 'form.save_and_new' => 'ctrl+shift+enter'],
+            ['global.new' => 'n', 'form.save' => 'ctrl+enter', 'form.save_and_new' => 'ctrl+shift+enter', 'form.back' => 'ctrl+b'],
             $resolver->snapshot(),
         );
     }

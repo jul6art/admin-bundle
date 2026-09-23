@@ -403,7 +403,8 @@ right field, save, start the next one — without reaching for the mouse.
 |---|---|
 | `n` | clicks the visible element whose `data-shortcut` is the combo in force for `global.new` (`n` by default) — typically the "New X" button. Render it with `keyboard_shortcut('global.new')`, never a literal `"n"`: an organisation's override would otherwise never reach the button |
 | `?` | opens the cheat-sheet, listing what the current page offers |
-| `Esc` | closes it, or goes back to the list you came from |
+| `Ctrl` + `B` | back to the list: clicks the Cancel link of `_form_actions` (`form.back`, overridable) |
+| `Esc` | closes the cheat-sheet — and nothing else since 1.20 |
 | `Ctrl`/`⌘` + `Enter` | submits the form |
 | `Ctrl`/`⌘` + `Shift` + `Enter` | submits it through the `data-secondary` button ("save and add another") |
 
@@ -417,7 +418,13 @@ Four Stimulus controllers ship with it. Register them under the identifiers the 
 > node; it knows nothing about roles. Which is exactly why this is an attribute rather than a
 > registry — the `is_granted()` that decides whether to render the button has already run.
 
-Add your own actions by configuration; the three above belong to the shell, everything else belongs
+> ⚠️ **`Esc` no longer goes back** (1.20). It only did after arriving through a shortcut, could not be
+> overridden, and shares its key with every Select2, modal and picker: one press too many left a
+> half-filled form. `Ctrl+B` replaces it. A form that writes its own Cancel link gives it
+> `data-shortcut="{{ keyboard_shortcut('form.back') }}"`; `cancel_shortcut: false` takes it off the
+> partial's.
+
+Add your own actions by configuration; the four above belong to the shell, everything else belongs
 to a product:
 
 ```yaml
@@ -427,18 +434,18 @@ admin:
             erp.lines.add: { default: 'l', label: 'keyboard.action.erp_lines_add' }
 ```
 
-A product action can sit on the cancel link of `_form_actions` — "back to the list" on a key —
-without copying the partial (since 1.18):
+The cancel link of `_form_actions` answers `form.back` by default. A product may hand it another of
+its actions instead, or none:
 
 ```twig
 {{ include('@Admin/partials/_form_actions.html.twig', { …,
-    cancel_shortcut: 'form.back',                       # declared under admin.keyboard.actions
-    cancel_shortcut_label: 'keyboard.action.form_back'|trans({}, 'keyboard'),
+    cancel_shortcut: 'app.leave',                        # declared under admin.keyboard.actions
+    cancel_shortcut_label: 'keyboard.action.app_leave'|trans({}, 'keyboard'),
+    # cancel_shortcut: false,                            # no shortcut on this link
 }) }}
 ```
 
-The link carries the combo in force, so an override reaches it; without `cancel_shortcut` it renders
-exactly as before.
+The link carries the combo in force, so an override reaches it.
 
 Letting people change their own combos is optional. Implement `KeyboardShortcutStoreInterface` and
 alias it; the resolver picks it up, and a settings screen can read `keyboard_actions()` and render

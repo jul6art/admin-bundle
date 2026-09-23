@@ -12,39 +12,46 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Twig\Environment;
 
 /**
- * The cancel link of `_form_actions` can carry a keyboard action of the product's own.
+ * The cancel link of `_form_actions` answers `form.back` — `Ctrl+B`, the keyboard twin of Cancel.
  *
- * superp wanted "back to the list" on a key (Ctrl+B), overridable like the others. The link is
- * rendered HERE, so a product could not reach it without copying the partial — and a copy is what
- * this partial exists to prevent. The action stays the product's: nothing is added to the shell's
- * catalogue, and a product that passes nothing renders exactly what it rendered before.
+ * Since 1.20 it is a SHELL action, on by default: the decider replaced the `Esc` back-jump with it on
+ * 2026-09-23, for every product. A product may hand the link another action, or none.
  */
 #[CoversNothing]
 final class FormActionsRenderingTest extends AbstractFunctionalTestCase
 {
     private const array CONFIG = ['keyboard' => ['actions' => [
-        'form.back' => ['default' => 'ctrl+b', 'label' => 'keyboard.action.form_back'],
+        'app.leave' => ['default' => 'alt+q', 'label' => 'keyboard.action.app_leave'],
     ]]];
 
-    public function testTheCancelLinkCarriesTheActionItIsHanded(): void
+    /**
+     * ⚠️ **On by default since 1.20**: `form.back` is a shell action, and every product's Cancel link
+     * answers `Ctrl+B` — or the combo an organisation chose.
+     */
+    public function testTheCancelLinkAnswersTheBackActionByDefault(): void
     {
         $html = $this->render("{{ include('@Admin/partials/_form_actions.html.twig', {
             save_label: 'Save', cancel_url: '/items', cancel_label: 'Cancel',
-            cancel_shortcut: 'form.back', cancel_shortcut_label: 'Back to the list',
         }) }}");
 
-        self::assertMatchesRegularExpression(
-            '#<a href="/items"[^>]*data-shortcut="ctrl\+b"[^>]*data-shortcut-label="Back to the list"#',
-            $html,
-            'Le lien d\'annulation doit porter la combinaison EN VIGUEUR de l\'action, et son libellé pour l\'antisèche.',
-        );
+        self::assertMatchesRegularExpression('#<a href="/items"[^>]*data-shortcut="ctrl\+b"[^>]*data-shortcut-label="Cancel"#', $html);
         self::assertMatchesRegularExpression('#<a href="/items"[^>]*data-shortcut-hint="ctrl\+b"#', $html, 'Comme les deux boutons, il affiche son raccourci.');
     }
 
-    public function testWithoutAnActionTheCancelLinkIsUnchanged(): void
+    public function testTheCancelLinkCarriesAnotherActionItIsHanded(): void
     {
         $html = $this->render("{{ include('@Admin/partials/_form_actions.html.twig', {
             save_label: 'Save', cancel_url: '/items', cancel_label: 'Cancel',
+            cancel_shortcut: 'app.leave', cancel_shortcut_label: 'Leave',
+        }) }}");
+
+        self::assertMatchesRegularExpression('#<a href="/items"[^>]*data-shortcut="alt\+q"[^>]*data-shortcut-label="Leave"#', $html);
+    }
+
+    public function testAProductCanTakeTheShortcutOffTheCancelLink(): void
+    {
+        $html = $this->render("{{ include('@Admin/partials/_form_actions.html.twig', {
+            save_label: 'Save', cancel_url: '/items', cancel_label: 'Cancel', cancel_shortcut: false,
         }) }}");
 
         self::assertMatchesRegularExpression('#<a href="/items" class="btn-secondary">#', $html);

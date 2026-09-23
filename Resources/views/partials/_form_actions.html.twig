@@ -19,15 +19,16 @@
     bouton primaire, donc « enregistrer et créer un nouveau » enregistre et affiche la fiche. Un
     défaut qui ne se voit qu'à la trentième saisie d'affilée.
 
-    `cancel_shortcut` (facultatif, depuis 1.18) : le code d'une action clavier DU PRODUIT — déclarée
-    dans `admin.keyboard.actions` — que le lien d'annulation porte, avec `cancel_shortcut_label`
-    pour l'antisèche. La combinaison rendue est celle EN VIGUEUR (`keyboard_shortcut()`), donc la
-    surcharge d'une organisation l'atteint. Sans lui, le lien est inchangé : le socle n'ajoute
-    aucune action à son catalogue, et un produit qui refuse les raccourcis n'en reçoit pas.
+    ⚠️ **Le lien d'annulation répond à `form.back` — `Ctrl+B` — depuis 1.20**, action du socle qui
+    remplace le retour par `Échap` (décideur, 2026-09-23). La combinaison rendue est celle EN VIGUEUR
+    (`keyboard_shortcut()`), donc la surcharge d'une organisation l'atteint. `cancel_shortcut` lui
+    donne une autre action (avec `cancel_shortcut_label` pour l'antisèche), `false` n'en donne
+    aucune.
 #}
 {% set save_and_new = save_and_new|default(false) %}
 {% set cancel_url = cancel_url|default(null) %}
-{% set cancel_combo = cancel_shortcut|default(null) ? keyboard_shortcut(cancel_shortcut) : '' %}
+{% set cancel_shortcut = cancel_shortcut ?? 'form.back' %}
+{% set cancel_combo = cancel_shortcut ? keyboard_shortcut(cancel_shortcut) : '' %}
 
 <div class="form-actions">
     <button type="submit" name="_after_save" value="show" class="btn-primary"

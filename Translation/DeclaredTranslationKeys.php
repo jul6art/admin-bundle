@@ -42,9 +42,9 @@ final readonly class DeclaredTranslationKeys
     /**
      * The cheat-sheet's own text. The five rows of the global section plus its chrome.
      *
-     * ⚠️ `keyboard.cheatsheet.global.back` describes `Esc`, which is NOT an overridable action and
-     * therefore has no entry in the catalogue — it would be missing if this list were derived from
-     * the catalogue alone.
+     * ⚠️ `keyboard.cheatsheet.global.back` described the `Esc` back-jump until 1.20; it now labels
+     * `Ctrl+B` (`form.back`), the action that replaced it — same words, "back to the list". The key
+     * is kept so no product's catalogue has to change.
      *
      * @var list<string>
      */

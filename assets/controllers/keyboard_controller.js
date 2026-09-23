@@ -13,7 +13,7 @@ import { translatableValues, useTranslatable } from '@jul6art/core-bundle/mixins
  * |------------------------|-----------------------------------------------------------------|
  * | any declared combo     | clicks the visible `[data-shortcut="<combo>"]`                   |
  * | `?`                    | opens the cheat-sheet                                           |
- * | `Esc`                  | closes it, or returns to the list one arrived from              |
+ * | `Esc`                  | closes it — and nothing else (`Ctrl+B`, `form.back`, goes back) |
  *
  * ## Why it reads the DOM on every keystroke
  *
@@ -28,7 +28,7 @@ import { translatableValues, useTranslatable } from '@jul6art/core-bundle/mixins
  *
  * ## The inhibition rule, which is what makes it usable
  *
- * ⚠️ While the caret is in a field, a letter is a letter. Only `Esc` and modifier combos pass —
+ * ⚠️ While the caret is in a field, a letter is a letter. Only modifier combos pass —
  * otherwise typing "n" in a search box would navigate away mid-word, and the feature would be
  * uninstalled within the hour.
  */
@@ -49,6 +49,7 @@ export default class extends Controller {
             globalNew: this._readCombo('kb.global.new', 'n'),
             formSave: this._readCombo('kb.form.save', 'ctrl+enter'),
             formSaveAndNew: this._readCombo('kb.form.save_and_new', 'ctrl+shift+enter'),
+            formBack: this._readCombo('kb.form.back', 'ctrl+b'),
         };
 
         document.addEventListener('keydown', this._onKeydown);
@@ -115,43 +116,21 @@ export default class extends Controller {
 
         event.preventDefault();
 
-        // ⚠️ The origin is remembered only for NAVIGATION shortcuts — an anchor with an href. A
-        // button that adds a line keeps the user on the page; overwriting the origin there would
-        // strand them with an `Esc` that jumps somewhere they never were.
-        if (target.tagName === 'A' && target.getAttribute('href')) {
-            this._writeOrigin(window.location.href);
-        }
-
         target.click();
     }
 
     /**
-     * `Esc` closes the cheat-sheet first, then hands back to the browser where it still means
-     * something, and only otherwise returns to the list one arrived from.
+     * `Esc` closes the cheat-sheet, and does nothing else.
      *
-     * ⚠️ **A plain text input has no native `Esc` action**, so swallowing it there — which a blanket
-     * "in a field, do nothing" guard does — removes the way back for exactly the people who
-     * navigate by keyboard. An open `<select>`, a Select2 dropdown, a native date picker and a rich
-     * editor all DO own `Esc`, and keep it.
+     * ⚠️ **It used to jump back to the list one arrived from** — only after arriving through a
+     * shortcut, not overridable, and on the key every Select2, modal and native picker already owns:
+     * one press too many left a half-filled form. `Ctrl+B` (`form.back`) replaced it (decider,
+     * 2026-09-23), so outside the cheat-sheet `Esc` is left entirely to the browser.
      */
     _onEscape(event) {
         if (this._cheatsheet) {
             event.preventDefault();
             this._closeCheatsheet();
-
-            return;
-        }
-
-        if (this._escapeHasNativeMeaning(event.target)) {
-            return;
-        }
-
-        const origin = this._readOrigin();
-
-        if (origin && document.querySelector('form[data-controller~="form--submit-shortcut"]')) {
-            event.preventDefault();
-            this._clearOrigin();
-            window.location.assign(origin);
         }
     }
 
@@ -210,57 +189,12 @@ export default class extends Controller {
             && (node.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName));
     }
 
-    _escapeHasNativeMeaning(node) {
-        if (!(node instanceof HTMLElement)) {
-            return false;
-        }
-
-        // An open Select2 owns Esc, and its search box IS a text input — so this comes first.
-        if (node.closest('.select2-container') || document.querySelector('.select2-container--open')) {
-            return true;
-        }
-
-        if (node.isContentEditable || node.tagName === 'SELECT') {
-            return true;
-        }
-
-        return node.tagName === 'INPUT'
-            && ['date', 'datetime-local', 'month', 'week', 'time', 'color']
-                .includes((node.getAttribute('type') || 'text').toLowerCase());
-    }
-
     _isVisible(element) {
         if (!(element instanceof HTMLElement) || element.hidden) {
             return false;
         }
 
         return element.offsetParent !== null || getComputedStyle(element).position === 'fixed';
-    }
-
-    // ── Where the user arrived from, so `Esc` can go back ──────────────────────────────────────
-
-    _readOrigin() {
-        try {
-            return window.sessionStorage.getItem('kb.originUrl');
-        } catch (_) {
-            return null;
-        }
-    }
-
-    _writeOrigin(url) {
-        try {
-            window.sessionStorage.setItem('kb.originUrl', url);
-        } catch (_) {
-            // Sandboxed iframe, blocked storage — the back-jump is a convenience, not a contract.
-        }
-    }
-
-    _clearOrigin() {
-        try {
-            window.sessionStorage.removeItem('kb.originUrl');
-        } catch (_) {
-            // ignore
-        }
     }
 
     // ── The cheat-sheet ───────────────────────────────────────────────────────────────────────
@@ -273,7 +207,7 @@ export default class extends Controller {
             ['?', this.t('keyboard.cheatsheet.global.help')],
             [this._combos.formSave, this.t('keyboard.cheatsheet.global.save')],
             [this._combos.formSaveAndNew, this.t('keyboard.cheatsheet.global.save_and_new')],
-            ['esc', this.t('keyboard.cheatsheet.global.back')],
+            [this._combos.formBack, this.t('keyboard.cheatsheet.global.back')],
         ];
 
         const contextual = this._collectContextual();
@@ -345,12 +279,15 @@ export default class extends Controller {
     _collectContextual() {
         const rows = [];
         const seen = new Set();
+        // A combo already in the global section is not listed twice: the Cancel link Ctrl+B clicks
+        // carries a label of its own, and so does the "New" button `n` clicks.
+        const globalCombos = new Set(Object.values(this._combos || {}));
 
         for (const element of document.querySelectorAll('[data-shortcut][data-shortcut-label]')) {
             const combo = element.getAttribute('data-shortcut');
             const label = element.getAttribute('data-shortcut-label');
 
-            if (!combo || !label || !this._isVisible(element) || seen.has(`${combo}::${label}`)) {
+            if (!combo || !label || globalCombos.has(combo) || !this._isVisible(element) || seen.has(`${combo}::${label}`)) {
                 continue;
             }
 

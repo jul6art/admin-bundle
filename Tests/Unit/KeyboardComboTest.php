@@ -125,7 +125,7 @@ final class KeyboardComboTest extends TestCase
             KeyboardCatalogue::GLOBAL_NEW => ['default' => 'c', 'label' => 'keyboard.action.global_new'],
         ]);
 
-        self::assertCount(4, $catalogue->all(), 'Redéfinir une action du socle ne doit pas en créer une seconde.');
+        self::assertCount(5, $catalogue->all(), 'Redéfinir une action du socle ne doit pas en créer une seconde.');
         self::assertSame('l', $catalogue->defaultFor('erp.lines.add'));
         self::assertSame('c', $catalogue->defaultFor(KeyboardCatalogue::GLOBAL_NEW));
     }
