@@ -48,8 +48,10 @@ final class StylesheetTest extends TestCase
     {
         $css = self::components();
 
-        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*bg-emerald-600[^}]*\}/s', $css);
-        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*hover:bg-emerald-500[^}]*\}/s', $css);
+        // ⚠️ The steps are 700 / 800 since 1.20.2, not 600 / 500: white on emerald-600 is 3.77 and
+        // on emerald-500 2.54, both below AA. The contrast itself is `SemanticContrastTest`'s.
+        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*bg-emerald-700[^}]*\}/s', $css);
+        self::assertMatchesRegularExpression('/\.btn-success \{[^}]*hover:bg-emerald-800[^}]*\}/s', $css);
     }
 
     /**

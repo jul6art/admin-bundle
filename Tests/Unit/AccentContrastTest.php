@@ -28,8 +28,8 @@ use PHPUnit\Framework\TestCase;
  *
  * ## What is measured, and why it is read rather than listed
  *
- * The pairs come from `components.css` itself — `.btn-primary` (white on 600) and `.badge-accent`
- * in light theme (700 on 50). A list chosen by hand would be a list chosen to pass, and it would
+ * The pairs come from `components.css` itself — `.btn-primary` (white on 600, and white on its
+ * hover step, read from the rule) and `.badge-accent` in light theme (700 on 50). A list chosen by hand would be a list chosen to pass, and it would
  * drift the day a component changes which step it uses.
  *
  * ⚠️ **Every case in the enum is covered, including `Brand`** — and `Brand` is the one this file
@@ -90,8 +90,15 @@ final class AccentContrastTest extends TestCase
             \sprintf('`%s` declares %d accent steps instead of 10: the survey reads the wrong block.', $accent->value, \count($ramp)),
         );
 
+        $hover = self::primaryHoverStep();
+
+        self::assertArrayHasKey($hover, $ramp, \sprintf('`.btn-primary` hovers on step %d, which `%s` does not declare.', $hover, $accent->value));
+
         foreach ([
             '.btn-primary — white on bg-accent-600' => [[255, 255, 255], $ramp[600]],
+            // ⚠️ READ from the rule: the hover was 500 until 1.20.2 and white on 500 was below AA
+            // for all seven accents, 2.15 for amber. A label is read while the pointer is on it.
+            \sprintf('.btn-primary:hover — white on bg-accent-%d', $hover) => [[255, 255, 255], $ramp[$hover]],
             '.badge-accent — text-accent-700 on bg-accent-50' => [$ramp[700], $ramp[50]],
         ] as $pair => [$front, $back]) {
             $ratio = self::contrast($front, $back);
@@ -104,9 +111,9 @@ final class AccentContrastTest extends TestCase
                     ."⚠️ `AccentColor`'s header states that every value is pre-checked for AA. "
                     ."That sentence is only true while this case passes.\n\n"
                     .'⚠️ The fix is to darken steps 600 and up and to LEAVE step 500 alone: 500 '
-                    .'carries the impression of the colour (it is the hover state and the focus '
-                    .'ring), while 600 is a button background half a step darker, which nobody '
-                    .'reads as a departure from the palette.',
+                    .'carries the impression of the colour (it is the focus ring), while 600 is a '
+                    .'button background half a step darker, which nobody reads as a departure '
+                    .'from the palette.',
                     $accent->value,
                     $pair,
                     $ratio,
@@ -140,6 +147,24 @@ final class AccentContrastTest extends TestCase
             $components,
             '`.badge-accent` no longer renders `text-accent-700` on `bg-accent-50`.',
         );
+    }
+
+    /**
+     * The step `.btn-primary` hovers on, as `components.css` declares it.
+     */
+    private static function primaryHoverStep(): int
+    {
+        $components = self::sansCommentaires((string) file_get_contents(
+            \dirname(__DIR__, 2).'/assets/styles/components.css',
+        ));
+
+        self::assertSame(
+            1,
+            preg_match('/\.btn-primary\s*\{[^}]*\shover:bg-accent-(\d+)[\s;]/', $components, $match),
+            '`.btn-primary` declares no `hover:bg-accent-*`: the hover pair is not measured.',
+        );
+
+        return (int) $match[1];
     }
 
     /**

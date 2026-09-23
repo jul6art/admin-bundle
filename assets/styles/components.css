@@ -131,21 +131,49 @@
      * suppresses the browser's native `outline: auto` ring, which Chrome renders
      * as a two-tone blue + white halo on dark backgrounds (rapport 2026-06-06 § btn).
      * No `ring-offset` on purpose — a white offset would re-introduce a light gap
-     * in dark mode. */
+     * in dark mode.
+     *
+     * ⚠️ The hover is accent-700, not 500 (since 1.20.2): white on accent-500 measured 4.47 for
+     * indigo, 4.23 violet, 3.67 rose, 2.77 sky, 2.54 emerald, 2.49 teal and 2.15 amber — every
+     * accent below AA while the pointer is on the label. 500 stays the focus ring. */
     .btn-primary {
-        @apply inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
+        @apply inline-flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
     }
 
     .btn-secondary {
         @apply inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
     }
 
+    /*
+     * The three semantic buttons, each at the lightest step that holds AA (4.5:1) in EVERY state.
+     * Measured on 2026-09-23 (WCAG relative luminance, Tailwind 3.4 palette):
+     *
+     *   .btn-warning  white on amber-500 2.15, hover amber-400 1.67
+     *                 → amber-950 text on the SAME amber: 6.97, hover 8.97
+     *   .btn-success  white on emerald-600 3.77, hover emerald-500 2.54
+     *                 → white on emerald-700 5.48, hover emerald-800 7.68
+     *   .btn-danger   white on red-600 4.83, but hover red-500 3.76
+     *                 → hover red-700 6.47, resting colour untouched
+     *
+     * ⚠️ **The hover goes DARKER on danger and success, as on `.btn-primary`.** A white label
+     * on a ramp whose resting step is the lightest that passes has nowhere lighter to go: a
+     * hover one step up is by construction below the threshold, and a label is read while the
+     * pointer is on it.
+     *
+     * ⚠️ **Warning keeps its amber and changes its ink.** No amber step carries white text before
+     * 700, which is brown, and a warning button that stops looking amber no longer reads as a
+     * warning. Dark text on amber is the usual answer for the same reason, and dark ink only
+     * gains from a lighter background, so this hover stays lighter.
+     *
+     * `Tests/Unit/SemanticContrastTest` reads these rules, not a copy of them: a class changing
+     * its step here is measured on the step it now renders.
+     */
     .btn-danger {
-        @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500;
+        @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500;
     }
 
     .btn-warning {
-        @apply inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400;
+        @apply inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400;
     }
 
     /* `emerald` et non `green` : c'est la couleur de `.badge-active` juste en dessous, et celle de
@@ -153,15 +181,19 @@
      * partout où elle apparaît — un « Activer » vert dans un menu de ligne et gris sur la fiche
      * de la même entité se lit comme deux actions différentes. */
     .btn-success {
-        @apply inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500;
+        @apply inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500;
     }
 
     .badge-active {
         @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800;
     }
 
+    /* Muted is not illegible: slate-500 on slate-100 measured 4.34 and slate-400 on slate-700
+     * 4.04 (2026-09-23). An "inactive" badge is a label someone reads, not a disabled control,
+     * so the WCAG exemption for inactive components does not cover it. One step darker in
+     * light (6.92), one lighter in dark (6.97); `.badge-neutral` stays the stronger grey. */
     .badge-inactive {
-        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-600;
+        @apply rounded-full px-2 py-0.5 text-xs font-medium ring-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-600;
     }
 
     /*

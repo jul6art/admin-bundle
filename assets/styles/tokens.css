@@ -24,6 +24,10 @@
  * ⚠️ And the ramp's ORDER survives: 500 stays lighter than 600, which stays lighter than 700, in
  * all four. A ramp that stops decreasing renders a hover state darker than its resting state.
  *
+ * ⚠️ **Since 1.20.2 the button's hover is 700, no longer 500.** White on 500 was below AA for all
+ * seven accents (4.47 indigo down to 2.15 amber), so the hover darkens instead of lightening. 500
+ * keeps the focus ring and the impression of the colour; no value of this file moved for it.
+ *
  * ⚠️ `AccentContrastTest` now measures every accent on the pairs this file's own `components.css`
  * renders. The claim is no longer an assertion in a docblock — it is a test, and it was not one.
 
