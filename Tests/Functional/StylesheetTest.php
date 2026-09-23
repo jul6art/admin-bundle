@@ -344,6 +344,35 @@ final class StylesheetTest extends TestCase
     }
 
     /**
+     * ⚠️ **A list box has no chevron.** `select[multiple]`, or a `size` above one, renders its
+     * options in place; the drop-down arrow `select.form-control` injects painted over the first
+     * option and `pr-9` kept a gutter for it — a consumer wrote its own field class to escape it
+     * (2026-09-23). The reset must be MORE specific than `select.form-control`, remove the image
+     * and give the right padding back, and must leave `size="1"` (a drop-down) alone.
+     */
+    public function testAListBoxSelectCarriesNoChevron(): void
+    {
+        $css = self::withoutComments(self::components());
+
+        self::assertSame(
+            1,
+            preg_match('/((?:[^{}]*,\s*)?select\.form-control\[multiple\](?:\s*,[^{}]*)?)\{([^{}]*)\}/', $css, $rule),
+            'No rule resets `select.form-control[multiple]`: a list box gets the drop-down chevron.',
+        );
+
+        // Split on the commas of the list, not those inside `:not(…)`.
+        $selectors = array_map(trim(...), preg_split('/,(?![^(]*\))/', $rule[1]) ?: []);
+        self::assertContains('select.form-control[multiple]', $selectors);
+        self::assertContains(
+            'select.form-control[size]:not([size="0"], [size="1"])',
+            $selectors,
+            'A `size` above one is a list box too; `size="1"` stays a drop-down.',
+        );
+        self::assertMatchesRegularExpression('/background-image:\s*none/', $rule[2], 'The list box keeps the chevron.');
+        self::assertMatchesRegularExpression('/@apply [^;]*\bpr-3\b/', $rule[2], 'The list box keeps the chevron gutter (`pr-9`).');
+    }
+
+    /**
      * La densité pilote le padding des panneaux, et pas seulement la hauteur de ligne d'un
      * tableau : sans cette règle, choisir « compact » ne se voyait que sur les pages qui portent
      * une datatable, ce qui ressemblait à un réglage cassé.
@@ -433,7 +462,9 @@ final class StylesheetTest extends TestCase
 
         // ⚠️ `input.` / `select.` / `textarea.`: one element of specificity above a `text-sm`
         // utility, so a template writing `form-control text-sm` cannot bring the zoom back.
-        foreach (['input.form-control', 'select.form-control', 'textarea.form-control', 'input.admin-search-input'] as $selector) {
+        // `select.form-select` as well: the class only had a `min-height`, so a
+        // `<select class="form-select text-sm">` stayed at 14 px (2026-09-23).
+        foreach (['input.form-control', 'select.form-control', 'select.form-select', 'textarea.form-control', 'input.admin-search-input'] as $selector) {
             self::assertGreaterThanOrEqual(16, $phone[$selector] ?? 0, \sprintf(
                 '`%s` is under 16 px on a 360-px screen: Safari zooms on every focus.',
                 $selector,

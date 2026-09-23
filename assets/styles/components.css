@@ -381,6 +381,9 @@
      * cannot bring the zoom back. The header search field is in the list for the same reason — it
      * is an `<input>` like any other, and Safari zooms on it too.
      *
+     * ⚠️ **`select.form-select` too (2026-09-23)**: the class only carried a `min-height`, so a
+     * `<select class="form-select text-sm">` stayed at 14 px and Safari zoomed on it.
+     *
      * ⚠️ `16px` en dur et non `text-base` : Tailwind pourrait recalculer `text-base` selon
      * l'échelle de police du compte (`--font-scale`), et une échelle « petite » ramènerait sous
      * les 16 px — donc rétablirait le zoom, pour les seuls comptes qui ont choisi de petits
@@ -390,6 +393,7 @@
         input.form-control,
         .form-control[type="text"],
         select.form-control,
+        select.form-select,
         textarea.form-control,
         input.admin-search-input {
             font-size: 16px;
@@ -413,6 +417,17 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='1.75'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
         background-position: right 0.6rem center;
         background-size: 1.1em 1.1em;
+    }
+
+    /* ⚠️ **A list box has no drop-down arrow.** A `<select multiple>`, or one whose `size` shows
+     * more than one row, renders its options in place: the chevron above painted an arrow over
+     * the first option that opened nothing, and `pr-9` kept a gutter for it. One attribute of
+     * specificity above `select.form-control`, so the reset wins inside the same layer.
+     * `size="0"` and `size="1"` are the drop-down itself and keep the chevron. */
+    select.form-control[multiple],
+    select.form-control[size]:not([size="0"], [size="1"]) {
+        @apply pr-3;
+        background-image: none;
     }
 
     .form-control-error {
