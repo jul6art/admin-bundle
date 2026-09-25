@@ -378,6 +378,22 @@ Eleven Stimulus controllers ship with it (`appearance`, `theme`, `dropdown`, `co
 them under `ui--<name>`, which is what the templates address. Four more come with the keyboard
 bricks below, under `core--` and `form--`.
 
+#### The decimal input (`form--decimal`, 1.21)
+
+The ui-bundle's decimal types (`CustomMoneyType`, `CustomUnitType`) attach `form--decimal` to their
+input **and ship no controller**. This one formats the value the French way ("3 600,00") at rest,
+gives back the plain value ("3600.00") on focus and on submit, and switches a `type="number"` input
+(`html5: true`) to text — a number input cannot hold a comma and the browser would empty it.
+
+```js
+// assets/controllers/form/decimal_controller.js — the path gives the identifier `form--decimal`
+export { default } from '@jul6art/admin-bundle/controllers/decimal_controller';
+```
+
+> ⚠️ **Without this file, nothing fails**: the identifier resolves to nothing, and every price and
+> quantity field shows "89.00". `DecimalController.parse()` is static and public, for controllers
+> that read a possibly-formatted value (line totals).
+
 ### Keyboard shortcuts
 
 Fast data entry for whoever types a hundred records in a row: open a creation screen, land on the

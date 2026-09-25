@@ -648,6 +648,24 @@ final class StylesheetTest extends TestCase
     }
 
     /**
+     * Aucun badge ne passe à la ligne.
+     *
+     * ⚠️ Seule `.badge` portait `white-space: nowrap` ; les fiches écrivent la VARIANTE seule (le
+     * `badgeClass()` d'une énumération). Posé à côté d'un libellé `truncate` dans une ligne flex, un
+     * badge « Site client » se faisait écraser et s'écrivait sur deux lignes — une pilule haute de
+     * deux lignes, vue sur la fiche pièce de cereezer le 2026-09-25.
+     */
+    #[DataProvider('badgeVariants')]
+    public function testEveryBadgeVariantNeverWraps(string $selector, string $palette): void
+    {
+        self::assertMatchesRegularExpression(
+            \sprintf('/%s \{[^}]*whitespace-nowrap[^}]*\}/s', preg_quote($selector, '/')),
+            self::components(),
+            \sprintf('%s doit rester sur une ligne : un badge est une étiquette, jamais un paragraphe.', $selector),
+        );
+    }
+
+    /**
      * Le marqueur d'obligation d'un champ EXISTE.
      *
      * ⚠️ Symfony pose la classe `required` sur le label d'un champ obligatoire — le thème de base
