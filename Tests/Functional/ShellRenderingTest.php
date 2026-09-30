@@ -520,6 +520,28 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     /**
      * @param array<string, mixed> $bundleConfig
      */
+    /**
+     * ⚠️ A shell on ANOTHER firewall must be able to silence the Mercure metas. A customer portal
+     * extending this shell sent its datatables to the back-office's token route: refused under a
+     * remember-me session, the refusal was flashed on the portal's next page (cereezer, 2026-09-30).
+     */
+    public function testAChildShellCanSilenceTheMercureMetas(): void
+    {
+        $config = self::BRANDING + ['mercure' => ['hub_url' => 'https://hub.test/.well-known/mercure', 'token_route' => 'admin_widget_index']];
+
+        $container = $this->boot(bundleConfig: $config);
+        $this->pushRequest($container, 'admin_widget_index');
+        $twig = $container->get('twig');
+        self::assertInstanceOf(Environment::class, $twig);
+
+        $shell = $twig->createTemplate("{% extends '@Admin/base.html.twig' %}")->render();
+        self::assertStringContainsString('name="mercure-token-url"', $shell, 'The shell no longer emits the metas: the test proves nothing.');
+
+        $silenced = $twig->createTemplate("{% extends '@Admin/base.html.twig' %}{% block mercure_meta %}{% endblock %}")->render();
+        self::assertStringNotContainsString('mercure-token-url', $silenced);
+        self::assertStringNotContainsString('mercure-hub', $silenced);
+    }
+
     private function render(string $template, array $bundleConfig, ?Account $user = null, string $route = 'admin_widget_index'): string
     {
         $container = $this->boot(bundleConfig: $bundleConfig);

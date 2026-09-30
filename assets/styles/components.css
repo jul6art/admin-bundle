@@ -696,6 +696,19 @@
         field-sizing: content;
     }
 
+    /* ⚠️ `rows` devient la hauteur MINIMALE. `field-sizing: content` dimensionne le champ sur son
+       contenu : vide, il ne faisait qu'une ligne, quel que soit `rows` — un champ de description
+       prenait l'allure d'un champ court (cereezer, 2026-09-30, sur les trois produits). Le champ
+       garde sa croissance au-delà. `lh` est supporté partout où `field-sizing` l'est ; le 1rem
+       couvre le rembourrage vertical du thème. */
+    textarea[rows="2"] { min-height: calc(2lh + 1rem); }
+    textarea[rows="3"] { min-height: calc(3lh + 1rem); }
+    textarea[rows="4"] { min-height: calc(4lh + 1rem); }
+    textarea[rows="5"] { min-height: calc(5lh + 1rem); }
+    textarea[rows="6"] { min-height: calc(6lh + 1rem); }
+    textarea[rows="8"] { min-height: calc(8lh + 1rem); }
+    textarea[rows="10"] { min-height: calc(10lh + 1rem); }
+
     /* ⚠️ LE REPLI, et il n'est pas décoratif : `field-sizing` n'est pas implémenté partout.
        Là où il manque, la règle ci-dessus laissait un champ figé à 3 rem ET sans poignée —
        c'est-à-dire moins utilisable qu'un `textarea` par défaut. La poignée revient donc

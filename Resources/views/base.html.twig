@@ -27,8 +27,12 @@
 
     {% block stylesheets %}{% endblock %}
 
+    {#- A shell that must not reach the back-office's token route (a customer portal on another
+        firewall) overrides this block empty: the Mercure bus then stays silent. -#}
+    {% block mercure_meta %}
     {% if admin_mercure_hub_url() is not empty %}<meta name="mercure-hub" content="{{ admin_mercure_hub_url() }}">{% endif %}
     {% if admin_mercure_token_route() is not empty %}<meta name="mercure-token-url" content="{{ path(admin_mercure_token_route()) }}">{% endif %}
+    {% endblock %}
     {% if app.user is not null and app.user.id is defined %}<meta name="current-user-id" content="{{ app.user.id }}">{% endif %}
 
     {% block head %}{% endblock %}
