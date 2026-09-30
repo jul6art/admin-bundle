@@ -518,9 +518,6 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
-     * @param array<string, mixed> $bundleConfig
-     */
-    /**
      * ⚠️ A shell on ANOTHER firewall must be able to silence the Mercure metas. A customer portal
      * extending this shell sent its datatables to the back-office's token route: refused under a
      * remember-me session, the refusal was flashed on the portal's next page (cereezer, 2026-09-30).
@@ -542,6 +539,9 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringNotContainsString('mercure-hub', $silenced);
     }
 
+    /**
+     * @param array<string, mixed> $bundleConfig
+     */
     private function render(string $template, array $bundleConfig, ?Account $user = null, string $route = 'admin_widget_index'): string
     {
         $container = $this->boot(bundleConfig: $bundleConfig);
