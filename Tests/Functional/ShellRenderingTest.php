@@ -99,8 +99,9 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
      * **Les quatre pages d'authentification défilent sur une fenêtre basse.**.
      *
      * ⚠️ Le défaut du 2026-09-06 : sur un écran court, les boutons étaient INATTEIGNABLES. Deux
-     * causes se cumulaient — `<html class="fixed-html">`, que la base pose sur toute page pour le
-     * layout d'administration, et que les projets traduisent par `overflow-y: hidden` ; et la carte
+     * causes se cumulaient — `<html class="fixed-html">`, que la base posait alors sur toute page
+     * pour le layout d'administration (voir le test suivant), et que les projets traduisent par
+     * `overflow-y: hidden` ; et la carte
      * centrée par `justify-content: center`, **le piège classique du centrage en flexbox** : quand
      * l'enfant dépasse, il dépasse des deux côtés, et aucun défilement ne remonte avant le bord de
      * départ d'un conteneur.
@@ -135,6 +136,48 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
             $html,
             'Le centrage de la coquille passe par `margin: auto`, jamais par `justify-content`.',
         );
+    }
+
+    /**
+     * **`fixed-html` est au layout d'administration, et à lui seul.**.
+     *
+     * ⚠️ Le défaut du 2026-10-07 : la base posait la classe sur TOUTE page, et les projets la
+     * traduisent par `max-height: 100vh; overflow-y: hidden`. Une page qui étend la base hors du
+     * layout — un portail client, une page publique, superp `/buy` — dépassait la fenêtre sans que
+     * la molette fasse rien. Chaque projet le contournait page par page, en réécrivant
+     * `html_attr` ; la page qu'on oubliait restait bloquée.
+     */
+    public function testOnlyTheAdministrationLayoutLocksTheDocumentScroll(): void
+    {
+        $container = $this->boot(bundleConfig: self::BRANDING);
+        $this->pushRequest($container, 'admin_widget_index');
+        $twig = $container->get('twig');
+        self::assertInstanceOf(Environment::class, $twig);
+
+        $page = $twig->createTemplate("{% extends '@Admin/base.html.twig' %}")->render();
+        self::assertMatchesRegularExpression('/<html lang="[a-z]+">/', $page, 'Une page hors du layout n\'a ni `fixed-html`, ni `class=""` vide.');
+
+        $locked = $twig->createTemplate("{% extends '@Admin/base.html.twig' %}{% block html_class %}fixed-html{% endblock %}")->render();
+        self::assertMatchesRegularExpression('/<html lang="[a-z]+" class="fixed-html">/', $locked, 'Une page qui défile dans ses colonnes remplit `html_class`, comme le layout.');
+
+        $layout = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+        self::assertMatchesRegularExpression('/<html lang="[a-z]+" class="fixed-html"/', $layout);
+
+        $login = $this->render('@Admin/security/login.html.twig', self::BRANDING, route: 'admin_security_login');
+        self::assertStringNotContainsString('fixed-html', $login, 'La carte d\'authentification étend la base, pas le layout.');
+    }
+
+    /**
+     * Le mode sombre se pose sur une page hors du layout aussi — sans `fixed-html`.
+     */
+    public function testTheDarkModeReachesAPageOutsideTheLayoutWithoutLockingIt(): void
+    {
+        $account = new Account()->setEmail('ada@example.test')->setFullName('Ada Lovelace')->setColorMode(ColorMode::Dark);
+
+        $html = $this->render('@Admin/security/login.html.twig', self::BRANDING, user: $account, route: 'admin_security_login');
+
+        self::assertStringContainsString('class="dark"', $html);
+        self::assertStringContainsString('data-theme="dark"', $html);
     }
 
     /**

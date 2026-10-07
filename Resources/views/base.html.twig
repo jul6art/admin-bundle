@@ -8,9 +8,17 @@
         {% extends '@Admin/base.html.twig' %}
         {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
         {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+
+    ⚠️ **`fixed-html` n'est PAS posée ici** : c'est `layout.html.twig` qui la pose, par le bloc
+    `html_class`. Les projets la traduisent par `max-height: 100vh; overflow-y: hidden`, juste pour
+    la coquille d'administration, qui défile dans ses colonnes. Posée par cette base, elle
+    bloquait toute page qui l'étend hors du layout (un portail client, une page publique) : la
+    page dépassait la fenêtre et la molette ne faisait rien — superp `/buy`, 2026-10-07. Une page
+    qui gère elle-même son défilement remplit `html_class` comme le layout. Le bloc est lu par
+    `block()`, pas rendu sur place : l'attribut `class` n'est écrit que s'il porte une classe.
 #}
 <!DOCTYPE html>
-<html lang="{{ app.request.locale }}"{% block html_attr %} class="fixed-html{% if admin_color_mode(app.user) == 'dark' %} dark{% endif %}"{{ admin_appearance_attributes(app.user) }}{% endblock %}>
+<html lang="{{ app.request.locale }}"{% block html_attr %}{% set html_class = ((block('html_class') is defined ? block('html_class') : '') ~ (admin_color_mode(app.user) == 'dark' ? ' dark' : ''))|trim %}{% if html_class is not empty %} class="{{ html_class }}"{% endif %}{{ admin_appearance_attributes(app.user) }}{% endblock %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

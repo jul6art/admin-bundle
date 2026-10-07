@@ -30,6 +30,10 @@
    sans la moindre feuille de style, et rien ne désigne la cause. #}
 {% extends admin_base_template() %}
 
+{#- La coquille défile dans ses colonnes, jamais dans la fenêtre : `fixed-html` est à elle seule
+    (voir `base.html.twig`). -#}
+{% block html_class %}fixed-html{% endblock %}
+
 {% block body %}
 <div class="flex min-h-screen max-h-screen">
     {# ── Barre latérale ──────────────────────────────────────── #}

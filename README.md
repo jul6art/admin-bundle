@@ -165,6 +165,25 @@ So an application points `base_template` at its own base, and makes that one ext
 > stylesheet, and nothing points at the cause. This was found by adopting the bundle in a real
 > application, not by writing it.
 
+#### `fixed-html` belongs to the layout (1.23.1)
+
+`@Admin/layout.html.twig` puts `class="fixed-html"` on `<html>`, through the `html_class` block;
+the base does not. Projects translate the class into `max-height: 100vh; overflow-y: hidden`,
+which is right for the back-office shell — its columns scroll on their own — and wrong anywhere
+else.
+
+> ⚠️ **Until 1.23.0 the base set it on every page.** A page extending the base outside the layout —
+> a customer portal, a public checkout page — grew past the window and the wheel did nothing.
+> Projects worked around it page by page by rewriting `html_attr`; the page someone forgot stayed
+> stuck. Those overrides can go: the base now writes the dark class and the appearance attributes
+> on its own, and `class` only when it carries one.
+
+A page of your own that scrolls inside its own columns opts in the way the layout does:
+
+```twig
+{% block html_class %}fixed-html{% endblock %}
+```
+
 Usage
 -----
 

@@ -110,9 +110,10 @@
      * ⚠️ **Le défaut corrigé (2026-09-06) : sur une fenêtre basse, les boutons étaient
      * inatteignables.** Deux causes se cumulaient, et il fallait les deux pour que ça casse :
      *
-     * 1. `<html class="fixed-html">` — que la base de ce bundle pose sur TOUTE page — est là pour
-     *    le layout d'administration, qui gère son propre défilement dans ses colonnes. Les projets
-     *    la traduisent par `max-height: 100vh; overflow-y: hidden`. La page ne défile donc pas.
+     * 1. `<html class="fixed-html">` — que la base de ce bundle posait alors sur TOUTE page ; seul
+     *    le layout la pose depuis 1.23.1 — est là pour le layout d'administration, qui gère son
+     *    propre défilement dans ses colonnes. Les projets la traduisent par `max-height: 100vh;
+     *    overflow-y: hidden`. La page ne défilait donc pas.
      * 2. La carte était centrée par `justify-content: center`. ⚠️ **C'est le piège classique du
      *    centrage en flexbox** : quand l'enfant dépasse, il dépasse des DEUX côtés, et le
      *    dépassement du HAUT n'est pas atteignable — aucun défilement ne remonte avant le bord de
