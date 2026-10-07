@@ -115,7 +115,23 @@ final class ConfigurationTest extends TestCase
                 'hub_url' => '',
                 'token_route' => '',
             ],
+            // Empty by default: the guide link only appears once a product says where its guide is.
+            'user_guide' => [
+                'route' => '',
+                'url' => '',
+            ],
         ], $this->process([]));
+    }
+
+    /**
+     * A guide is either a route of the application OR an address: both at once leaves the shell
+     * guessing which one wins, so the configuration says no.
+     */
+    public function testAUserGuideIsARouteOrAnUrlNotBoth(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        self::process([['user_guide' => ['route' => 'public_guide_index', 'url' => '/docs']]]);
     }
 
     public function testLaterConfigsOverrideEarlierOnes(): void

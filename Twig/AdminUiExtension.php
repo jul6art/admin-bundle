@@ -34,7 +34,21 @@ final readonly class AdminUiExtension
         private string $mercureTokenRoute = '',
         /** @var array<string, string> */
         private array $routes = [],
+        private string $userGuideRoute = '',
+        private string $userGuideUrl = '',
     ) {
+    }
+
+    /**
+     * Where the user guide lives: a route name, or an address — at most one of the two is filled,
+     * the configuration refuses both. Both empty hides the links, the way an empty route does.
+     *
+     * @return array{route: string, url: string}
+     */
+    #[AsTwigFunction(name: 'admin_user_guide')]
+    public function userGuide(): array
+    {
+        return ['route' => $this->userGuideRoute, 'url' => $this->userGuideUrl];
     }
 
     #[AsTwigFunction(name: 'admin_branding')]

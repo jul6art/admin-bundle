@@ -12,6 +12,8 @@ services:
             $layoutTemplate: '%admin.layout_template%'
             $mercureHubUrl: '%admin.mercure.hub_url%'
             $mercureTokenRoute: '%admin.mercure.token_route%'
+            $userGuideRoute: '%admin.user_guide.route%'
+            $userGuideUrl: '%admin.user_guide.url%'
             # La table des routes est reconstituée ici plutôt que lue clé par clé dans le gabarit :
             # une clé absente doit rendre '' — donc masquer le lien — et non lever.
             $routes:

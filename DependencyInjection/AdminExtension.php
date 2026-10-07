@@ -68,6 +68,10 @@ class AdminExtension extends Extension
             $container->setParameter('admin.route.'.$key, self::asString($routes[$key] ?? null, ''));
         }
 
+        $guide = \is_array($config['user_guide'] ?? null) ? $config['user_guide'] : [];
+        $container->setParameter('admin.user_guide.route', self::asString($guide['route'] ?? null, ''));
+        $container->setParameter('admin.user_guide.url', self::asString($guide['url'] ?? null, ''));
+
         $mercure = \is_array($config['mercure'] ?? null) ? $config['mercure'] : [];
         $container->setParameter('admin.mercure.hub_url', self::asString($mercure['hub_url'] ?? null, ''));
         $container->setParameter('admin.mercure.token_route', self::asString($mercure['token_route'] ?? null, ''));

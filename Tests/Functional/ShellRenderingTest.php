@@ -196,6 +196,60 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('nav.appearance', $html, 'La route d\'apparence a un défaut : le lien est là.');
     }
 
+    /**
+     * **The user guide, from every screen** — a line in the account menu and an icon in the top
+     * bar, both opening a new tab: nobody leaves a half-filled form to read the help.
+     *
+     * Hidden until the product says where its guide is: an empty entry renders nothing.
+     */
+    public function testTheUserGuideLinkIsHiddenUntilConfigured(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+
+        self::assertStringNotContainsString('data-admin-user-guide', $html);
+        self::assertStringNotContainsString('nav.user_guide', $html);
+    }
+
+    public function testTheUserGuideLinkFollowsAConfiguredRoute(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING + ['user_guide' => ['route' => 'admin_report_index']], user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+        $links = self::guideLinks($html);
+
+        self::assertCount(2, $links, 'One line in the account menu, one icon in the top bar.');
+
+        foreach ($links as $link) {
+            self::assertSame('/admin/reports', $link->getAttribute('href'));
+            self::assertSame('_blank', $link->getAttribute('target'));
+            self::assertStringContainsString('noopener', $link->getAttribute('rel'));
+        }
+
+        self::assertSame(['topbar', 'menu'], array_map(static fn (\DOMElement $link): string => $link->getAttribute('data-admin-user-guide'), $links));
+        self::assertSame('nav.user_guide', $links[0]->getAttribute('title'), 'The icon names itself.');
+    }
+
+    public function testTheUserGuideLinkFollowsAConfiguredUrl(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING + ['user_guide' => ['url' => '/docs']], user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+
+        self::assertSame(['/docs', '/docs'], array_map(static fn (\DOMElement $link): string => $link->getAttribute('href'), self::guideLinks($html)));
+    }
+
+    /** @return list<\DOMElement> the guide links, in document order */
+    private static function guideLinks(string $html): array
+    {
+        $document = new \DOMDocument();
+        @$document->loadHTML($html);
+        $links = [];
+
+        foreach (new \DOMXPath($document)->query('//a[@data-admin-user-guide]') ?: [] as $node) {
+            if ($node instanceof \DOMElement) {
+                $links[] = $node;
+            }
+        }
+
+        return $links;
+    }
+
     public function testTheAppearanceOfTheSignedInAccountReachesTheHtmlTag(): void
     {
         $account = new Account()

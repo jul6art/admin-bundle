@@ -115,7 +115,15 @@ extra top bar — points that key at it, and makes that layout extend `@Admin/la
     mercure:
         hub_url: '%env(MERCURE_PUBLIC_URL)%'
         token_route: admin_mercure_token
+
+    # The product's user guide, linked from the account menu and from a help icon in the top
+    # bar — both open a new tab. A route OR an url, never both; empty (the default) shows nothing.
+    user_guide:
+        route: public_guide_index     # or: url: '/docs'
 ```
+
+The guide's label is `nav.user_guide`, read from the application's `messages` catalogue like
+`nav.logout`: every consumer that fills `user_guide` defines that key in each of its languages.
 
 > ⚠️ **`routes` is a GLOBAL table — one route per entry, for the whole application.**
 >

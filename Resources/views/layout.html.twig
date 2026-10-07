@@ -122,9 +122,23 @@
 
             <div class="flex-1 flex justify-end md:justify-center min-w-0">{% block admin_topbar_center %}{% endblock %}</div>
 
+            {# The user guide (`admin.user_guide`): a route or an address, nothing when neither is set.
+               Opened in a new tab, from the top bar and from the account menu — nobody leaves a
+               half-filled form to read the help. #}
+            {% set user_guide = admin_user_guide() %}
+            {% set user_guide_href = user_guide.route ? path(user_guide.route) : user_guide.url %}
+
             <div class="flex items-center gap-3 flex-shrink-0">
                 {% block admin_topbar_locale %}{% endblock %}
                 {% block admin_topbar_actions %}{% endblock %}
+
+                {% if user_guide_href %}
+                    <a href="{{ user_guide_href }}" target="_blank" rel="noopener noreferrer" data-admin-user-guide="topbar"
+                       title="{{ 'nav.user_guide'|trans }}" aria-label="{{ 'nav.user_guide'|trans }}"
+                       class="rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <i class="fa-solid fa-circle-question text-lg"></i>
+                    </a>
+                {% endif %}
 
                 {% if app.user %}
                     <div class="relative" data-ui-dropdown>
@@ -147,6 +161,13 @@
                             {% endif %}
                             {% if admin_route('change_password') %}
                                 {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('change_password'), icon: 'fa-solid fa-key', label: 'nav.change_password'|trans }) }}
+                            {% endif %}
+                            {% if user_guide_href %}
+                                <a href="{{ user_guide_href }}" target="_blank" rel="noopener noreferrer" data-admin-user-guide="menu"
+                                   class="flex items-center gap-2 px-3 admin-touch-row rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <i class="fa-solid fa-circle-question w-4 text-center text-slate-400"></i> {{ 'nav.user_guide'|trans }}
+                                    <i class="fa-solid fa-arrow-up-right-from-square ml-auto text-[10px] text-slate-400"></i>
+                                </a>
                             {% endif %}
                             {% if admin_route('appearance') %}
                                 {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('appearance'), icon: 'fa-solid fa-palette', label: 'nav.appearance'|trans }) }}
