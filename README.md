@@ -438,6 +438,44 @@ export { default } from '@jul6art/admin-bundle/controllers/decimal_controller';
 > quantity field shows "89.00". `DecimalController.parse()` is static and public, for controllers
 > that read a possibly-formatted value (line totals).
 
+#### A short collection (`form--collection`, ordering 1.26)
+
+Adds, removes and — since 1.26 — reorders the rows of a `CollectionType` in place: the links of a
+footer, the steps of a checklist. Declare the collection `allow_add`, `allow_delete` and
+`by_reference: false`, and render the prototype and the rows with the same template.
+
+```twig
+{% macro link_row(row) %}
+    <div data-form--collection-target="item">
+        {{ form_row(row.label) }}
+        {{ form_widget(row.position, {attr: {'data-form--collection-target': 'position'}}) }}
+        <button type="button" data-action="form--collection#up">Up</button>
+        <button type="button" data-action="form--collection#down">Down</button>
+        <button type="button" data-action="form--collection#remove">Remove</button>
+    </div>
+{% endmacro %}
+
+<div data-controller="form--collection" data-form--collection-prototype-value="{{ _self.link_row(form.links.vars.prototype)|e('html_attr') }}">
+    <div data-form--collection-target="container">
+        {% for row in form.links %}{{ _self.link_row(row) }}{% endfor %}
+    </div>
+    <button type="button" data-action="form--collection#add">Add</button>
+</div>
+```
+
+```js
+// assets/controllers/form/collection_controller.js
+export { default } from '@jul6art/admin-bundle/controllers/collection_controller';
+```
+
+> ⚠️ **Moving a row does not reorder what Symfony receives**: a field keeps its name, and its name
+> carries its index. The order travels in each row's hidden `position` field (an `IntegerType` or
+> `HiddenType` of the entry), which the controller renumbers after every move, addition and
+> removal. Sort by it when you save; a row without one moves on screen only.
+
+Two buttons rather than a drag handle: a keyboard and a screen reader reach them like any other
+button, and the focus stays on the button just pressed, which moved with its row.
+
 ### Keyboard shortcuts
 
 Fast data entry for whoever types a hundred records in a row: open a creation screen, land on the

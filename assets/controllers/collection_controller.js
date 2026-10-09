@@ -20,9 +20,24 @@ import { Controller } from "@hotwired/stimulus";
  * ⚠️ The prototype and the existing rows MUST be rendered by the same template. A prototype that
  * drifts from the rows produces an added row with a different structure — different classes, a
  * different remove button — and this controller stops finding its targets in it.
+ *
+ * **Ordering (1.26)** — `up` and `down` move a row one place, for a short ordered collection (the
+ * links of a footer, the steps of a checklist): two buttons per row, which a keyboard and a screen
+ * reader reach like any button, where dragging would need a second path for them anyway.
+ *
+ * ⚠️ Moving a row does NOT reorder what Symfony receives: a field keeps its name, and its name
+ * carries its index. The order travels in a hidden field of each row marked
+ * `data-form--collection-target="position"`, renumbered here after every move, addition and
+ * removal; the application sorts by it when it saves. A row without one moves on screen only.
+ *
+ * ```twig
+ * <button type="button" data-action="form--collection#up">…</button>
+ * <button type="button" data-action="form--collection#down">…</button>
+ * {{ form_widget(row.position, {attr: {'data-form--collection-target': 'position'}}) }}
+ * ```
  */
 export default class extends Controller {
-    static targets = ["container", "item"];
+    static targets = ["container", "item", "position"];
 
     static values = {
         prototype: String,
@@ -51,6 +66,7 @@ export default class extends Controller {
         }
 
         this.containerTarget.appendChild(item);
+        this._renumber();
 
         // Focus the first field: whoever just clicked "Add" wants to type, not to hunt for where.
         item.querySelector("input, select, textarea")?.focus();
@@ -62,5 +78,51 @@ export default class extends Controller {
         // `closest` on the item target rather than `parentElement`: the template's structure can
         // gain a level without breaking removal.
         event.currentTarget.closest('[data-form--collection-target="item"]')?.remove();
+        this._renumber();
+    }
+
+    /** Moves the row one place up. */
+    up(event) {
+        this._move(event, -1);
+    }
+
+    /** Moves the row one place down. */
+    down(event) {
+        this._move(event, 1);
+    }
+
+    _move(event, step) {
+        event.preventDefault();
+
+        const button = event.currentTarget;
+        const item = button.closest('[data-form--collection-target="item"]');
+        const index = this.itemTargets.indexOf(item);
+        const neighbour = this.itemTargets[index + step];
+
+        if (index < 0 || !neighbour) {
+            return;
+        }
+
+        if (step < 0) {
+            neighbour.before(item);
+        } else {
+            neighbour.after(item);
+        }
+
+        this._renumber();
+
+        // The keyboard stays where it was: on the button just pressed, which moved with its row.
+        button.focus();
+    }
+
+    /** Every row's position field, in the order the rows now stand. */
+    _renumber() {
+        this.itemTargets.forEach((item, index) => {
+            const position = item.querySelector('[data-form--collection-target="position"]');
+
+            if (position) {
+                position.value = String(index);
+            }
+        });
     }
 }
