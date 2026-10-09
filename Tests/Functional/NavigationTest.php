@@ -39,7 +39,8 @@ final class NavigationTest extends AbstractFunctionalTestCase
     {
         $items = $this->builder(granted: [])->build()[0]->items;
 
-        self::assertSame(['admin_widget_index'], array_map(static fn (NavItem $i): string => $i->route, $items));
+        // `site_home` ne demande aucune permission : il reste.
+        self::assertSame(['admin_widget_index', 'site_home'], array_map(static fn (NavItem $i): string => $i->route, $items));
     }
 
     public function testAnItemWhosePermissionIsGrantedStays(): void

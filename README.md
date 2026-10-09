@@ -350,6 +350,20 @@ the item's `labelDomain`) — "3", read after "Messages", does not say three wha
 > office.** Keep it to one cheap query (a `COUNT` on an indexed column); a live count belongs to
 > the screen that shows the messages.
 
+**An entry that opens a new tab** (1.27) — the public site of a back office, a guide: a page read
+beside the form one is filling, not instead of it:
+
+```php
+new NavItem('site_home', 'nav.site', 'fa-solid fa-globe',
+    newTab: true,                                  // target="_blank" rel="noopener noreferrer"
+    newTabLabelKey: 'nav.new_tab',                 // the default; what a screen reader hears
+),
+```
+
+An arrow follows the label (`.admin-nav-new-tab`), and the label is followed, for a screen
+reader, by the sentence `newTabLabelKey` translates in the item's `labelDomain` — the project adds
+that key to its catalogue.
+
 An application that already has its menu in Twig overrides `admin_sidebar_nav` and keeps it. Both
 paths are supported; the contract is for projects starting from scratch.
 

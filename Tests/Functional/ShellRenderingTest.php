@@ -277,6 +277,21 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertSame(1, substr_count($html, 'class="admin-nav-badge"'), 'Une entrée sans compteur n\'a pas de pastille.');
     }
 
+    /** Une entrée qui ouvre un nouvel onglet le fait savoir — à l'écran par une flèche, à l'oreille par une phrase. */
+    public function testANewTabEntryOpensElsewhereAndSaysSo(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING);
+
+        self::assertMatchesRegularExpression('#<a href="/" target="_blank" rel="noopener noreferrer"#', $html);
+        self::assertMatchesRegularExpression(
+            '#nav\.widget_site\s*<i class="fa-solid fa-arrow-up-right-from-square admin-nav-new-tab" aria-hidden="true"></i><span class="admin-sr">nav\.new_tab</span>#',
+            $html,
+        );
+        self::assertSame(1, substr_count($html, 'admin-nav-new-tab'), 'Les autres entrées restent dans l\'onglet.');
+        self::assertSame(1, substr_count($html, '<a href="/admin/widgets"'), 'Une entrée ordinaire n\'a pas de cible.');
+        self::assertStringNotContainsString('<a href="/admin/widgets" target', $html);
+    }
+
     /**
      * Une route non configurée MASQUE son lien. `path('')` serait une 500 sur chaque page du
      * back-office, pour un lien optionnel.

@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 return static function (RoutingConfigurator $routes): void {
     foreach ([
         'admin_dashboard' => '/admin',
+        'site_home' => '/',
         'admin_security_login' => '/login',
         'admin_security_logout' => '/logout',
         'admin_security_register' => '/register',

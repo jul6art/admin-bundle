@@ -23,7 +23,7 @@
 #}
 {% set _active = item.route == active_item_route %}
 <li>
-    <a href="{{ path(item.route, item.routeParameters) }}"
+    <a href="{{ path(item.route, item.routeParameters) }}"{% if item.newTab %} target="_blank" rel="noopener noreferrer"{% endif %}
        class="flex items-center gap-3 px-2 admin-touch-row rounded-lg text-sm transition-colors
               {% if _active %}
                 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 border-l-2 border-accent-500 pl-[6px]
@@ -35,6 +35,10 @@
         {#- Le compteur (1.25) : le nombre seul à l'écran, des mots pour un lecteur d'écran. -#}
         {%- if item.badge %}
             <span class="admin-nav-badge"><span aria-hidden="true">{{ item.badge }}</span><span class="admin-sr">{{ item.badgeLabelKey|trans({'%count%': item.badge}, item.labelDomain) }}</span></span>
+        {%- endif %}
+        {#- Un nouvel onglet (1.27) : une flèche à l'écran, une phrase pour un lecteur d'écran. -#}
+        {%- if item.newTab %}
+            <i class="fa-solid fa-arrow-up-right-from-square admin-nav-new-tab" aria-hidden="true"></i><span class="admin-sr">{{ item.newTabLabelKey|trans({}, item.labelDomain) }}</span>
         {%- endif %}
     </a>
 </li>

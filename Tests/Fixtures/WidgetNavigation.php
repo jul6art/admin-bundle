@@ -20,6 +20,7 @@ final class WidgetNavigation implements NavigationProviderInterface
             new NavItem('admin_widget_index', 'nav.widget_list', 'fa-solid fa-list', badge: 3),
             new NavItem('admin_widget_show', 'nav.widget_secret', 'fa-solid fa-lock', permission: 'widget:secret', routeParameters: ['id' => 1]),
             new NavItem('admin_report_index', 'nav.widget_reports', 'fa-solid fa-chart-pie', feature: 'reporting'),
+            new NavItem('site_home', 'nav.widget_site', 'fa-solid fa-globe', newTab: true),
         ], priority: 10);
 
         // Une section entièrement gardée : refusée, elle disparaît avec ses entrées, et sans coûter

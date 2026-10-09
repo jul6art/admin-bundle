@@ -785,6 +785,11 @@
         line-height: 1.25rem;
     }
 
+    /* L'entrée qui ouvre un nouvel onglet (1.27) : la flèche, discrète, au bout de la ligne. */
+    .admin-nav-new-tab {
+        @apply ml-auto text-xs opacity-60;
+    }
+
     /*
      * La messagerie (`@Admin/inbox/_layout.html.twig`, 1.25) : les dossiers en pilules, puis deux
      * volets dans un même panneau — la liste, le message ouvert.

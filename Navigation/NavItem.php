@@ -39,6 +39,13 @@ final readonly class NavItem
      * @param string               $badgeLabelKey   translation key (in `$labelDomain`) of the words
      *                                              a screen reader says for the badge; receives
      *                                              `%count%`. The visible pill is the number alone.
+     * @param bool                 $newTab          opens the entry in a new tab (1.27) — the public
+     *                                              site of a back office, a guide: a page read
+     *                                              BESIDE the form one is filling, not instead of
+     *                                              it. An arrow follows the label.
+     * @param string               $newTabLabelKey  translation key (in `$labelDomain`) of what a
+     *                                              screen reader hears after the label: a link that
+     *                                              opens a tab says so before it is followed
      */
     public function __construct(
         public string $route,
@@ -51,6 +58,8 @@ final readonly class NavItem
         public ?string $activePrefix = null,
         public ?int $badge = null,
         public string $badgeLabelKey = 'nav.badge',
+        public bool $newTab = false,
+        public string $newTabLabelKey = 'nav.new_tab',
     ) {
     }
 
