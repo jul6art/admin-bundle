@@ -1,0 +1,10 @@
+{#
+    A project dressing the sign-in card with `auth_aside`: an illustrated half and a link back to
+    its public site. What the shell must guarantee is where the aside lands — inside the shell,
+    as its direct children, before the card.
+#}
+{% extends '@Admin/security/_card.html.twig' %}
+
+{% block auth_title %}Sign in{% endblock %}
+{% block auth_aside %}<aside data-project-aside>ASIDE</aside><a data-project-back href="https://example.com">Back</a>{% endblock %}
+{% block auth_body %}<form data-card-form></form>{% endblock %}

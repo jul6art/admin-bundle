@@ -527,6 +527,23 @@ They carry the branding and honour `admin.routes` — closing public sign-up is 
 overriding a template. The register and reset templates expect a `form` from the application: the
 bundle does not decide what an account is made of, it draws the screen.
 
+They all extend `@Admin/security/_card.html.twig`. A project dresses the five at once by overriding
+that ONE file and extending the original through `@!Admin` — never by copying the pages:
+
+```twig
+{# templates/bundles/AdminBundle/security/_card.html.twig #}
+{% extends '@!Admin/security/_card.html.twig' %}
+
+{% block auth_topbar %}{{ include('_partials/_locale_switcher.html.twig') }}{% endblock %}
+{% block auth_aside %}{{ include('security/_aside.html.twig') }}{% endblock %}
+```
+
+| Block | What goes in |
+| --- | --- |
+| `auth_aside` (1.24) | beside the card: an illustrated half, a brand, a link back to the public site. Its elements are DIRECT children of `.auth-shell` — the project places them (absolute on a wide screen, in the flow on a phone, `order` for what comes after the card). Empty by default |
+| `auth_topbar` | above the card, right-aligned — a language picker |
+| `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer` | the card itself, filled by each page |
+
 > ⚠️ The password-reset flow must never reveal whether an address exists. Both cases lead to the
 > same confirmation page with the same text — a different message turns the form into an
 > account-enumeration oracle. The shipped templates already read that way; keep them that way.

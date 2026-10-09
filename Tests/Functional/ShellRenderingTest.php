@@ -217,6 +217,41 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * **`auth_aside` (1.24) pose ses éléments DANS la coquille, comme ses enfants directs, avant la
+     * carte.** C'est la promesse qui permet au projet de les placer — en absolu sur grand écran,
+     * dans le flux sur un téléphone — sans dupliquer les gabarits d'authentification.
+     */
+    public function testTheAsideLandsInTheShellAsItsDirectChildrenBeforeTheCard(): void
+    {
+        $html = $this->render('aside_card.html.twig', self::BRANDING, route: 'admin_security_login');
+
+        self::assertMatchesRegularExpression(
+            '#<div class="auth-shell">\s*<aside data-project-aside>ASIDE</aside><a data-project-back href="https://example.com">Back</a>#',
+            $html,
+            'Les éléments de l\'aparté sont les premiers enfants de la coquille.',
+        );
+
+        $aside = strpos($html, 'data-project-aside');
+        $card = strpos($html, 'data-card-form');
+
+        self::assertIsInt($aside);
+        self::assertIsInt($card);
+        self::assertLessThan($card, $aside, 'L\'aparté précède la carte.');
+    }
+
+    /** Vide par défaut : une page qui ne le remplit pas rend exactement la coquille d'avant 1.24. */
+    public function testAnEmptyAsideLeavesTheShellAsItWas(): void
+    {
+        $html = $this->render('@Admin/security/login.html.twig', self::BRANDING, route: 'admin_security_login');
+
+        self::assertMatchesRegularExpression(
+            '#<div class="auth-shell">\s*<div class="w-full max-w-md flex justify-end mb-3">#',
+            $html,
+            'Sans aparté, le premier enfant de la coquille reste la barre du haut.',
+        );
+    }
+
+    /**
      * L'entrée de la liste reste allumée sur une page de détail. C'est un préfixe de nom de route
      * et non une égalité : sinon la barre latérale se vide dès qu'on ouvre une fiche.
      */

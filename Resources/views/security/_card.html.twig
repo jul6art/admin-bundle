@@ -6,8 +6,8 @@
     `@Admin/layout.html.twig` — mais elles étendent la même base, et héritent donc du thème, des
     jetons d'accent et des toasts.
 
-    Blocs : `auth_topbar` (au-dessus de la carte, aligné à droite), `auth_title`,
-    `auth_subtitle`, `auth_body`, `auth_footer`.
+    Blocs : `auth_aside` (à côté de la carte, hors de son flux), `auth_topbar` (au-dessus de la
+    carte, aligné à droite), `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer`.
 
     ⚠️ `admin_base_template()`, jamais `'@Admin/base.html.twig'` en dur : c'est l'indirection qui
     permet au projet d'injecter sa chaîne d'assets. En dur, les pages d'authentification rendaient
@@ -26,6 +26,22 @@
     boutons inatteignables, et ce sur les quatre pages à la fois.
 #}
 <div class="auth-shell">
+    {#
+        `auth_aside` (1.24) — ce que l'application veut poser À CÔTÉ de la carte : une moitié
+        d'écran illustrée, une marque, des légendes, un lien de retour vers le site public. Vide
+        par défaut, donc sans effet sur l'existant.
+
+        Ses éléments sont des enfants DIRECTS de la coquille, et héritent donc de sa règle
+        (`margin-block: auto`, `flex-shrink: 0`) : c'est au projet de les placer — en absolu sur
+        grand écran, dans le flux sur un téléphone, avec `order` pour ce qui doit passer après la
+        carte. Le bundle ne propose aucune mise en page : un panneau à côté de la carte ne se
+        dessine pas pareil d'un produit à l'autre.
+
+        Même raison d'être qu'`auth_topbar` : sans lui, habiller ces écrans obligeait à dupliquer
+        les gabarits dans `templates/bundles/AdminBundle/security/`.
+    #}
+    {% block auth_aside %}{% endblock %}
+
     {#
         `auth_topbar` — ce que l'application veut poser AU-DESSUS de la carte, aligné à droite :
         un sélecteur de langue, typiquement. Vide par défaut, donc sans effet sur l'existant.
