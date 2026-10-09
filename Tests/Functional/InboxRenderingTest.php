@@ -95,6 +95,27 @@ final class InboxRenderingTest extends AbstractFunctionalTestCase
         self::assertSame('/admin/inbox/3', self::one($page, '[data-shortcut="j"]')->getAttribute('href'));
     }
 
+    /** Un dossier plus long que sa tranche : un lien vers la suivante, que `ui--inbox` suit au défilement. */
+    public function testALongFolderLinksItsOlderSlice(): void
+    {
+        $page = $this->render(['more_url' => '/admin/inbox?before=3'] + $this->inbox());
+
+        $link = self::one($page, '[data-ui--inbox-target="list"] [data-ui--inbox-target="more"] a');
+        self::assertSame('/admin/inbox?before=3', $link->getAttribute('href'));
+        self::assertSame('ui--inbox#more', $link->getAttribute('data-action'));
+        self::assertSame('inbox.more', self::text($link));
+        self::assertSame('inbox.loaded', self::one($page, '.admin-inbox')->getAttribute('data-ui--inbox-loaded-value'));
+        self::assertSame('polite', self::one($page, '[data-ui--inbox-target="status"]')->getAttribute('aria-live'));
+    }
+
+    public function testAFolderThatFitsHasNoOlderLink(): void
+    {
+        $page = $this->render($this->inbox());
+
+        self::assertSame([], self::all($page, '[data-ui--inbox-target="more"]'));
+        self::assertNull(self::one($page, '.admin-inbox')->getAttribute('data-ui--inbox-loaded-value'), 'Sans tranche suivante, pas de clé à traduire.');
+    }
+
     public function testAnEmptyFolderSaysSo(): void
     {
         $page = $this->render(['folders' => [], 'messages' => [], 'current' => null, 'message_route' => 'admin_inbox_show']);

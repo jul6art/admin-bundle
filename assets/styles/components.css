@@ -884,6 +884,15 @@
         min-height: 100%;
     }
 
+    /* Le lien des messages plus anciens (1.28), que `ui--inbox` suit dès qu'il entre à l'écran. */
+    .admin-inbox__more {
+        @apply p-4 text-center;
+    }
+
+    .admin-inbox__more[aria-busy='true'] {
+        @apply opacity-60;
+    }
+
     .admin-inbox__head {
         @apply grid gap-3 border-b border-slate-200 dark:border-slate-700 p-4;
     }

@@ -652,6 +652,29 @@ folders in place, from the current URL.
 > (Mercure, polling…) calls `ui--inbox#refresh` — through `inbox_attr`, or a small controller of its
 > own. Without one, the list is as fresh as the last page load.
 
+**A long folder, slice by slice (1.28)** — a folder is never rendered whole. The application
+renders a slice and passes `more_url`, the address of the next, older one; the template turns it
+into a link under the list, which works without JavaScript. With it, `ui--inbox` follows the link
+as soon as it scrolls into view, APPENDS the slice and replaces the link by the slice's own — an
+infinite scroll whose link stays the keyboard's way (pressed, it moves the focus to the first
+message added). A screen reader hears `inbox.loaded` (`%count%`); the link reads `inbox.more`.
+
+```twig
+{% embed '@Admin/inbox/_layout.html.twig' with { inbox: {
+    …,
+    more_url: more ? path('admin_message_index', {before: last.id}) : null,
+} } %}
+```
+
+> ⚠️ **The cursor is the application's, and it should not be an offset.** Paginate on the
+> ordering key — `(receivedAt, id)` before the last message shown: a message that arrives between
+> two slices then shifts nothing, where an `OFFSET` repeats one message and skips another.
+
+> ⚠️ **`refresh()` keeps the loaded slices.** The fresh first page replaces the HEAD of the list,
+> down to its own oldest message; what was loaded below stays. A message opened far down should be
+> rendered with the list down to it (and its neighbours), or it is no longer in the list it was
+> opened from.
+
 **Keyboard: `inbox.previous`, `inbox.next`, `inbox.reply`, `inbox.archive` are the application's
 to declare**, not the bundle's — a consumer without an inbox has no business seeing them in its
 cheat-sheet:

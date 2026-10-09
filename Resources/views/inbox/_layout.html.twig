@@ -16,6 +16,7 @@
     | `message_route`        | la route d'un message (paramètre `id`)                             |
     | `message_route_params` | ses autres paramètres (le dossier, par exemple) — facultatif       |
     | `translation_domain`   | le domaine des libellés d'état des messages — facultatif           |
+    | `more_url`             | la tranche suivante, plus ancienne — facultatif (1.28)             |
 
     Les blocs à remplir :
     - `inbox_actions` : les boutons du message ouvert (répondre, archiver…), dans son en-tête ;
@@ -34,7 +35,14 @@
 
     ⚠️ **Les libellés de ce gabarit sont dans le domaine `inbox` de l'application** (le bundle ne
     livre pas de traductions) : `inbox.folders`, `inbox.list`, `inbox.empty`, `inbox.select`,
-    `inbox.unread`, `inbox.back`, `inbox.previous`, `inbox.next`.
+    `inbox.unread`, `inbox.back`, `inbox.previous`, `inbox.next` — et, avec `more_url`, `inbox.more`
+    et `inbox.loaded` (reçoit `%count%`).
+
+    **Les messages plus anciens (1.28)** : un dossier ne se rend pas d'un bloc. L'application donne
+    `more_url`, l'adresse de la tranche suivante (son curseur est à elle) ; le gabarit en fait un
+    lien sous la liste, qui marche sans JavaScript. Avec, `ui--inbox` charge la tranche dès que le
+    lien entre à l'écran et l'ajoute à la liste — un défilement infini, dont le lien reste le chemin
+    du clavier — et l'annonce.
 #}
 {% set _current = inbox.current ?? null %}
 {% set _params = inbox.message_route_params ?? {} %}
@@ -54,7 +62,9 @@
 {% set _kb_previous = keyboard_shortcut('inbox.previous') %}
 {% set _kb_next = keyboard_shortcut('inbox.next') %}
 
-<div class="admin-inbox" data-controller="ui--inbox" data-inbox-pane="{{ _current ? 'reader' : 'list' }}"{% block inbox_attr %}{% endblock %}>
+<div class="admin-inbox" data-controller="ui--inbox" data-inbox-pane="{{ _current ? 'reader' : 'list' }}"
+     {%- if inbox.more_url ?? false %} data-ui--inbox-loaded-value="{{ 'inbox.loaded'|trans({}, 'inbox') }}"{% endif %}{% block inbox_attr %}{% endblock %}>
+    <p class="admin-sr" aria-live="polite" data-ui--inbox-target="status"></p>
     <nav class="admin-inbox__folders" aria-label="{{ 'inbox.folders'|trans({}, 'inbox') }}" data-ui--inbox-target="folders">
         {% for folder in inbox.folders %}
             <a href="{{ folder.url }}" class="admin-inbox__folder"{% if folder.active %} aria-current="page"{% endif %}>
@@ -90,6 +100,11 @@
                         </li>
                     {% endfor %}
                 </ul>
+                {% if inbox.more_url ?? false %}
+                    <p class="admin-inbox__more" data-ui--inbox-target="more">
+                        <a href="{{ inbox.more_url }}" class="btn-secondary" data-action="ui--inbox#more">{{ 'inbox.more'|trans({}, 'inbox') }}</a>
+                    </p>
+                {% endif %}
             {% endif %}
         </section>
 
