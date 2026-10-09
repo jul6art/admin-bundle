@@ -670,6 +670,10 @@ message added). A screen reader hears `inbox.loaded` (`%count%`); the link reads
 > ordering key — `(receivedAt, id)` before the last message shown: a message that arrives between
 > two slices then shifts nothing, where an `OFFSET` repeats one message and skips another.
 
+**The panes fit the screen (1.28.1)**: the list and the open message scroll each in their own pane,
+never the page — `ui--inbox` measures what stands above and below them (`--admin-inbox-top`,
+16rem without JavaScript).
+
 > ⚠️ **`refresh()` keeps the loaded slices.** The fresh first page replaces the HEAD of the list,
 > down to its own oldest message; what was loaded below stays. A message opened far down should be
 > rendered with the list down to it (and its neighbours), or it is no longer in the list it was

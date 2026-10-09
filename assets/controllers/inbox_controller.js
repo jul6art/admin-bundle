@@ -24,6 +24,10 @@ import { Controller } from '@hotwired/stimulus';
  *   presses it (`more`), the focus moves to the first message added, and a screen reader hears
  *   how many came (`loaded`, `%count%`).
  *
+ * - **The panes fit the screen (1.28.1)**: the list and the open message scroll each in their own
+ *   pane, never the page. `--admin-inbox-top` is set to what stands above them (title, folders…),
+ *   measured here and again on resize; the stylesheet falls back to 16rem without JavaScript.
+ *
  * ⚠️ **`refresh()` keeps what was loaded.** Once older slices are in, the fresh first page
  * replaces the HEAD of the list — down to its own oldest message — and the rest stays. Replacing
  * the whole list threw away every slice the user had scrolled through, each time a message
@@ -47,6 +51,10 @@ export default class extends Controller {
         this.element.addEventListener('click', this._onClick);
         this._humanize();
 
+        this._fit = this._fit.bind(this);
+        this._fit();
+        window.addEventListener('resize', this._fit);
+
         // The open message stays in sight in a long list.
         if (this.hasListTarget) {
             this.listTarget.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -55,8 +63,29 @@ export default class extends Controller {
 
     disconnect() {
         this.element.removeEventListener('click', this._onClick);
+        window.removeEventListener('resize', this._fit);
         this._observer?.disconnect();
         this._observer = null;
+    }
+
+    /**
+     * What stands above the panes — from the top of the screen, as if the page were scrolled to its
+     * top — and below them, down to the end of the page (its bottom padding): the panes take the
+     * rest, and the page no longer scrolls.
+     */
+    _fit() {
+        const panes = this.element.querySelector('.admin-inbox__panes');
+        const scroller = this.element.closest('main') ?? document.scrollingElement;
+
+        if (!panes || !scroller) {
+            return;
+        }
+
+        const box = panes.getBoundingClientRect();
+        const origin = scroller === document.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
+        const top = box.top + scroller.scrollTop;
+        const below = scroller.scrollHeight - (box.bottom - origin + scroller.scrollTop);
+        this.element.style.setProperty('--admin-inbox-top', `${Math.max(0, Math.round(top + below))}px`);
     }
 
     moreTargetConnected(element) {
@@ -64,14 +93,16 @@ export default class extends Controller {
             return;
         }
 
-        // Created on first use: a target can connect before `connect()` runs.
+        // Created on first use: a target can connect before `connect()` runs. The root is the list,
+        // which scrolls in its own pane: the margin then loads the next slice a little before its
+        // link shows.
         this._observer ??= new IntersectionObserver(
             (entries) => {
                 if (entries.some((entry) => entry.isIntersecting)) {
                     this.more();
                 }
             },
-            { rootMargin: '0px 0px 300px 0px' },
+            { root: this.hasListTarget ? this.listTarget : null, rootMargin: '0px 0px 300px 0px' },
         );
         this._observer.observe(element);
     }

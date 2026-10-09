@@ -826,10 +826,26 @@
         @apply rounded-full bg-slate-200 dark:bg-slate-700 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200;
     }
 
+    /*
+     * Les volets tiennent dans l'écran (1.28.1) : la page ne défile pas, la liste et le message
+     * défilent chacun chez eux. `--admin-inbox-top` est la hauteur de ce qui les précède — mesurée
+     * par `ui--inbox`, 16rem sans JavaScript. Sans cette borne, une liste chargée au défilement
+     * allongeait la page entière, et le message ouvert partait avec elle.
+     */
     .admin-inbox__panes {
         @apply overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm;
         display: grid;
-        min-height: 28rem;
+        grid-template-rows: minmax(0, 1fr);
+        height: calc(100vh - var(--admin-inbox-top, 16rem));
+        height: calc(100dvh - var(--admin-inbox-top, 16rem));
+        min-height: 20rem;
+    }
+
+    .admin-inbox__list,
+    .admin-inbox__reader {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     .admin-inbox__items {
