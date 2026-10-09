@@ -333,6 +333,23 @@ controller is right.
 - A section whose items all disappear disappears too — a group header opening onto nothing
   advertises a module the account cannot reach.
 
+**A count beside an entry** (1.25) — unread messages, pending requests:
+
+```php
+new NavItem('admin_message_index', 'nav.messages', 'fa-solid fa-inbox',
+    permission: 'contact_message:list',
+    badge: $this->messages->countUnread(),         // null or 0: no pill
+    badgeLabelKey: 'nav.messages_unread',          // default 'nav.badge', receives %count%
+),
+```
+
+The pill shows the number alone; a screen reader hears the sentence `badgeLabelKey` translates (in
+the item's `labelDomain`) — "3", read after "Messages", does not say three what.
+
+> ⚠️ **The provider computes the count each time the menu is built — on every page of the back
+> office.** Keep it to one cheap query (a `COUNT` on an indexed column); a live count belongs to
+> the screen that shows the messages.
+
 An application that already has its menu in Twig overrides `admin_sidebar_nav` and keeps it. Both
 paths are supported; the contract is for projects starting from scratch.
 
@@ -519,6 +536,95 @@ every one of them as dead and the next tidy-up deletes them.
 > ⚠️ **The action labels are NOT among them.** `KeyboardAction::$labelKey` is read by a settings
 > screen, server-side, in that screen's own domain — putting it in the browser catalogue would
 > bless a dead entry as alive.
+
+### The inbox (1.25)
+
+A mail-client screen for messages the application receives — contact requests, support tickets,
+enquiries: the folders on top, the list on the left, the open message on the right; on a phone, one
+pane at a time, with a way back. The bundle knows no entity: a message is anything implementing
+`Contract\InboxMessageInterface` (id, sender name and e-mail, a plain-text excerpt, the date
+received, read or not, and an optional status label).
+
+The page is **rendered by the server**: one URL per folder, one per open message, links everywhere.
+It works without JavaScript; the controller only helps.
+
+```twig
+{# templates/message/index.html.twig — the list, and the open message when there is one #}
+{% extends '@Admin/layout.html.twig' %}
+
+{% block content %}
+    {% embed '@Admin/inbox/_layout.html.twig' with { inbox: {
+        folders: [
+            { label: 'message.folder.inbox'|trans({}, 'contact'), url: path('admin_message_index'), count: unread, active: folder == 'inbox' },
+            { label: 'message.folder.archived'|trans({}, 'contact'), url: path('admin_message_index', { folder: 'archived' }), count: 0, active: folder == 'archived' },
+        ],
+        messages: messages,                    # InboxMessageInterface[], in list order
+        current: message ?? null,              # the open one, or null
+        message_route: 'admin_message_show',   # takes `id`
+        message_route_params: { folder: folder },
+        translation_domain: 'contact',         # where getInboxStatusLabel() keys live
+    } } %}
+        {% block inbox_actions %}
+            {% if is_granted('contact_message:reply', message) %}
+                <a href="#reply-body" class="btn-primary" data-shortcut="{{ keyboard_shortcut('inbox.reply') }}"
+                   data-shortcut-label="{{ 'message.reply'|trans({}, 'contact') }}">…</a>
+            {% endif %}
+        {% endblock %}
+        {% block inbox_reader %}
+            <div class="whitespace-pre-line">{{ message.body }}</div>
+            {# the thread of replies, the reply form (textarea id="reply-body")… #}
+        {% endblock %}
+    {% endembed %}
+{% endblock %}
+```
+
+| Block | What goes in it |
+|---|---|
+| `inbox_actions` | the open message's buttons (reply, archive, delete…), in its header |
+| `inbox_reader` | its content — the text, the replies, the form. The bundle renders the sender, the e-mail and the date above it |
+| `inbox_attr` | more attributes on the root — a second controller, typically |
+
+Register the controller as `ui--inbox`:
+
+```js
+// assets/controllers/ui/inbox_controller.js
+export { default } from '@jul6art/admin-bundle/controllers/inbox_controller';
+```
+
+It turns every date into "3 hours ago" in the page's language (`Intl.RelativeTimeFormat`, the
+absolute date moving to `title`), keeps the open message in sight in a long list, and focuses a
+field a link points to (`<a href="#reply-body">`). Its `refresh()` action reloads the list and the
+folders in place, from the current URL.
+
+> ⚠️ **The bundle owns no real-time feed.** When a message arrives, the application's own channel
+> (Mercure, polling…) calls `ui--inbox#refresh` — through `inbox_attr`, or a small controller of its
+> own. Without one, the list is as fresh as the last page load.
+
+**Keyboard: `inbox.previous`, `inbox.next`, `inbox.reply`, `inbox.archive` are the application's
+to declare**, not the bundle's — a consumer without an inbox has no business seeing them in its
+cheat-sheet:
+
+```yaml
+admin:
+    keyboard:
+        actions:
+            inbox.previous: { default: 'k', label: 'keyboard.action.inbox_previous' }
+            inbox.next:     { default: 'j', label: 'keyboard.action.inbox_next' }
+            inbox.reply:    { default: 'r', label: 'keyboard.action.inbox_reply' }
+            inbox.archive:  { default: 'e', label: 'keyboard.action.inbox_archive' }
+```
+
+The previous/next links of the reader take their combo from the first two as soon as they are
+declared; undeclared, they stay plain links. The last two are yours to put on your own buttons in
+`inbox_actions`, as above — a button a permission withholds is a shortcut that does not exist.
+
+The template's own words are in the application's **`inbox`** domain (the bundle ships no
+translations): `inbox.folders`, `inbox.list`, `inbox.empty`, `inbox.select`, `inbox.unread`,
+`inbox.back`, `inbox.previous`, `inbox.next`. All of them are rendered server-side — none belongs
+in the browser catalogue.
+
+> ⚠️ **The excerpt is plain text, and escaped.** `getInboxExcerpt()` is what the list shows under the
+> sender; strip the markup before returning it, or the list shows the tags.
 
 ### The sign-in pages
 

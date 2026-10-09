@@ -778,6 +778,178 @@
     .delivery-planning-tour-dropzone > .delivery-planning-item > .delivery-planning-item__date {
         @apply text-[10px] whitespace-nowrap;
     }
+
+    /* Le compteur d'une entrée de menu (`NavItem::$badge`, 1.25), poussé au bout de la ligne. */
+    .admin-nav-badge {
+        @apply ml-auto rounded-full bg-accent-500 px-2 text-xs font-semibold text-white;
+        line-height: 1.25rem;
+    }
+
+    /*
+     * La messagerie (`@Admin/inbox/_layout.html.twig`, 1.25) : les dossiers en pilules, puis deux
+     * volets dans un même panneau — la liste, le message ouvert.
+     *
+     * ⚠️ Écrite en CSS, comme `.admin-touch-row` : les gabarits du bundle ne sont pas scannés par
+     * tous les consommateurs, et un `lg:grid-cols-…` qui n'existerait que là manquerait en silence.
+     * Même raison pour `.admin-sr` (masqué à l'écran, lu par un lecteur d'écran), plutôt que
+     * l'utilitaire `sr-only` : le compteur du menu s'en sert aussi.
+     *
+     * ⚠️ **Un volet à la fois sous 1024 px** (`data-inbox-pane`) : la liste quand aucun message
+     * n'est ouvert, le message sinon, avec un bouton de retour que le bureau n'affiche pas.
+     */
+    .admin-inbox {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .admin-inbox__folders {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .admin-inbox__folder {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 px-3 text-sm text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700;
+        min-height: 2.75rem;
+    }
+
+    .admin-inbox__folder[aria-current='page'] {
+        @apply border-accent-300 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300;
+    }
+
+    .admin-inbox__count {
+        @apply rounded-full bg-slate-200 dark:bg-slate-700 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200;
+    }
+
+    .admin-inbox__panes {
+        @apply overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm;
+        display: grid;
+        min-height: 28rem;
+    }
+
+    .admin-inbox__items {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .admin-inbox__item {
+        @apply grid gap-x-3 gap-y-1 border-b border-l-4 border-b-slate-100 dark:border-b-slate-700 border-l-transparent px-4 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .admin-inbox__item[aria-current='true'] {
+        @apply border-l-accent-500 bg-accent-50 dark:bg-accent-900/30;
+    }
+
+    .admin-inbox__sender {
+        @apply flex items-center gap-2 truncate font-medium text-slate-800 dark:text-slate-100;
+    }
+
+    .admin-inbox__item.is-unread .admin-inbox__sender {
+        @apply font-semibold;
+    }
+
+    .admin-inbox__dot {
+        @apply inline-block h-2 w-2 flex-shrink-0 rounded-full bg-accent-500;
+    }
+
+    .admin-inbox__date {
+        @apply whitespace-nowrap text-xs text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-inbox__excerpt {
+        @apply line-clamp-2 text-slate-600 dark:text-slate-300;
+        grid-column: 1 / -1;
+    }
+
+    .admin-inbox__status {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .admin-inbox__empty,
+    .admin-inbox__placeholder {
+        @apply p-8 text-center text-sm text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-inbox__placeholder {
+        display: grid;
+        place-items: center;
+        min-height: 100%;
+    }
+
+    .admin-inbox__head {
+        @apply grid gap-3 border-b border-slate-200 dark:border-slate-700 p-4;
+    }
+
+    .admin-inbox__nav,
+    .admin-inbox__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .admin-inbox__from {
+        display: grid;
+        gap: 0.125rem;
+    }
+
+    .admin-inbox__name {
+        @apply text-lg font-semibold text-slate-900 dark:text-slate-100;
+    }
+
+    .admin-inbox__email {
+        @apply text-sm text-accent-700 dark:text-accent-300 hover:underline;
+    }
+
+    .admin-inbox__body {
+        @apply p-4;
+    }
+
+    .admin-sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    @media (max-width: 1023.98px) {
+        .admin-inbox[data-inbox-pane='reader'] .admin-inbox__list,
+        .admin-inbox[data-inbox-pane='list'] .admin-inbox__reader {
+            display: none;
+        }
+    }
+
+    @media (min-width: 640px) {
+        .admin-inbox__head {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .admin-inbox__nav {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .admin-inbox__panes {
+            grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+        }
+
+        .admin-inbox__list {
+            @apply border-r border-slate-200 dark:border-slate-700;
+        }
+
+        .admin-inbox__back {
+            display: none;
+        }
+    }
 }
 
 /*

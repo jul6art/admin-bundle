@@ -1,0 +1,5 @@
+{# Une page de messagerie telle qu'une application l'écrit : les deux blocs qui lui reviennent. #}
+{% embed '@Admin/inbox/_layout.html.twig' with {inbox: inbox} %}
+    {% block inbox_actions %}<button type="button" class="btn-secondary">ACTION-ARCHIVE</button>{% endblock %}
+    {% block inbox_reader %}<p>BODY-OF-THE-MESSAGE</p>{% endblock %}
+{% endembed %}

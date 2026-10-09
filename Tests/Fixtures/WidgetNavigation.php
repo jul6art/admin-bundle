@@ -17,7 +17,7 @@ final class WidgetNavigation implements NavigationProviderInterface
     public function sections(): iterable
     {
         yield new NavSection('widgets', 'nav.widgets', 'fa-solid fa-cube', [
-            new NavItem('admin_widget_index', 'nav.widget_list', 'fa-solid fa-list'),
+            new NavItem('admin_widget_index', 'nav.widget_list', 'fa-solid fa-list', badge: 3),
             new NavItem('admin_widget_show', 'nav.widget_secret', 'fa-solid fa-lock', permission: 'widget:secret', routeParameters: ['id' => 1]),
             new NavItem('admin_report_index', 'nav.widget_reports', 'fa-solid fa-chart-pie', feature: 'reporting'),
         ], priority: 10);

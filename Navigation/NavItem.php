@@ -32,6 +32,13 @@ final readonly class NavItem
      *                                              Defaults to `$route` minus a trailing `_index`,
      *                                              so a listing stays highlighted on its own
      *                                              show/edit pages.
+     * @param int|null             $badge           a count shown beside the label — unread
+     *                                              messages, pending requests. `null` or `0` shows
+     *                                              nothing. The provider computes it when it builds
+     *                                              the menu, so keep it to one cheap query.
+     * @param string               $badgeLabelKey   translation key (in `$labelDomain`) of the words
+     *                                              a screen reader says for the badge; receives
+     *                                              `%count%`. The visible pill is the number alone.
      */
     public function __construct(
         public string $route,
@@ -42,6 +49,8 @@ final readonly class NavItem
         public ?string $feature = null,
         public array $routeParameters = [],
         public ?string $activePrefix = null,
+        public ?int $badge = null,
+        public string $badgeLabelKey = 'nav.badge',
     ) {
     }
 

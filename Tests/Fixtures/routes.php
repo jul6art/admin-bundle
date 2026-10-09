@@ -21,6 +21,8 @@ return static function (RoutingConfigurator $routes): void {
         'admin_widget_index' => '/admin/widgets',
         'admin_widget_show' => '/admin/widgets/{id}',
         'admin_report_index' => '/admin/reports',
+        'admin_inbox_index' => '/admin/inbox',
+        'admin_inbox_show' => '/admin/inbox/{id}',
     ] as $name => $path) {
         $routes->add($name, $path);
     }

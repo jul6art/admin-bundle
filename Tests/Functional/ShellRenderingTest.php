@@ -263,6 +263,21 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * Le compteur d'une entrée (1.25) : une pastille pour l'œil, une phrase pour le lecteur
+     * d'écran — « 3 » seul, lu après « Widgets », ne dit pas trois quoi.
+     */
+    public function testAnItemCountShowsAPillAndSaysWhatItCounts(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING);
+
+        self::assertMatchesRegularExpression(
+            '#<span class="admin-nav-badge"><span aria-hidden="true">3</span><span class="admin-sr">nav\.badge</span></span>#',
+            $html,
+        );
+        self::assertSame(1, substr_count($html, 'class="admin-nav-badge"'), 'Une entrée sans compteur n\'a pas de pastille.');
+    }
+
+    /**
      * Une route non configurée MASQUE son lien. `path('')` serait une 500 sur chaque page du
      * back-office, pour un lien optionnel.
      */

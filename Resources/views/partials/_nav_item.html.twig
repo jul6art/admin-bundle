@@ -32,5 +32,9 @@
               {% endif %}">
         <i class="{{ item.icon }} w-4 text-center flex-shrink-0"></i>
         {{ item.labelKey|trans({}, item.labelDomain) }}
+        {#- Le compteur (1.25) : le nombre seul à l'écran, des mots pour un lecteur d'écran. -#}
+        {%- if item.badge %}
+            <span class="admin-nav-badge"><span aria-hidden="true">{{ item.badge }}</span><span class="admin-sr">{{ item.badgeLabelKey|trans({'%count%': item.badge}, item.labelDomain) }}</span></span>
+        {%- endif %}
     </a>
 </li>

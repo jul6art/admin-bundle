@@ -1,0 +1,131 @@
+{#
+    La messagerie (admin-bundle ≥ 1.25) : la liste des messages à gauche, celui qu'on lit à
+    droite ; sur un téléphone, un volet à la fois (la liste, puis le message, avec un retour).
+
+    Rendue par le serveur : une page par dossier, une page par message ouvert, des liens partout.
+    Le contrôleur `ui--inbox` ne fait qu'aider — dates relatives, rechargement de la liste quand
+    l'application le lui demande (action `refresh`), focus du formulaire de réponse.
+
+    Attend une variable `inbox` :
+
+    | Clé                    | Rôle                                                              |
+    |------------------------|-------------------------------------------------------------------|
+    | `folders`              | les dossiers : `{label, url, count, active}`                       |
+    | `messages`             | des `InboxMessageInterface`, dans l'ordre de la liste              |
+    | `current`              | le message ouvert, ou `null`                                       |
+    | `message_route`        | la route d'un message (paramètre `id`)                             |
+    | `message_route_params` | ses autres paramètres (le dossier, par exemple) — facultatif       |
+    | `translation_domain`   | le domaine des libellés d'état des messages — facultatif           |
+
+    Les blocs à remplir :
+    - `inbox_actions` : les boutons du message ouvert (répondre, archiver…), dans son en-tête ;
+    - `inbox_reader` : son contenu (le texte, le fil des réponses, le formulaire) ;
+    - `inbox_attr` : des attributs de plus sur la racine (un second contrôleur, par exemple).
+
+    ⚠️ **Les raccourcis sont des liens et des boutons visibles** (`data-shortcut`), que le routeur
+    clavier du bundle clique : `inbox.previous` et `inbox.next` sont posés ici ; `inbox.reply` et
+    `inbox.archive` se posent dans `inbox_actions`. Un bouton qu'une permission retire est un
+    raccourci qui n'existe pas.
+
+    ⚠️ **Ces quatre actions, l'APPLICATION les déclare** (`admin.keyboard.actions`, voir le README) :
+    le catalogue du bundle ne porte que les gestes de la coquille, et un consommateur sans
+    messagerie n'a pas à voir dans son antisèche des touches qui ne font rien. Non déclarée, une
+    action n'a pas de combinaison (`keyboard_shortcut()` rend `''`) et le lien reste un lien.
+
+    ⚠️ **Les libellés de ce gabarit sont dans le domaine `inbox` de l'application** (le bundle ne
+    livre pas de traductions) : `inbox.folders`, `inbox.list`, `inbox.empty`, `inbox.select`,
+    `inbox.unread`, `inbox.back`, `inbox.previous`, `inbox.next`.
+#}
+{% set _current = inbox.current ?? null %}
+{% set _params = inbox.message_route_params ?? {} %}
+{% set _status_domain = inbox.translation_domain ?? 'inbox' %}
+
+{# Les voisins du message ouvert, dans l'ordre de la liste : `j` et `k` y mènent. #}
+{% set _previous = null %}
+{% set _next = null %}
+{% if _current %}
+    {% set _seen = false %}
+    {% for message in inbox.messages %}
+        {% if _seen and _next is null %}{% set _next = message %}{% endif %}
+        {% if message.inboxId == _current.inboxId %}{% set _seen = true %}{% elseif not _seen %}{% set _previous = message %}{% endif %}
+    {% endfor %}
+{% endif %}
+{% set _back_url = (inbox.folders|filter(folder => folder.active)|first).url ?? null %}
+{% set _kb_previous = keyboard_shortcut('inbox.previous') %}
+{% set _kb_next = keyboard_shortcut('inbox.next') %}
+
+<div class="admin-inbox" data-controller="ui--inbox" data-inbox-pane="{{ _current ? 'reader' : 'list' }}"{% block inbox_attr %}{% endblock %}>
+    <nav class="admin-inbox__folders" aria-label="{{ 'inbox.folders'|trans({}, 'inbox') }}" data-ui--inbox-target="folders">
+        {% for folder in inbox.folders %}
+            <a href="{{ folder.url }}" class="admin-inbox__folder"{% if folder.active %} aria-current="page"{% endif %}>
+                {{- folder.label -}}
+                {% if folder.count %} <span class="admin-inbox__count">{{ folder.count }}</span>{% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+
+    <div class="admin-inbox__panes">
+        <section class="admin-inbox__list" aria-label="{{ 'inbox.list'|trans({}, 'inbox') }}" data-ui--inbox-target="list">
+            {% if inbox.messages is empty %}
+                <p class="admin-inbox__empty">{{ 'inbox.empty'|trans({}, 'inbox') }}</p>
+            {% else %}
+                <ul class="admin-inbox__items" role="list">
+                    {% for message in inbox.messages %}
+                        <li>
+                            <a href="{{ path(inbox.message_route, _params|merge({id: message.inboxId})) }}"
+                               class="admin-inbox__item{{ message.read ? '' : ' is-unread' }}"
+                               {%- if _current and message.inboxId == _current.inboxId %} aria-current="true"{% endif %}>
+                                <span class="admin-inbox__sender">
+                                    {%- if not message.read -%}
+                                        <span class="admin-inbox__dot" aria-hidden="true"></span><span class="admin-sr">{{ 'inbox.unread'|trans({}, 'inbox') }} — </span>
+                                    {%- endif -%}
+                                    {{ message.senderName }}
+                                </span>
+                                <time class="admin-inbox__date" datetime="{{ message.receivedAt|date('c') }}" data-ui--inbox-target="date">{{ message.receivedAt|date('d/m/Y H:i') }}</time>
+                                <span class="admin-inbox__excerpt">{{ message.inboxExcerpt }}</span>
+                                {% if message.inboxStatusLabel %}
+                                    <span class="badge-neutral admin-inbox__status">{{ message.inboxStatusLabel|trans({}, _status_domain) }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="admin-inbox__reader"{% if _current %} aria-labelledby="admin-inbox-subject"{% else %} aria-label="{{ 'inbox.select'|trans({}, 'inbox') }}"{% endif %}>
+            {% if _current %}
+                <header class="admin-inbox__head">
+                    <nav class="admin-inbox__nav" aria-label="{{ 'inbox.list'|trans({}, 'inbox') }}">
+                        {% if _back_url %}
+                            <a href="{{ _back_url }}" class="btn-secondary admin-inbox__back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{ 'inbox.back'|trans({}, 'inbox') }}</a>
+                        {% endif %}
+                        {% if _previous %}
+                            <a href="{{ path(inbox.message_route, _params|merge({id: _previous.inboxId})) }}" class="btn-secondary"
+                               title="{{ 'inbox.previous'|trans({}, 'inbox') }}"
+                               {%- if _kb_previous %} data-shortcut="{{ _kb_previous }}" data-shortcut-label="{{ 'inbox.previous'|trans({}, 'inbox') }}" data-shortcut-hint="{{ _kb_previous }}"{% endif %}>
+                                <i class="fa-solid fa-chevron-up" aria-hidden="true"></i><span class="admin-sr">{{ 'inbox.previous'|trans({}, 'inbox') }}</span>
+                            </a>
+                        {% endif %}
+                        {% if _next %}
+                            <a href="{{ path(inbox.message_route, _params|merge({id: _next.inboxId})) }}" class="btn-secondary"
+                               title="{{ 'inbox.next'|trans({}, 'inbox') }}"
+                               {%- if _kb_next %} data-shortcut="{{ _kb_next }}" data-shortcut-label="{{ 'inbox.next'|trans({}, 'inbox') }}" data-shortcut-hint="{{ _kb_next }}"{% endif %}>
+                                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i><span class="admin-sr">{{ 'inbox.next'|trans({}, 'inbox') }}</span>
+                            </a>
+                        {% endif %}
+                    </nav>
+                    <div class="admin-inbox__from">
+                        <h2 id="admin-inbox-subject" class="admin-inbox__name">{{ _current.senderName }}</h2>
+                        <a href="mailto:{{ _current.senderEmail }}" class="admin-inbox__email">{{ _current.senderEmail }}</a>
+                        <time class="admin-inbox__date" datetime="{{ _current.receivedAt|date('c') }}" data-ui--inbox-target="date">{{ _current.receivedAt|date('d/m/Y H:i') }}</time>
+                    </div>
+                    <div class="admin-inbox__actions">{% block inbox_actions %}{% endblock %}</div>
+                </header>
+                <div class="admin-inbox__body">{% block inbox_reader %}{% endblock %}</div>
+            {% else %}
+                <p class="admin-inbox__placeholder">{{ 'inbox.select'|trans({}, 'inbox') }}</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
