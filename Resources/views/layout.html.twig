@@ -102,7 +102,7 @@
     </aside>
 
     {# ── Contenu ─────────────────────────────────────────────── #}
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-0">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-0" data-controller="ui--page-title">
         {#
             The top bar has ONE layout, written here; a project only fills the slots.
 
@@ -114,17 +114,22 @@
               notification bell…), then the account menu. Two back-offices on this theme used to
               show the bell and the language picker in opposite orders, each ordering its own slot.
             - `relative` on the header: the mobile search row of `partials/_global_search.html.twig`
-              is positioned against it, full width, right below it.
+              is positioned against it, full width, right below it — and the page title (1.29).
+            - The page title: once the page's `<h1>` has scrolled away, `ui--page-title` copies it
+              into the free space after the left slot. Absolute, out of the flow: taking room there
+              re-centred the search field each time the title came and went.
         #}
         <header class="relative h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-4 z-10">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3" data-ui--page-title-target="start">
                 <button type="button" data-ui-sidebar-toggle class="lg:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
                     <i class="fa-solid fa-bars text-lg"></i>
                 </button>
                 {% block admin_topbar_left %}{% endblock %}
             </div>
 
-            <div class="flex-1 flex justify-end md:justify-center min-w-0">{% block admin_topbar_center %}{% endblock %}</div>
+            <p class="absolute top-1/2 -translate-y-1/2 truncate text-sm font-semibold text-slate-900 dark:text-slate-100 pointer-events-none opacity-0 transition-opacity duration-150 motion-reduce:transition-none" data-ui--page-title-target="label" aria-hidden="true"></p>
+
+            <div class="flex-1 flex justify-end md:justify-center min-w-0" data-ui--page-title-target="limit">{% block admin_topbar_center %}{% endblock %}</div>
 
             {# The user guide (`admin.user_guide`): a route or an address, nothing when neither is set.
                Opened in a new tab, from the top bar and from the account menu — nobody leaves a
@@ -197,7 +202,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 max-h-screen">
+        <main class="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 max-h-screen" data-ui--page-title-target="scroller">
             <div class="{% block container_class %}max-w-7xl 2xl:max-w-[1680px]{% endblock %} mx-auto px-6 py-8">
                 {% block content %}{% endblock %}
             </div>

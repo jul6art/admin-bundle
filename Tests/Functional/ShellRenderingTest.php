@@ -641,6 +641,29 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * **The page title follows the page into the top bar** (1.29), laid over it.
+     *
+     * ⚠️ In the flow, the copy of the `<h1>` shrank the centre slot, and the search field centred in
+     * it slid sideways each time the title came and went. The label is absolute, empty until the
+     * `<h1>` has scrolled away, and silent — the `<h1>` is already read. What scrolls is `<main>`,
+     * and the room ends at the centre slot.
+     */
+    public function testThePageTitleIsLaidOverTheTopBarOutOfItsFlow(): void
+    {
+        $html = $this->render('topbar_layout.html.twig', self::BRANDING, user: self::account());
+
+        self::assertMatchesRegularExpression('#data-controller="ui--page-title">\s*<header\b#', $html, 'Le contrôleur doit tenir la barre ET <main>.');
+        self::assertMatchesRegularExpression(
+            '#<p class="[^"]*\babsolute\b[^"]*\btruncate\b[^"]*\bpointer-events-none\b[^"]*\bopacity-0\b[^"]*" data-ui--page-title-target="label" aria-hidden="true"></p>#',
+            $html,
+            'Le titre doit être hors du flux, vide et muet.',
+        );
+        self::assertMatchesRegularExpression('#data-ui--page-title-target="start">\s*<button[^>]*data-ui-sidebar-toggle#', $html, 'Le titre part après la case de gauche.');
+        self::assertMatchesRegularExpression('#data-ui--page-title-target="limit">\s*<span data-project-search>#', $html, 'Le titre s\'arrête à la case du centre.');
+        self::assertMatchesRegularExpression('#<main [^>]*data-ui--page-title-target="scroller"#', $html, 'Ce qui défile, c\'est <main>.');
+    }
+
+    /**
      * **A reasonable name stays on one line**, and a long one is cut rather than wrapped.
      *
      * Measured with the same name in two back-offices: one line at 1280 px in one, two lines in the

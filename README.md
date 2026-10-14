@@ -226,6 +226,30 @@ project only fills slots:
 Projects that put the language picker in `admin_topbar_actions` still render — move it to
 `admin_topbar_locale` to follow the norm.
 
+#### The page title follows the page (1.29)
+
+Down a long form, the name of the record being edited used to scroll away with the first fields.
+Once the page's `<h1>` has left the screen, the shell now copies its text into the top bar, after
+the left slot; it leaves as soon as the `<h1>` comes back. Nothing to write in the pages — a short
+page never loses its `<h1>`, so nothing ever shows there. Register the controller as
+`ui--page-title`:
+
+```js
+// assets/controllers/ui/page-title_controller.js
+export { default } from '@jul6art/admin-bundle/controllers/page-title_controller';
+```
+
+- **It copies the first `<h1>` of `<main>`.** A page whose `<h1>` does not carry the right name
+  marks another element: `data-ui--page-title-target="source"`.
+- **It never moves the bar.** The copy is laid OVER the free space, up to the first thing of the
+  centre slot (the search field, its magnifier on a phone) or to its end when it is empty — cut
+  with an ellipsis, in full in its `title`, hidden when it neither fits whole nor has 6rem. In the flow, it
+  shrank the centre slot and slid the search field sideways each time it came and went.
+- **For the eyes only**: `aria-hidden`, the `<h1>` is already read. The fade is dropped under
+  reduced motion.
+
+Without the registration, the shell renders as before: the empty label stays invisible.
+
 #### The global search field
 
 ```twig
@@ -431,8 +455,9 @@ module.exports = {
 > ⚠️ **The bundle's `assets/` must be in Tailwind's `content`.** A class used only in the bundle's
 > templates is otherwise purged from the production stylesheet — and only from that one.
 
-Eleven Stimulus controllers ship with it (`appearance`, `theme`, `dropdown`, `collapsible`, `tabs`,
-`sidebar-section`, `toast`, `locale-switcher`, `cookie-consent`, `sidebar`, `password`). Register
+Twelve Stimulus controllers ship with it (`appearance`, `theme`, `dropdown`, `collapsible`, `tabs`,
+`sidebar-section`, `toast`, `locale-switcher`, `cookie-consent`, `sidebar`, `password`,
+`page-title`). Register
 them under `ui--<name>`, which is what the templates address. Four more come with the keyboard
 bricks below, under `core--` and `form--`.
 
