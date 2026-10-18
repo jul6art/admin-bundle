@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Jul6Art\AdminBundle\DependencyInjection;
 
+use Jul6Art\AdminBundle\Ui\EmailPalette;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -96,6 +98,7 @@ class Configuration implements ConfigurationInterface
                             ->info('Whether the product name is written under the logo on the authentication pages. Turn it off when the logo is a wordmark — the name would be there twice.')
                             ->defaultTrue()
                         ->end()
+                        ->append($this->emailPaletteNode())
                     ->end()
                 ->end()
                 ->arrayNode('routes')
@@ -179,5 +182,69 @@ class Configuration implements ConfigurationInterface
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * `branding.email`: the colours of the e-mail layout ({@see EmailPalette}). Every key defaults
+     * to the layout's historical colour, so a product that declares nothing sees no change.
+     */
+    private function emailPaletteNode(): ArrayNodeDefinition
+    {
+        $node = new TreeBuilder('email')->getRootNode();
+        $children = $node
+            ->info('Colours of the transactional e-mail layout (@Admin/email/base.html.twig), as #rrggbb literals — a mail client loads no stylesheet. The defaults are the historical slate layout. A palette whose body text on the panel, heading on the background or button text on the accent falls under 4.5:1 is refused.')
+            ->addDefaultsIfNotSet()
+            ->children();
+
+        foreach (EmailPalette::DEFAULTS as $key => $default) {
+            if ('logo' === $key) {
+                $children->enumNode('logo')
+                    ->info('Which logo variant the e-mail serves: `light` (branding.logo, dark ink) or `dark` (branding.logo_dark, for a dark e-mail).')
+                    ->values(['light', 'dark'])
+                    ->defaultValue($default)
+                ->end();
+
+                continue;
+            }
+
+            $children->scalarNode($key)
+                ->defaultValue($default)
+                ->validate()
+                    ->ifTrue(static fn (mixed $value): bool => !\is_string($value) || 1 !== preg_match('/^#[0-9a-fA-F]{6}$/', $value))
+                    ->thenInvalid(\sprintf('admin.branding.email.%s expects a #rrggbb colour, %%s given.', $key))
+                ->end()
+            ->end();
+        }
+
+        $node->validate()
+            ->ifTrue(static fn (array $palette): bool => [] !== self::illegiblePairs($palette))
+            ->then(static function (array $palette): never {
+                throw new \InvalidArgumentException(\sprintf('admin.branding.email is not legible (%s): a mail must reach %.1f:1.', implode(', ', self::illegiblePairs($palette)), EmailPalette::MINIMUM_CONTRAST));
+            })
+        ->end();
+
+        return $node;
+    }
+
+    /**
+     * The pairs of an e-mail palette that fall under {@see EmailPalette::MINIMUM_CONTRAST}, as
+     * readable failures — empty when the palette is legible.
+     *
+     * @param array<mixed> $palette
+     *
+     * @return list<string>
+     */
+    private static function illegiblePairs(array $palette): array
+    {
+        $colour = static fn (string $key): string => \is_string($palette[$key] ?? null) ? $palette[$key] : EmailPalette::DEFAULTS[$key];
+        $failures = [];
+        foreach (EmailPalette::LEGIBLE_PAIRS as [$foreground, $background]) {
+            $ratio = EmailPalette::contrast($colour($foreground), $colour($background));
+            if ($ratio < EmailPalette::MINIMUM_CONTRAST) {
+                $failures[] = \sprintf('%s on %s is %.2f:1', $foreground, $background, $ratio);
+            }
+        }
+
+        return $failures;
     }
 }

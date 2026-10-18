@@ -56,7 +56,18 @@ final readonly class Branding
          * classe de visibilité. Un projet qui n'a qu'un logo lisible partout n'a rien à changer.
          */
         public string $logoDark = '',
+        /** The colours of the e-mail layout — {@see EmailPalette}; the defaults are the historical slate. */
+        public EmailPalette $email = new EmailPalette(),
     ) {
+    }
+
+    /**
+     * The logo the e-mail layout serves: the dark-theme variant when the palette asks for it and
+     * one exists, the main logo otherwise.
+     */
+    public function emailLogo(): string
+    {
+        return $this->email->usesDarkLogo() && $this->hasLogoDark() ? $this->logoDark : $this->logo;
     }
 
     /** Whether a logo was configured at all — the templates fall back to the name alone. */

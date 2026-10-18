@@ -6,9 +6,11 @@ namespace Jul6Art\AdminBundle\DependencyInjection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Jul6Art\AdminBundle\Ui\Branding;
+use Jul6Art\AdminBundle\Ui\EmailPalette;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Form\AbstractType;
@@ -58,7 +60,8 @@ class AdminExtension extends Extension
             ->setArgument('$homeRoute', self::asString($branding['home_route'] ?? null, 'admin_dashboard'))
             ->setArgument('$logoWidth', \is_int($branding['logo_width'] ?? null) ? $branding['logo_width'] : null)
             ->setArgument('$showName', !\is_bool($branding['show_name'] ?? null) || $branding['show_name'])
-            ->setArgument('$logoDark', self::asString($branding['logo_dark'] ?? null, ''));
+            ->setArgument('$logoDark', self::asString($branding['logo_dark'] ?? null, ''))
+            ->setArgument('$email', self::emailPalette($branding['email'] ?? null));
 
         // Les noms de route et les deux valeurs Mercure atteignent les gabarits par des paramètres
         // de conteneur plutôt que par un global Twig : un gabarit du bundle peut les lire, et
@@ -113,6 +116,28 @@ class AdminExtension extends Extension
                 $loader->load('controller.yaml');
             }
         }
+    }
+
+    /**
+     * The e-mail palette as a service argument: an inline definition — a container argument cannot
+     * be an arbitrary object — built from the validated `branding.email` node, defaults filling in.
+     */
+    private static function emailPalette(mixed $email): Definition
+    {
+        $email = \is_array($email) ? $email : [];
+        $value = static fn (string $key): string => self::asString($email[$key] ?? null, EmailPalette::DEFAULTS[$key]);
+
+        return new Definition(EmailPalette::class, [
+            $value('background'),
+            $value('panel'),
+            $value('border'),
+            $value('text'),
+            $value('heading'),
+            $value('muted'),
+            $value('accent'),
+            $value('accent_text'),
+            $value('logo'),
+        ]);
     }
 
     private static function asString(mixed $value, string $fallback): string

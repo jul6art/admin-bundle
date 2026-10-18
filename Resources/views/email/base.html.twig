@@ -8,7 +8,11 @@
 
     Blocs : `email_title` (préheader + titre), `email_body` (le contenu), `email_footer`.
     Le bouton d'action se pose avec le partial `@Admin/email/_button.html.twig`.
+
+    Les couleurs viennent de `branding.email` (`EmailPalette`) : par défaut, l'ardoise historique, à
+    l'octet près ; un produit y déclare les siennes, un produit de nuit y passe en fond sombre.
 #}
+{% set palette = admin_branding().email %}
 <!DOCTYPE html>
 <html lang="{{ app.request ? app.request.locale : 'en' }}">
 <head>
@@ -16,8 +20,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block email_title %}{{ admin_branding().name }}{% endblock %}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+<body style="margin: 0; padding: 0; background-color: {{ palette.background }}; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: {{ palette.background }}; padding: 32px 16px;">
         <tr>
             <td align="center">
                 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width: 560px; width: 100%;">
@@ -29,25 +33,26 @@
                                     thème clair. Un e-mail ne peut pas s'appuyer sur une classe
                                     CSS — beaucoup de clients de messagerie retirent les feuilles
                                     de style —, donc rendre les deux images en afficherait DEUX
-                                    chez la plupart. Le fond d'un e-mail est blanc dans la quasi-
-                                    totalité des clients : la variante à encre foncée est la bonne.
+                                    chez la plupart. Le fond d'un e-mail est clair par défaut : la
+                                    variante à encre foncée. Un e-mail de nuit (`branding.email.logo:
+                                    dark`) sert `logo_dark` — `Branding::emailLogo()` choisit.
                                 #}
-                                <img src="{{ absolute_url(asset(admin_branding().logo)) }}" alt="{{ admin_branding().name }}" width="{{ admin_branding().logoWidth ?? 140 }}" style="width: {{ admin_branding().logoWidth ?? 140 }}px; height: auto; border: 0;">
+                                <img src="{{ absolute_url(asset(admin_branding().emailLogo)) }}" alt="{{ admin_branding().name }}" width="{{ admin_branding().logoWidth ?? 140 }}" style="width: {{ admin_branding().logoWidth ?? 140 }}px; max-width: 100%; height: auto; border: 0;">
                             {% endif %}
                             {% if admin_branding().showName %}
-                                <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-top: 8px;">{{ admin_branding().name }}</div>
+                                <div style="font-size: 18px; font-weight: 600; color: {{ palette.heading }}; margin-top: 8px;">{{ admin_branding().name }}</div>
                             {% endif %}
                         </td>
                     </tr>
                     <tr>
-                        <td style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0;">
-                            <div style="font-size: 15px; line-height: 1.6; color: #334155;">
+                        <td style="background-color: {{ palette.panel }}; border-radius: 12px; padding: 32px; border: 1px solid {{ palette.border }};">
+                            <div style="font-size: 15px; line-height: 1.6; color: {{ palette.text }};">
                                 {% block email_body %}{% endblock %}
                             </div>
                         </td>
                     </tr>
                     <tr>
-                        <td align="center" style="padding-top: 24px; font-size: 12px; color: #94a3b8;">
+                        <td align="center" style="padding-top: 24px; font-size: 12px; color: {{ palette.muted }};">
                             {% block email_footer %}{{ admin_branding().name }}{% endblock %}
                         </td>
                     </tr>

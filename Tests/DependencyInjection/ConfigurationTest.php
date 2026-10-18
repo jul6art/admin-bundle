@@ -91,6 +91,18 @@ final class ConfigurationTest extends TestCase
                 'home_route' => 'admin_dashboard',
                 'logo_width' => null,
                 'show_name' => true,
+                // Les couleurs historiques du layout d'e-mail : un produit qui ne déclare rien ne voit rien changer.
+                'email' => [
+                    'background' => '#f1f5f9',
+                    'panel' => '#ffffff',
+                    'border' => '#e2e8f0',
+                    'text' => '#334155',
+                    'heading' => '#1e293b',
+                    'muted' => '#94a3b8',
+                    'accent' => '#1e293b',
+                    'accent_text' => '#ffffff',
+                    'logo' => 'light',
+                ],
             ],
             // Les noms par défaut sont ceux que les contrôleurs de ce bundle déclarent ; les autres
             // sont vides, et une route vide MASQUE le lien au lieu de faire échouer le rendu.
@@ -168,6 +180,40 @@ final class ConfigurationTest extends TestCase
         yield 'string' => ['yes'];
         yield 'int' => [0];
         yield 'array' => [[]];
+    }
+
+    /** Une couleur d'e-mail s'écrit dans un attribut `style` : rien d'autre qu'un #rrggbb n'y entre. */
+    public function testAnEmailColourMustBeAHexLiteral(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('admin.branding.email.accent expects a #rrggbb colour');
+
+        $this->process([['branding' => ['email' => ['accent' => 'red; background: url(x)']]]]);
+    }
+
+    /** Une palette illisible est refusée au démarrage, pas découverte dans une boîte mail. */
+    public function testAnIllegibleEmailPaletteIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('accent_text on accent is');
+
+        $this->process([['branding' => ['email' => ['accent' => '#f59e0b', 'accent_text' => '#ffffff']]]]);
+    }
+
+    /** Une palette de nuit lisible passe, logo sombre compris. */
+    public function testANightEmailPaletteIsAccepted(): void
+    {
+        $config = $this->process([['branding' => ['email' => [
+            'background' => '#0e0a1a', 'panel' => '#151026', 'border' => '#2a1f45', 'text' => '#dcd0e6',
+            'heading' => '#f8f1fa', 'muted' => '#ada0c0', 'accent' => '#ff4f9a', 'accent_text' => '#1a0b14', 'logo' => 'dark',
+        ]]]]);
+
+        $branding = $config['branding'];
+        self::assertIsArray($branding);
+        $email = $branding['email'];
+        self::assertIsArray($email);
+        self::assertSame('dark', $email['logo']);
+        self::assertSame('#ff4f9a', $email['accent']);
     }
 
     /**

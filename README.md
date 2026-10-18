@@ -758,6 +758,54 @@ that ONE file and extending the original through `@!Admin` — never by copying 
 > same confirmation page with the same text — a different message turns the form into an
 > account-enumeration oracle. The shipped templates already read that way; keep them that way.
 
+### The e-mail layout (1.30)
+
+`@Admin/email/base.html.twig` and its button `@Admin/email/_button.html.twig` draw a transactional
+mail — logo, name, content panel, footer — entirely inline, since a mail client loads no stylesheet.
+Their colours come from `branding.email`; every key defaults to the historical slate layout, so a
+product that declares nothing sends exactly the mails it sent before.
+
+```yaml
+admin:
+    branding:
+        email:
+            accent: '#1565d8'        # the button: your --accent-600, AA with white text
+            accent_text: '#ffffff'
+```
+
+A product whose identity is dark sends a night mail, with its light wordmark:
+
+```yaml
+admin:
+    branding:
+        logo: 'img/logo-ink.png'
+        logo_dark: 'img/logo-white.png'
+        email:
+            background: '#0e0a1a'
+            panel: '#151026'
+            border: '#2a1f45'
+            text: '#dcd0e6'
+            heading: '#f8f1fa'
+            muted: '#ada0c0'
+            accent: '#ff4f9a'
+            accent_text: '#1a0b14'
+            logo: dark               # serves logo_dark; falls back to logo when there is none
+```
+
+| Key | Default | Where |
+| --- | --- | --- |
+| `background` | `#f1f5f9` | the page around the panel |
+| `panel` / `border` | `#ffffff` / `#e2e8f0` | the content panel |
+| `text` | `#334155` | the content |
+| `heading` | `#1e293b` | the product name under the logo |
+| `muted` | `#94a3b8` | the footer |
+| `accent` / `accent_text` | `#1e293b` / `#ffffff` | the button |
+| `logo` | `light` | `dark` serves `branding.logo_dark` |
+
+> ⚠️ Values are `#rrggbb` literals — they are written into `style` attributes, never CSS custom
+> properties. A palette whose content on the panel, name on the background or button text on the
+> accent falls under 4.5:1 is refused when the container compiles, not discovered in an inbox.
+
 Quality assurance
 -----------------
 
