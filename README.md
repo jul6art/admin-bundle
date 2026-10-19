@@ -95,6 +95,21 @@ when@dev:
 `core.performance.ignored_route_prefix` excludes from collection. Rename them and the dashboard
 starts measuring its own page, adding a record on every visit to what it displays.
 
+### Content-Security-Policy (with `jul6art/core-bundle` ≥ 3.6)
+
+The shell has one inline script — the anti-FOUC in the head, which must run before the first paint
+— and the performance dashboard another. `script-src 'self'` refuses both. With core-bundle ≥ 3.6
+they carry the page's nonce (`admin_csp_nonce()`, which reads the core's `csp_nonce()`), and the
+core's security header listener adds it to the policy. Without the core there is no policy to
+satisfy, and the scripts are written without the attribute.
+
+No template of the bundle carries an inline event handler (`onclick`, `onsubmit`): it has no nonce,
+the policy refuses it. A project's own inline script asks for the nonce the same way:
+
+```twig
+<script nonce="{{ csp_nonce() }}">window.jwtToken = {{ jwt_token()|json_encode|raw }};</script>
+```
+
 ⚠️ Pages shipped by this bundle extend `admin.layout_template` (default `@Admin/layout.html.twig`).
 An application whose own pages go through its own layout — the one exposing `window.jwtToken`, an
 extra top bar — points that key at it, and makes that layout extend `@Admin/layout.html.twig`.

@@ -14,6 +14,9 @@ services:
             $mercureTokenRoute: '%admin.mercure.token_route%'
             $userGuideRoute: '%admin.user_guide.route%'
             $userGuideUrl: '%admin.user_guide.url%'
+            # Le nonce CSP vient du core (≥ 3.6), que ce bundle ne requiert pas : `@?` rend null
+            # quand le service n'existe pas, et la coquille écrit alors ses scripts sans attribut.
+            $cspNonce: '@?Jul6Art\CoreBundle\Security\CspNonce'
             # La table des routes est reconstituée ici plutôt que lue clé par clé dans le gabarit :
             # une clé absente doit rendre '' — donc masquer le lien — et non lever.
             $routes:

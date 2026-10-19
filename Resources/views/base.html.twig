@@ -30,8 +30,12 @@
         `system`, qui exige `matchMedia` et ne peut donc pas être connu côté serveur, et
         resynchronise `localStorage` pour que le choix d'un utilisateur précédent ne fuite pas sur
         une page anonyme.
+
+        Il est INLINE parce qu'il doit tourner avant la première peinture : `admin_csp_nonce()` le
+        laisse passer la CSP (`script-src 'self'` refuse tout script inline), quand core-bundle
+        ≥ 3.6 est là pour envoyer la politique.
     #}
-    <script>(function(){var r=document.documentElement,t=r.getAttribute('data-theme');if(t){var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);r.classList.toggle('dark',d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}}else{try{if(localStorage.getItem('theme')==='dark'){r.classList.add('dark')}}catch(e){}}})();</script>
+    <script{% if admin_csp_nonce() is not null %} nonce="{{ admin_csp_nonce() }}"{% endif %}>(function(){var r=document.documentElement,t=r.getAttribute('data-theme');if(t){var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);r.classList.toggle('dark',d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}}else{try{if(localStorage.getItem('theme')==='dark'){r.classList.add('dark')}}catch(e){}}})();</script>
 
     {% block stylesheets %}{% endblock %}
 

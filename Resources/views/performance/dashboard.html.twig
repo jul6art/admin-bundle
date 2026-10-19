@@ -37,7 +37,7 @@
         <button type="button" class="btn-primary" id="exportJson">{{ 'performance.action.export_json_view'|trans }}</button>
         <a href="{{ path('admin_performance_export', { format: 'csv' }) }}" class="btn-secondary" title="{{ 'performance.action.raw_csv_help'|trans }}">{{ 'performance.action.raw_csv'|trans }}</a>
         <a href="{{ path('admin_performance_export', { format: 'json' }) }}" class="btn-secondary" title="{{ 'performance.action.raw_json_help'|trans }}">{{ 'performance.action.raw_json'|trans }}</a>
-        <form action="{{ path('admin_performance_clear') }}" method="post" class="inline" onsubmit="return confirm('{{ 'performance.action.clear_confirm'|trans }}');">
+        <form action="{{ path('admin_performance_clear') }}" method="post" class="inline" data-confirm="{{ 'performance.action.clear_confirm'|trans }}">
             <button type="submit" class="btn-danger">{{ 'performance.action.clear'|trans }}</button>
         </form>
     </div>
@@ -177,8 +177,16 @@
     .dark .badge-perf.danger { color: rgb(252 165 165); }
 </style>
 
-<script>
+{# Inline, avec les lignes en JSON : `admin_csp_nonce()` le laisse passer la CSP. La confirmation du
+   vidage est écoutée ici — un `onsubmit="…"` n'a pas de nonce, la politique le refuse. #}
+<script{% if admin_csp_nonce() is not null %} nonce="{{ admin_csp_nonce() }}"{% endif %}>
 (function () {
+    document.querySelectorAll('form[data-confirm]').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!confirm(form.dataset.confirm)) event.preventDefault();
+        });
+    });
+
     const rawRows = {{ rows|json_encode|raw }};
     const rawRoutes = {{ route_aggregates|json_encode|raw }};
     const labels = {

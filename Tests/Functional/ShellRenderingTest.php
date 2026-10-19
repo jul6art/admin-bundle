@@ -10,6 +10,7 @@ use Jul6Art\AdminBundle\Appearance\DisplayDensity;
 use Jul6Art\AdminBundle\DependencyInjection\Configuration;
 use Jul6Art\AdminBundle\Form\AppearanceType;
 use Jul6Art\AdminBundle\Tests\Fixtures\Entity\Account;
+use Jul6Art\CoreBundle\Security\CspNonce;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -722,6 +723,59 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         $silenced = $twig->createTemplate("{% extends '@Admin/base.html.twig' %}{% block mercure_meta %}{% endblock %}")->render();
         self::assertStringNotContainsString('mercure-token-url', $silenced);
         self::assertStringNotContainsString('mercure-hub', $silenced);
+    }
+
+    /**
+     * L'anti-FOUC est inline, et `script-src 'self'` refuse tout script inline : avec core-bundle,
+     * il porte le nonce de la page — celui que le listener du core ajoute à la politique, donc
+     * celui que la requête PRINCIPALE garde.
+     */
+    public function testTheAntiFoucScriptCarriesTheNonceOfThePage(): void
+    {
+        $container = $this->boot(bundleConfig: self::BRANDING, withCore: true);
+        $this->pushRequest($container, 'admin_widget_index');
+        $twig = $container->get('twig');
+        self::assertInstanceOf(Environment::class, $twig);
+
+        $html = $twig->render('@Admin/security/login.html.twig');
+
+        $requestStack = $container->get('request_stack');
+        self::assertInstanceOf(RequestStack::class, $requestStack);
+        $nonce = CspNonce::of($requestStack->getMainRequest() ?? Request::create('/'));
+        self::assertNotNull($nonce, 'The shell never asked for the nonce: the policy would refuse its script.');
+        self::assertStringContainsString('<script nonce="'.$nonce.'">(function(){var r=document.documentElement', $html);
+    }
+
+    /** Sans le core, pas de politique à satisfaire : le script sort sans attribut, jamais `nonce=""`. */
+    public function testWithoutTheCoreTheAntiFoucScriptHasNoNonce(): void
+    {
+        $html = $this->render('@Admin/security/login.html.twig', self::BRANDING);
+
+        self::assertStringContainsString('<script>(function(){var r=document.documentElement', $html);
+        self::assertStringNotContainsString('nonce=', $html);
+    }
+
+    /**
+     * Ni `onclick`, ni `onsubmit`, ni `href="javascript:…"` dans un gabarit du bundle : un gestionnaire
+     * inline n'a pas de nonce, la politique le refuse, et le bouton ne fait plus rien le jour où elle
+     * s'applique.
+     */
+    public function testNoTemplateOfTheBundleCarriesAnInlineEventHandler(): void
+    {
+        $templates = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(\dirname(__DIR__, 2).'/Resources/views', \FilesystemIterator::SKIP_DOTS));
+
+        $offenders = [];
+        foreach ($templates as $file) {
+            if (!$file instanceof \SplFileInfo || !str_ends_with($file->getFilename(), '.twig')) {
+                continue;
+            }
+
+            if (1 === preg_match('/\son[a-z]+\s*=|javascript:/i', (string) file_get_contents($file->getPathname()))) {
+                $offenders[] = $file->getFilename();
+            }
+        }
+
+        self::assertSame([], $offenders);
     }
 
     /**

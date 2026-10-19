@@ -10,6 +10,7 @@ use Jul6Art\AdminBundle\Contract\AppearanceAwareInterface;
 use Jul6Art\AdminBundle\Navigation\NavigationBuilder;
 use Jul6Art\AdminBundle\Navigation\NavSection;
 use Jul6Art\AdminBundle\Ui\Branding;
+use Jul6Art\CoreBundle\Security\CspNonce;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Twig\Attribute\AsTwigFunction;
 
@@ -36,6 +37,7 @@ final readonly class AdminUiExtension
         private array $routes = [],
         private string $userGuideRoute = '',
         private string $userGuideUrl = '',
+        private ?CspNonce $cspNonce = null,
     ) {
     }
 
@@ -200,6 +202,18 @@ final readonly class AdminUiExtension
     public function mercureTokenRoute(): string
     {
         return $this->mercureTokenRoute;
+    }
+
+    /**
+     * The page's CSP nonce, for the shell's inline scripts — or null without
+     * `jul6art/core-bundle` ≥ 3.6, which draws it and adds it to the policy it sends. This bundle
+     * does not require the core: without it there is no policy to satisfy, and no attribute to
+     * write (`nonce=""` would match nothing).
+     */
+    #[AsTwigFunction(name: 'admin_csp_nonce')]
+    public function cspNonce(): ?string
+    {
+        return $this->cspNonce?->get();
     }
 
     /**

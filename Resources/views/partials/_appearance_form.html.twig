@@ -140,7 +140,8 @@
                     <button type="button" class="btn-primary">{{ 'appearance.preview.button'|trans }}</button>
                     <span class="badge-active">{{ 'appearance.preview.badge'|trans }}</span>
                 </div>
-                <a href="#" class="text-accent-600 dark:text-accent-400 text-sm font-medium" onclick="return false;">{{ 'appearance.preview.link'|trans }}</a>
+                {# Sans `href` : un lien d'exemple qui ne mène nulle part, sans `onclick` que la CSP refuserait. #}
+                <a class="text-accent-600 dark:text-accent-400 text-sm font-medium cursor-pointer">{{ 'appearance.preview.link'|trans }}</a>
 
                 {# Sample rows so the density setting is demonstrable live —
                    `table.dataTable td` is what the density CSS re-pads. #}
