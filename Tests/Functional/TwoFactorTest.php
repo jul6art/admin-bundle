@@ -122,6 +122,28 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
         self::assertFalse($account->isTotpAuthenticationEnabled());
     }
 
+    /**
+     * Une application à plusieurs espaces importe l'écran une fois par espace : il s'affiche dans
+     * le layout de l'espace et y revient — un client ne passe jamais par le préfixe de la plateforme.
+     */
+    public function testTheScreenImportedInASecondAreaKeepsItsLayoutAndItsPrefix(): void
+    {
+        $account = $this->signIn(self::OFFERED);
+
+        $page = $this->send($this->request('GET', '/app/account/two-factor'));
+        self::assertSame(200, $page->getStatusCode());
+        self::assertStringContainsString('data-area-layout', (string) $page->getContent());
+
+        $secret = $account->getTotpAuthenticationConfiguration()?->getSecret();
+        if (null === $secret || '' === $secret) {
+            self::fail('L\'écran pose un secret en attente.');
+        }
+        self::assertSame(1, preg_match('/name="two_factor_enable\[_token\]"[^>]*value="([^"]+)"/', (string) $page->getContent(), $token));
+        $done = $this->send($this->request('POST', '/app/account/two-factor', ['two_factor_enable' => ['code' => TOTP::createFromSecret($secret)->now(), '_token' => html_entity_decode($token[1])]]));
+
+        self::assertSame('/app/account/two-factor', $done->headers->get('Location'));
+    }
+
     public function testARequiredSecondFactorCannotBeTurnedOff(): void
     {
         $account = $this->signIn(self::REQUIRED);
@@ -141,6 +163,7 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/admin/account/two-factor', $response->headers->get('Location'));
         self::assertSame(200, $this->get()->getStatusCode(), 'L\'écran d\'enrôlement, lui, reste ouvert.');
+        self::assertSame(200, $this->send($this->request('GET', '/app/account/two-factor'))->getStatusCode(), 'Comme chacun de ses imports.');
     }
 
     public function testTheSignInCodePageIsTheAuthenticationCard(): void

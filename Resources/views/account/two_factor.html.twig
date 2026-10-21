@@ -4,14 +4,18 @@
     l'impose (`required`) — l'écran le dit, et `TwoFactorEnforcementListener` y ramène tant qu'elle
     n'est pas active.
 
-    Attend `account`, `form` (null quand il n'y a rien à faire), `required`, `qr_code` et `secret`.
+    Attend `account`, `form` (null quand il n'y a rien à faire), `required`, `qr_code`, `secret`, et
+    `layout` : celui de l'espace qui a importé l'écran sous son préfixe (`_admin_layout`), sinon null.
+
+    ⚠️ `admin_layout_template()` par défaut, jamais `'@Admin/layout.html.twig'` en dur — voir l'écran
+    d'apparence pour le symptôme.
 
     ⚠️ Le QR code est un SVG en URI `data:` (aucune ressource externe, CSP `img-src 'self' data:`), et
     le secret n'est montré QUE pendant l'enrôlement.
 
     Les libellés sont les clés `security.two_factor.*` du catalogue `security` de l'application.
 #}
-{% extends admin_layout_template() %}
+{% extends layout ?? admin_layout_template() %}
 {% trans_default_domain 'security' %}
 
 {% block title %}{{ 'security.two_factor.page_title'|trans }} · {{ admin_branding().name }}{% endblock %}

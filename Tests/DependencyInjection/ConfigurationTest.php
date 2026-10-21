@@ -160,6 +160,7 @@ final class ConfigurationTest extends TestCase
                 'required' => false,
                 'issuer' => null,
                 'exempt_routes' => [],
+                'enrolment_route' => 'admin_account_two_factor',
                 'open_routes' => [],
             ],
         ], $this->process([]));

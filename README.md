@@ -786,6 +786,7 @@ admin:
         required: false   # REQUIRE it: an account without it reaches its enrolment screen and nothing else
         exempt_routes: []  # sign-ins that skip the code — the dev login link, never a production route
         open_routes: []    # with `required`: what an account without it still reaches (a language switch…)
+        enrolment_route: admin_account_two_factor   # with `required`: where such an account is sent
 ```
 
 Off by default, and then nothing is registered. On, the bundle configures scheb for you — the TOTP
@@ -830,6 +831,20 @@ admin_two_factor:
     resource: '@AdminBundle/Controller/TwoFactorController.php'
     type: attribute
     prefix: /admin
+```
+
+**Several connected areas** — `/app` for the customer, `/admin` for the platform — import the screen
+once per area, each with its prefix, name prefix and layout, and link it from their own
+`admin_account_menu_extra`; `admin.routes.two_factor` is then emptied. The screen renders in the
+area's layout and comes back to the area's route, and every import stays open under `required`:
+
+```yaml
+app_two_factor:
+    resource: '@AdminBundle/Controller/TwoFactorController.php'
+    type: attribute
+    prefix: /app
+    name_prefix: app_                                 # app_admin_account_two_factor
+    defaults: { _admin_layout: 'app/layout.html.twig' }
 ```
 
 The screen (`admin_account_two_factor`) enrols with a QR code — an SVG `data:` URI, nothing the

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Jul6Art\AdminBundle\EventListener;
 
 use Jul6Art\AdminBundle\Contract\TwoFactorAwareInterface;
+use Jul6Art\AdminBundle\Controller\TwoFactorController;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +17,9 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  * `admin.two_factor.required: true` — an account that has not enabled the second factor reaches
  * the enrolment screen and nothing else: it can still sign out, and reach the `open_routes`. A
  * background request (XHR) or an API call gets a 403 rather than a redirect it cannot follow.
+ *
+ * Every import of the screen is open — an application with several areas imports it once per area —
+ * and the redirect goes to `admin.two_factor.enrolment_route`.
  *
  * Registered only when the option is on, on `kernel.request` at priority 7: after the firewall
  * (8), which fills the token storage.
@@ -48,7 +52,9 @@ final readonly class TwoFactorEnforcementListener
 
         $request = $event->getRequest();
         $route = $request->attributes->get('_route');
-        if (\is_string($route) && ($route === $this->enrolmentRoute || \in_array($route, $this->openRoutes, true))) {
+        $controller = $request->attributes->get('_controller');
+        if ((\is_string($route) && ($route === $this->enrolmentRoute || \in_array($route, $this->openRoutes, true)))
+            || (\is_string($controller) && str_starts_with($controller, TwoFactorController::class))) {
             return;
         }
 

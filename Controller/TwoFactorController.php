@@ -35,11 +35,26 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  *     type: attribute
  *     prefix: /admin
  * ```
+ *
+ * An application with several connected areas imports it once per area, each under its own
+ * prefix, name prefix and layout — the screen then lives inside the area that links to it:
+ *
+ * ```yaml
+ * app_two_factor:
+ *     resource: '@AdminBundle/Controller/TwoFactorController.php'
+ *     type: attribute
+ *     prefix: /app
+ *     name_prefix: app_
+ *     defaults: { _admin_layout: 'app/layout.html.twig' }
+ * ```
  */
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 final class TwoFactorController extends AbstractController
 {
     public const string ROUTE = 'admin_account_two_factor';
+
+    /** The route default naming the layout of an area that imported the screen under its own prefix. */
+    public const string LAYOUT_ATTRIBUTE = '_admin_layout';
 
     public function __construct(
         private readonly TotpEnrolment $enrolment,
@@ -67,13 +82,19 @@ final class TwoFactorController extends AbstractController
             if ($enabled ? $this->enrolment->disable($account, $code) : $this->enrolment->confirm($account, $code)) {
                 $this->addFlash('success', $enabled ? 'security.two_factor.flash.disabled' : 'security.two_factor.flash.enabled');
 
-                return $this->redirectToRoute(self::ROUTE);
+                // La route qui a servi l'écran, pas `ROUTE` : importé par espace, il y revient.
+                $route = $request->attributes->get('_route');
+
+                return $this->redirectToRoute(\is_string($route) ? $route : self::ROUTE);
             }
             // Sur le champ, pas en toast : c'est une erreur de saisie, et elle reste sous les yeux.
             $form->get('code')->addError(new FormError($this->translator->trans('two_factor.code.invalid', [], 'validators')));
         }
 
+        $layout = $request->attributes->get(self::LAYOUT_ATTRIBUTE);
+
         return $this->render('@Admin/account/two_factor.html.twig', [
+            'layout' => \is_string($layout) ? $layout : null,
             'account' => $account,
             'form' => $form,
             'required' => $this->required,

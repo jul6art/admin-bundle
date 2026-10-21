@@ -228,8 +228,10 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         if (true === ($twoFactor['required'] ?? false)) {
             // Ce qu'un compte sans second facteur atteint encore : son écran d'enrôlement, la
             // sortie, la saisie du code elle-même, et ce que l'application ajoute.
+            $enrolment = self::asString($twoFactor['enrolment_route'] ?? null, TwoFactorController::ROUTE);
+            $container->setParameter('admin.two_factor.enrolment_route', $enrolment);
             $container->setParameter('admin.two_factor.open_routes', array_values(array_unique(array_filter([
-                TwoFactorController::ROUTE,
+                $enrolment,
                 $logoutRoute,
                 '2fa_login',
                 '2fa_login_check',

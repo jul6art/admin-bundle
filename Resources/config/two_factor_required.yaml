@@ -5,7 +5,7 @@ services:
         arguments:
             $tokenStorage: '@security.token_storage'
             $urls: '@router'
-            $enrolmentRoute: !php/const Jul6Art\AdminBundle\Controller\TwoFactorController::ROUTE
+            $enrolmentRoute: '%admin.two_factor.enrolment_route%'
             $openRoutes: '%admin.two_factor.open_routes%'
         tags:
             - { name: kernel.event_listener, event: kernel.request, priority: 7 }
