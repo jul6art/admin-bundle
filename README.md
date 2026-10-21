@@ -865,10 +865,10 @@ its phone is reset by `TotpEnrolment::reset()`.
 
 | Catalogue | Keys |
 | --- | --- |
-| `security` | `security.two_factor.{title, subtitle, code, submit, cancel, page_title, help, required, enabled_since, disable_help, disable, cannot_disable, step_scan, step_confirm, qr_alt, manual, enable, flash.enabled, flash.disabled}` |
+| `security` | `security.two_factor.{title, subtitle, code, submit, cancel, page_title, help, required, enabled_since, disable_help, disable, cannot_disable, step_scan, step_confirm, qr_alt, manual, enable}` |
 | `validators` | `two_factor.code.{not_blank, format, invalid}` |
 | `SchebTwoFactorBundle` | `two_factor.throttled` — scheb translates its own errors |
-| `messages` | `nav.two_factor` |
+| `messages` | `nav.two_factor`, and the screen's flashes `security.two_factor.flash.{enabled, disabled}` — the shell's toasts translate in `messages` |
 
 ### The e-mail layout (1.30)
 
