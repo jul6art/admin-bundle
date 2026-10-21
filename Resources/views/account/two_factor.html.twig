@@ -59,7 +59,9 @@
                     <img src="{{ qr_code }}" alt="{{ 'security.two_factor.qr_alt'|trans }}" width="220" height="220" class="rounded-lg border border-slate-200 bg-white" data-totp-qr>
                     <div class="text-sm">
                         <p class="text-slate-500 dark:text-slate-400">{{ 'security.two_factor.manual'|trans }}</p>
-                        <p class="font-mono text-base mt-1 break-all select-all" data-totp-secret>{{ secret }}</p>
+                        {# `break-words` et non `break-all` : la clé vient en groupes de quatre séparés par des espaces,
+                           la ligne se coupe entre deux groupes — jamais au milieu d'un. #}
+                        <p class="font-mono text-base mt-1 break-words select-all" data-totp-secret>{{ secret }}</p>
                     </div>
                 </div>
                 {{ form_start(form, { attr: { class: 'form-grid' } }) }}
