@@ -1,0 +1,73 @@
+{#
+    La double authentification de son compte (`admin.two_factor`) : activée, ou à activer par un QR
+    code et un premier code juste ; désactivable par un code en cours, sauf quand l'application
+    l'impose (`required`) — l'écran le dit, et `TwoFactorEnforcementListener` y ramène tant qu'elle
+    n'est pas active.
+
+    Attend `account`, `form` (null quand il n'y a rien à faire), `required`, `qr_code` et `secret`.
+
+    ⚠️ Le QR code est un SVG en URI `data:` (aucune ressource externe, CSP `img-src 'self' data:`), et
+    le secret n'est montré QUE pendant l'enrôlement.
+
+    Les libellés sont les clés `security.two_factor.*` du catalogue `security` de l'application.
+#}
+{% extends admin_layout_template() %}
+{% trans_default_domain 'security' %}
+
+{% block title %}{{ 'security.two_factor.page_title'|trans }} · {{ admin_branding().name }}{% endblock %}
+
+{% block content %}
+    <div class="max-w-2xl">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{{ 'security.two_factor.page_title'|trans }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">{{ 'security.two_factor.help'|trans }}</p>
+
+        {% if required and not account.totpAuthenticationEnabled %}
+            <div class="panel p-4 mb-6 text-sm text-amber-700 dark:text-amber-400" data-totp-required>
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ 'security.two_factor.required'|trans }}
+            </div>
+        {% endif %}
+
+        {% if account.totpAuthenticationEnabled %}
+            <div class="panel p-6">
+                <p class="text-sm text-emerald-700 dark:text-emerald-400" data-totp-enabled>
+                    <i class="fa-solid fa-shield-halved"></i> {{ 'security.two_factor.enabled_since'|trans({'%date%': account.totpEnabledAt|date('d/m/Y H:i')}) }}
+                </p>
+                {% if form %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-4">{{ 'security.two_factor.disable_help'|trans }}</p>
+                    {{ form_start(form, { attr: { class: 'form-grid mt-2' } }) }}
+                        {{ form_errors(form) }}
+                        {{ form_widget(form) }}
+                        <div class="form-actions">
+                            <button type="submit" class="btn-warning"><i class="fa-solid fa-ban"></i> {{ 'security.two_factor.disable'|trans }}</button>
+                        </div>
+                    {{ form_end(form) }}
+                {% else %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">{{ 'security.two_factor.cannot_disable'|trans }}</p>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="form-panel">
+                <ol class="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+                    <li>{{ 'security.two_factor.step_scan'|trans }}</li>
+                    <li>{{ 'security.two_factor.step_confirm'|trans }}</li>
+                </ol>
+                <div class="flex flex-col sm:flex-row gap-6 items-start mb-4">
+                    <img src="{{ qr_code }}" alt="{{ 'security.two_factor.qr_alt'|trans }}" width="220" height="220" class="rounded-lg border border-slate-200 bg-white" data-totp-qr>
+                    <div class="text-sm">
+                        <p class="text-slate-500 dark:text-slate-400">{{ 'security.two_factor.manual'|trans }}</p>
+                        <p class="font-mono text-base mt-1 break-all select-all" data-totp-secret>{{ secret }}</p>
+                    </div>
+                </div>
+                {{ form_start(form, { attr: { class: 'form-grid' } }) }}
+                    {{ form_errors(form) }}
+                    {{ form_widget(form) }}
+                    <div class="form-actions">
+                        <button type="submit" class="btn-success">
+                            <i class="fa-solid fa-circle-check"></i> {{ 'security.two_factor.enable'|trans }}
+                        </button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

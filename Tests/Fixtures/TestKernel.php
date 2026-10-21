@@ -6,14 +6,19 @@ namespace Jul6Art\AdminBundle\Tests\Fixtures;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Jul6Art\AdminBundle\AdminBundle;
+use Jul6Art\AdminBundle\EventListener\TwoFactorEnforcementListener;
+use Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener;
 use Jul6Art\AdminBundle\Keyboard\KeyboardShortcutResolver;
 use Jul6Art\AdminBundle\Navigation\NavigationBuilder;
 use Jul6Art\AdminBundle\Search\GlobalSearch;
 use Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys;
 use Jul6Art\AdminBundle\Twig\AdminUiExtension;
 use Jul6Art\AdminBundle\Twig\KeyboardExtension;
+use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
+use Jul6Art\AdminBundle\TwoFactor\TotpEnrolment;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\CoreBundle\CoreBundle;
+use Scheb\TwoFactorBundle\SchebTwoFactorBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -51,6 +56,8 @@ final class TestKernel extends Kernel
         private readonly bool $withOrm = false,
         /** Enregistre `jul6art/core-bundle` : l'écran du profileur n'existe qu'avec lui. */
         private readonly bool $withCore = false,
+        /** Enregistre scheb/2fa-bundle : la double authentification n'existe qu'avec lui. */
+        private readonly bool $withTwoFactor = false,
         private readonly string $uniqueId = 'default',
     ) {
         // Debug mode installs Symfony's error handler and never removes it, which PHPUnit
@@ -79,6 +86,10 @@ final class TestKernel extends Kernel
         // `require-dev` : ce bundle ne l'impose pas, et le test doit prouver LES DEUX cas.
         if ($this->withCore) {
             yield new CoreBundle();
+        }
+
+        if ($this->withTwoFactor) {
+            yield new SchebTwoFactorBundle();
         }
 
         // Twig est toujours là : la coquille, les pages d'authentification et l'écran
@@ -147,6 +158,12 @@ final class TestKernel extends Kernel
                     KeyboardExtension::class,
                     DeclaredTranslationKeys::class,
                     GlobalSearch::class,
+                    'router',
+                    TotpEnrolment::class,
+                    ExemptRoutesCondition::class,
+                    TwoFactorEnforcementListener::class,
+                    TwoFactorThrottleListener::class,
+                    'scheb_two_factor.security.totp_authenticator',
                 ];
 
                 foreach ($container->getDefinitions() as $id => $definition) {

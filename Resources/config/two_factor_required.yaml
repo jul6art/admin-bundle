@@ -1,0 +1,11 @@
+# Chargé quand `admin.two_factor.required` est vrai : un compte sans second facteur ne voit que son
+# écran d'enrôlement. Priorité 7 : après le pare-feu (8), qui remplit le stockage de jetons.
+services:
+    Jul6Art\AdminBundle\EventListener\TwoFactorEnforcementListener:
+        arguments:
+            $tokenStorage: '@security.token_storage'
+            $urls: '@router'
+            $enrolmentRoute: !php/const Jul6Art\AdminBundle\Controller\TwoFactorController::ROUTE
+            $openRoutes: '%admin.two_factor.open_routes%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 7 }

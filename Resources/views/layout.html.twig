@@ -181,6 +181,10 @@
                             {% if admin_route('appearance') %}
                                 {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('appearance'), icon: 'fa-solid fa-palette', label: 'nav.appearance'|trans }) }}
                             {% endif %}
+                            {# Présente seulement quand l'application PROPOSE le second facteur (`admin.two_factor.enabled`). #}
+                            {% if admin_route('two_factor') %}
+                                {{ include('@Admin/partials/_menu_link.html.twig', { route: admin_route('two_factor'), icon: 'fa-solid fa-shield-halved', label: 'nav.two_factor'|trans }) }}
+                            {% endif %}
 
                             {# Le profileur : une route vide masque le lien, et c'est ainsi qu'il
                                ne paraît qu'en développement — le projet ne remplit

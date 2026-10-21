@@ -5,15 +5,23 @@ declare(strict_types=1);
 namespace Jul6Art\AdminBundle\DependencyInjection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Endroid\QrCode\Builder\Builder;
+use Jul6Art\AdminBundle\Controller\TwoFactorController;
+use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\AdminBundle\Ui\EmailPalette;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
 use Twig\Environment;
 
 /**
@@ -34,8 +42,49 @@ use Twig\Environment;
  * when their components are installed, and the navigation's feature checker — which the
  * application implements, or does not — is settled by a compiler pass.
  */
-class AdminExtension extends Extension
+class AdminExtension extends Extension implements PrependExtensionInterface
 {
+    /** The limiter of the second factor: five failures per quarter of an hour and per account. */
+    public const string TWO_FACTOR_LIMITER = 'admin_two_factor';
+
+    /**
+     * `admin.two_factor.enabled` configures scheb/2fa-bundle and the limiter FOR the application:
+     * the TOTP provider, its sign-in template, the tokens it applies to, the routes it skips, the
+     * replay protection. What only the application can say stays in its files — the `two_factor`
+     * block of its firewall, and the routes it imports.
+     */
+    #[\Override]
+    public function prepend(ContainerBuilder $container): void
+    {
+        $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig('admin'));
+        $twoFactor = \is_array($config['two_factor'] ?? null) ? $config['two_factor'] : [];
+        if (true !== ($config['enabled'] ?? true) || true !== ($twoFactor['enabled'] ?? false) || !$container->hasExtension('scheb_two_factor')) {
+            return;
+        }
+
+        $branding = \is_array($config['branding'] ?? null) ? $config['branding'] : [];
+        $container->prependExtensionConfig('scheb_two_factor', [
+            // Le formulaire de connexion et les authentificateurs personnalisés (lien de connexion
+            // compris) ; jamais le jeton « se souvenir de moi », ni celui d'une API sans état.
+            'security_tokens' => [UsernamePasswordToken::class, PostAuthenticationToken::class],
+            'two_factor_condition' => ExemptRoutesCondition::class,
+            // Un code accepté ne resservira pas pendant sa fenêtre : rejouer un code intercepté échoue.
+            'code_reuse_cache' => 'cache.app',
+            'code_reuse_cache_duration' => 90,
+            'totp' => [
+                'enabled' => true,
+                'issuer' => self::asString($twoFactor['issuer'] ?? null, self::asString($branding['name'] ?? null, 'Admin')),
+                // Cinq secondes de tolérance au passage d'une fenêtre de 30 s : une horloge de
+                // téléphone un peu en retard ne bloque pas une connexion, sans rouvrir l'ancien code.
+                'leeway' => 5,
+                'template' => '@Admin/security/two_factor.html.twig',
+            ],
+        ]);
+        $container->prependExtensionConfig('framework', [
+            'rate_limiter' => [self::TWO_FACTOR_LIMITER => ['policy' => 'sliding_window', 'limit' => 5, 'interval' => '15 minutes']],
+        ]);
+    }
+
     #[\Override]
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -69,6 +118,14 @@ class AdminExtension extends Extension
         $routes = \is_array($config['routes'] ?? null) ? $config['routes'] : [];
         foreach (['login', 'logout', 'register', 'reset_password_request', 'profile', 'change_password', 'appearance', 'privacy', 'performance'] as $key) {
             $container->setParameter('admin.route.'.$key, self::asString($routes[$key] ?? null, ''));
+        }
+
+        $twoFactor = \is_array($config['two_factor'] ?? null) ? $config['two_factor'] : [];
+        $twoFactorEnabled = true === ($twoFactor['enabled'] ?? false);
+        // L'entrée du menu de compte n'existe que si l'application PROPOSE le second facteur.
+        $container->setParameter('admin.route.two_factor', $twoFactorEnabled ? self::asString($routes['two_factor'] ?? null, '') : '');
+        if ($twoFactorEnabled) {
+            $this->loadTwoFactor($loader, $container, $twoFactor, self::asString($routes['logout'] ?? null, ''));
         }
 
         $guide = \is_array($config['user_guide'] ?? null) ? $config['user_guide'] : [];
@@ -138,6 +195,57 @@ class AdminExtension extends Extension
             $value('accent_text'),
             $value('logo'),
         ]);
+    }
+
+    /**
+     * The second factor's services. Its four packages are `suggest`s, so turning the option on
+     * without them fails HERE, with the command to run, rather than at the first sign-in.
+     *
+     * @param array<array-key, mixed> $twoFactor
+     */
+    private function loadTwoFactor(YamlFileLoader $loader, ContainerBuilder $container, array $twoFactor, string $logoutRoute): void
+    {
+        $missing = array_keys(array_filter([
+            'scheb/2fa-bundle scheb/2fa-totp' => !interface_exists(TwoFactorInterface::class),
+            'endroid/qr-code' => !class_exists(Builder::class),
+            'symfony/rate-limiter' => !class_exists(RateLimiterFactory::class),
+            'symfony/form' => !class_exists(AbstractType::class),
+            'doctrine/orm' => !interface_exists(EntityManagerInterface::class),
+        ]));
+        if ([] !== $missing) {
+            throw new \LogicException(\sprintf('admin.two_factor.enabled needs: composer require %s', implode(' ', $missing)));
+        }
+        $bundles = $container->hasParameter('kernel.bundles') ? $container->getParameter('kernel.bundles') : [];
+        if (!\is_array($bundles) || !\array_key_exists('SchebTwoFactorBundle', $bundles)) {
+            throw new \LogicException('admin.two_factor.enabled needs Scheb\\TwoFactorBundle\\SchebTwoFactorBundle in config/bundles.php (Symfony Flex adds it on `composer require scheb/2fa-bundle`).');
+        }
+
+        $exempt = self::stringList($twoFactor['exempt_routes'] ?? []);
+        $container->setParameter('admin.two_factor.required', true === ($twoFactor['required'] ?? false));
+        $container->setParameter('admin.two_factor.exempt_routes', $exempt);
+        $loader->load('two_factor.yaml');
+
+        if (true === ($twoFactor['required'] ?? false)) {
+            // Ce qu'un compte sans second facteur atteint encore : son écran d'enrôlement, la
+            // sortie, la saisie du code elle-même, et ce que l'application ajoute.
+            $container->setParameter('admin.two_factor.open_routes', array_values(array_unique(array_filter([
+                TwoFactorController::ROUTE,
+                $logoutRoute,
+                '2fa_login',
+                '2fa_login_check',
+                ...$exempt,
+                ...self::stringList($twoFactor['open_routes'] ?? []),
+            ]))));
+            $loader->load('two_factor_required.yaml');
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function stringList(mixed $value): array
+    {
+        return \is_array($value) ? array_values(array_filter($value, \is_string(...))) : [];
     }
 
     private static function asString(mixed $value, string $fallback): string

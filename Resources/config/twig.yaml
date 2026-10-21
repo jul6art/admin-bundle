@@ -27,5 +27,6 @@ services:
                 profile: '%admin.route.profile%'
                 change_password: '%admin.route.change_password%'
                 appearance: '%admin.route.appearance%'
+                two_factor: '%admin.route.two_factor%'
                 privacy: '%admin.route.privacy%'
                 performance: '%admin.route.performance%'

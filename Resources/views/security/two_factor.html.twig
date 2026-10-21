@@ -1,0 +1,39 @@
+{#
+    Le code demandé après le mot de passe (`admin.two_factor`, scheb/2fa-bundle) : la même carte que
+    la page de connexion. Les variables viennent du contrôleur de formulaire de scheb.
+
+    ⚠️ `authenticationError` est une clé du domaine `SchebTwoFactorBundle` (« code_invalid »…), que
+    scheb traduit lui-même ; la seule qu'il ne connaît pas est `two_factor.throttled` (la limite
+    d'essais de ce bundle) — l'application l'ajoute à son catalogue `SchebTwoFactorBundle`.
+#}
+{% extends '@Admin/security/_card.html.twig' %}
+{% trans_default_domain 'security' %}
+
+{% block auth_title %}{{ 'security.two_factor.title'|trans }}{% endblock %}
+{% block auth_subtitle %}<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'security.two_factor.subtitle'|trans }}</p>{% endblock %}
+
+{% block auth_body %}
+    {% if authenticationError %}
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400" data-totp-error>
+            {{ authenticationError|trans(authenticationErrorData, 'SchebTwoFactorBundle') }}
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ checkPathUrl ? checkPathUrl : path(checkPathRoute) }}" class="space-y-5">
+        <div class="form-field">
+            <label class="form-label" for="_auth_code">{{ 'security.two_factor.code'|trans }}</label>
+            <input class="form-control tracking-widest text-center" id="_auth_code" type="text" name="{{ authCodeParameterName }}"
+                   autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus>
+        </div>
+        {% if isCsrfProtectionEnabled %}
+            <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
+        {% endif %}
+        <button type="submit" class="btn-primary w-full justify-center">
+            <i class="fa-solid fa-right-to-bracket"></i> {{ 'security.two_factor.submit'|trans }}
+        </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm">
+        <a href="{{ logoutPath }}" class="text-slate-500 hover:text-slate-700 dark:text-slate-400">{{ 'security.two_factor.cancel'|trans }}</a>
+    </p>
+{% endblock %}

@@ -27,4 +27,8 @@ return static function (RoutingConfigurator $routes): void {
     ] as $name => $path) {
         $routes->add($name, $path);
     }
+
+    // Le seul écran de ce fichier qui est réellement DEMANDÉ : la double authentification, importée
+    // comme une application l'importe (attribut, préfixe). Son service n'existe qu'avec l'option.
+    $routes->import(__DIR__.'/../../Controller/TwoFactorController.php', 'attribute')->prefix('/admin');
 };

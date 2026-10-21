@@ -1,0 +1,31 @@
+# Chargé quand `admin.two_factor.enabled` est vrai (et ses paquets présents — l'extension le vérifie).
+# L'application importe encore la route de l'écran, et ajoute le bloc `two_factor` à son pare-feu.
+services:
+    _defaults:
+        autowire: true
+
+    Jul6Art\AdminBundle\TwoFactor\TotpEnrolment: ~
+
+    # La condition de scheb (`two_factor_condition`, posée par le prepend de l'extension).
+    Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition:
+        arguments:
+            $exemptRoutes: '%admin.two_factor.exempt_routes%'
+
+    Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener:
+        arguments:
+            $limiter: '@limiter.admin_two_factor'
+        tags:
+            - { name: kernel.event_listener, event: scheb_two_factor.authentication.attempt, method: onAttempt }
+            - { name: kernel.event_listener, event: scheb_two_factor.authentication.failure, method: onFailure }
+            - { name: kernel.event_listener, event: scheb_two_factor.authentication.complete, method: onComplete }
+
+    Jul6Art\AdminBundle\Form\TwoFactorCodeType:
+        tags: [form.type]
+
+    # ⚠️ `autoconfigure: false`, pour la raison de l'écran d'apparence (`controller.yaml`) : la route
+    # ne naît que de l'import explicite du projet, sous le préfixe qu'il a choisi.
+    Jul6Art\AdminBundle\Controller\TwoFactorController:
+        autoconfigure: false
+        arguments:
+            $required: '%admin.two_factor.required%'
+        tags: ['controller.service_arguments', 'container.service_subscriber']

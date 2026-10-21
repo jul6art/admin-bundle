@@ -7,6 +7,8 @@ namespace Jul6Art\AdminBundle\Tests\Functional;
 use Jul6Art\AdminBundle\Tests\Fixtures\TestKernel;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 abstract class AbstractFunctionalTestCase extends TestCase
 {
@@ -51,11 +53,13 @@ abstract class AbstractFunctionalTestCase extends TestCase
         array $bundleConfig = [],
         bool $withOrm = false,
         bool $withCore = false,
+        bool $withTwoFactor = false,
     ): ContainerInterface {
         $uniqueId = substr(md5(serialize([
             $bundleConfig,
             $withOrm,
             $withCore,
+            $withTwoFactor,
         ])), 0, 12);
 
         // Arguments nommés : une brique absente retire son paramètre du kernel, et un appel
@@ -65,11 +69,22 @@ abstract class AbstractFunctionalTestCase extends TestCase
             $bundleConfig,
             withOrm: $withOrm,
             withCore: $withCore,
+            withTwoFactor: $withTwoFactor,
             uniqueId: $uniqueId,
         );
         $this->kernel->boot();
 
         return $this->kernel->getContainer();
+    }
+
+    /**
+     * Sends a request through the booted kernel — for the few screens this bundle serves itself.
+     */
+    final protected function handle(Request $request): Response
+    {
+        self::assertInstanceOf(TestKernel::class, $this->kernel, 'boot() first.');
+
+        return $this->kernel->handle($request);
     }
 
     /**

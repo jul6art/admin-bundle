@@ -116,6 +116,7 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode('profile')->defaultValue('')->end()
                         ->scalarNode('change_password')->defaultValue('')->end()
                         ->scalarNode('appearance')->defaultValue('admin_account_appearance_edit')->info('Empty removes the appearance entry from the account menu.')->end()
+                        ->scalarNode('two_factor')->defaultValue('admin_account_two_factor')->info('The account menu entry of the two-factor screen, shown only when `two_factor.enabled` is on. Empty removes the entry — an application with several areas links it from `admin_account_menu_extra` instead.')->end()
                         ->scalarNode('privacy')->defaultValue('')->info('Linked from the cookie banner; empty renders no banner.')->end()
                     ->end()
                 ->end()
@@ -179,9 +180,53 @@ class Configuration implements ConfigurationInterface
                         ->thenInvalid('admin.user_guide takes a route OR an url, not both: %s.')
                     ->end()
                 ->end()
+                ->append($this->twoFactorNode())
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * `two_factor`: the optional second factor — a six-digit code from an authenticator app (TOTP),
+     * asked after the password. Two decisions, the application's: OFFER it to its accounts
+     * (`enabled`), and REQUIRE it (`required`).
+     */
+    private function twoFactorNode(): ArrayNodeDefinition
+    {
+        $node = new TreeBuilder('two_factor')->getRootNode();
+        $node
+            ->info('The optional two-factor authentication (scheb/2fa-bundle, TOTP). Off by default: nothing is registered. The application adds the `two_factor` block to its sign-in firewall, imports the routes and uses `TwoFactorTrait` on its User — see the README.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enabled')
+                    ->info('The application OFFERS the second factor: an account turns it on from its account menu, and is then asked for a code after its password.')
+                    ->defaultFalse()
+                ->end()
+                ->booleanNode('required')
+                    ->info('The application REQUIRES it: an account without the second factor reaches its enrolment screen and nothing else, and cannot turn it off. Needs `enabled`.')
+                    ->defaultFalse()
+                ->end()
+                ->scalarNode('issuer')
+                    ->info('The name the authenticator app shows next to the account. Null: `branding.name`.')
+                    ->defaultNull()
+                ->end()
+                ->arrayNode('exempt_routes')
+                    ->info('Routes whose sign-in skips the code — the development login link (`dev_login_link_check`). Never a route that exists in production.')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([])
+                ->end()
+                ->arrayNode('open_routes')
+                    ->info('With `required`: what an account without the second factor still reaches, beside its enrolment screen and the sign-out — a language switch, say.')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([])
+                ->end()
+            ->end()
+            ->validate()
+                ->ifTrue(static fn (array $twoFactor): bool => true === ($twoFactor['required'] ?? false) && true !== ($twoFactor['enabled'] ?? false))
+                ->thenInvalid('admin.two_factor.required needs admin.two_factor.enabled: an application cannot require what it does not offer, %s.')
+            ->end();
+
+        return $node;
     }
 
     /**

@@ -773,6 +773,82 @@ that ONE file and extending the original through `@!Admin` — never by copying 
 > same confirmation page with the same text — a different message turns the form into an
 > account-enumeration oracle. The shipped templates already read that way; keep them that way.
 
+### Two-factor authentication (1.32)
+
+A six-digit code from an authenticator app (TOTP), asked after the password — scheb/2fa-bundle
+underneath. Two decisions, and they are the application's:
+
+```yaml
+# config/packages/admin.yaml
+admin:
+    two_factor:
+        enabled: true     # OFFER it: an account turns it on from its account menu
+        required: false   # REQUIRE it: an account without it reaches its enrolment screen and nothing else
+        exempt_routes: []  # sign-ins that skip the code — the dev login link, never a production route
+        open_routes: []    # with `required`: what an account without it still reaches (a language switch…)
+```
+
+Off by default, and then nothing is registered. On, the bundle configures scheb for you — the TOTP
+provider and its issuer (`branding.name`), the sign-in template, the tokens it applies to (form
+login and custom authenticators, never remember-me nor a stateless API), the exempt routes, the
+replay protection — and the limiter: five wrong codes per quarter of an hour and per account, then
+even the right one is refused before it is read.
+
+**What the application writes**, because only it knows where:
+
+```shell
+composer require scheb/2fa-bundle scheb/2fa-totp endroid/qr-code symfony/rate-limiter
+```
+
+```php
+#[ORM\Entity]
+class User implements UserInterface, TwoFactorAwareInterface
+{
+    use TwoFactorTrait;   // totp_secret, totp_enabled_at — then a migration
+}
+```
+
+```yaml
+# config/packages/security.yaml — the firewall that signs in with a form
+security:
+    firewalls:
+        main:
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+                enable_csrf: true
+    access_control:
+        - { path: ^/2fa, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }   # first in the list
+
+# config/routes/admin.yaml — scheb's two routes, and the account screen
+2fa_login:
+    path: /2fa
+    defaults: { _controller: 'scheb_two_factor.form_controller::form' }
+2fa_login_check:
+    path: /2fa_check
+admin_two_factor:
+    resource: '@AdminBundle/Controller/TwoFactorController.php'
+    type: attribute
+    prefix: /admin
+```
+
+The screen (`admin_account_two_factor`) enrols with a QR code — an SVG `data:` URI, nothing the
+CSP refuses — and a first correct code; it turns the second factor off on a **current** code only,
+so a session left open is not enough; it refuses to turn it off when `required`. Its account-menu
+entry is `admin.routes.two_factor` — empty it in an application with several areas and link the
+screen from `admin_account_menu_extra`.
+
+The bundle writes no audit trail: it dispatches `TwoFactorEvent::ENABLED`, `DISABLED` and
+`FAILED` (a wrong code at sign-in), and an application that keeps one listens. An account that lost
+its phone is reset by `TotpEnrolment::reset()`.
+
+| Catalogue | Keys |
+| --- | --- |
+| `security` | `security.two_factor.{title, subtitle, code, submit, cancel, page_title, help, required, enabled_since, disable_help, disable, cannot_disable, step_scan, step_confirm, qr_alt, manual, enable, flash.enabled, flash.disabled}` |
+| `validators` | `two_factor.code.{not_blank, format, invalid}` |
+| `SchebTwoFactorBundle` | `two_factor.throttled` — scheb translates its own errors |
+| `messages` | `nav.two_factor` |
+
 ### The e-mail layout (1.30)
 
 `@Admin/email/base.html.twig` and its button `@Admin/email/_button.html.twig` draw a transactional

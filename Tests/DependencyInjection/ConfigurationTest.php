@@ -75,6 +75,28 @@ final class ConfigurationTest extends TestCase
         self::process([['branding' => ['logo_width' => '220']]]);
     }
 
+    /**
+     * Les deux décisions du projet — PROPOSER le second facteur, et l'IMPOSER — et la seule
+     * combinaison absurde : l'imposer sans le proposer.
+     */
+    public function testTwoFactorIsOffUnlessTheApplicationOffersIt(): void
+    {
+        $twoFactor = self::process([['two_factor' => ['enabled' => true, 'required' => true, 'exempt_routes' => ['dev_login_link_check']]]])['two_factor'];
+
+        self::assertIsArray($twoFactor);
+        self::assertTrue($twoFactor['enabled']);
+        self::assertTrue($twoFactor['required']);
+        self::assertSame(['dev_login_link_check'], $twoFactor['exempt_routes']);
+    }
+
+    public function testTwoFactorCannotBeRequiredWithoutBeingOffered(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('admin.two_factor.required needs admin.two_factor.enabled');
+
+        self::process([['two_factor' => ['required' => true]]]);
+    }
+
     public function testItAppliesItsDefaults(): void
     {
         self::assertSame([
@@ -115,6 +137,7 @@ final class ConfigurationTest extends TestCase
                 'profile' => '',
                 'change_password' => '',
                 'appearance' => 'admin_account_appearance_edit',
+                'two_factor' => 'admin_account_two_factor',
                 'privacy' => '',
             ],
             // ⚠️ Le clavier est ACTIF par défaut et son catalogue d'extension est vide : le socle
@@ -131,6 +154,13 @@ final class ConfigurationTest extends TestCase
             'user_guide' => [
                 'route' => '',
                 'url' => '',
+            ],
+            'two_factor' => [
+                'enabled' => false,
+                'required' => false,
+                'issuer' => null,
+                'exempt_routes' => [],
+                'open_routes' => [],
             ],
         ], $this->process([]));
     }
