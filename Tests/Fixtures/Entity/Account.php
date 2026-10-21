@@ -8,7 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Jul6Art\AdminBundle\Appearance\ColorMode;
 use Jul6Art\AdminBundle\Contract\AdminUserInterface;
 use Jul6Art\AdminBundle\Contract\AppearanceAwareInterface;
+use Jul6Art\AdminBundle\Contract\TwoFactorAwareInterface;
 use Jul6Art\AdminBundle\Entity\Traits\AppearancePreferencesTrait;
+use Jul6Art\AdminBundle\Entity\Traits\TwoFactorTrait;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -22,9 +24,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'account')]
-class Account implements AdminUserInterface, AppearanceAwareInterface, UserInterface
+class Account implements AdminUserInterface, AppearanceAwareInterface, TwoFactorAwareInterface, UserInterface
 {
     use AppearancePreferencesTrait;
+    use TwoFactorTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
