@@ -847,6 +847,9 @@ app_two_factor:
     defaults: { _admin_layout: 'app/layout.html.twig' }
 ```
 
+At sign-in, the form still redirects to its usual target; it is the NEXT request that scheb sends to
+`/2fa` while the code is missing — a functional test follows that redirect before expecting `/2fa`.
+
 The screen (`admin_account_two_factor`) enrols with a QR code — an SVG `data:` URI, nothing the
 CSP refuses — and a first correct code; it turns the second factor off on a **current** code only,
 so a session left open is not enough; it refuses to turn it off when `required`. Its account-menu
@@ -854,7 +857,10 @@ entry is `admin.routes.two_factor` — empty it in an application with several a
 screen from `admin_account_menu_extra`.
 
 The bundle writes no audit trail: it dispatches `TwoFactorEvent::ENABLED`, `DISABLED` and
-`FAILED` (a wrong code at sign-in), and an application that keeps one listens. An account that lost
+`FAILED` (a wrong code at sign-in), and an application that keeps one listens. ⚠️ An application
+whose `User` is `#[Auditable]` (jul6art/audit-bundle) adds `totpSecret` to its ignored fields: the
+secret is read back to check a code, so in clear in an update diff it would hand the second factor
+to whoever reads the trail. An account that lost
 its phone is reset by `TotpEnrolment::reset()`.
 
 | Catalogue | Keys |
