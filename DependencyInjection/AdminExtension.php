@@ -11,6 +11,7 @@ use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\AdminBundle\Ui\EmailPalette;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -79,6 +80,9 @@ class AdminExtension extends Extension implements PrependExtensionInterface
                 'leeway' => 5,
                 'template' => '@Admin/security/two_factor.html.twig',
             ],
+            // Les codes de secours : scheb les vérifie à la connexion, avant le code TOTP. Sans leur
+            // paquet, rien n'est allumé ici : `load()` lève alors en nommant la commande à lancer.
+            'backup_codes' => ['enabled' => true === ($twoFactor['backup_codes'] ?? false) && interface_exists(BackupCodeInterface::class)],
         ]);
         $container->prependExtensionConfig('framework', [
             'rate_limiter' => [self::TWO_FACTOR_LIMITER => ['policy' => 'sliding_window', 'limit' => 5, 'interval' => '15 minutes']],
@@ -207,6 +211,7 @@ class AdminExtension extends Extension implements PrependExtensionInterface
     {
         $missing = array_keys(array_filter([
             'scheb/2fa-bundle scheb/2fa-totp' => !interface_exists(TwoFactorInterface::class),
+            'scheb/2fa-backup-code' => true === ($twoFactor['backup_codes'] ?? false) && !interface_exists(BackupCodeInterface::class),
             'endroid/qr-code' => !class_exists(Builder::class),
             'symfony/rate-limiter' => !class_exists(RateLimiterFactory::class),
             'symfony/form' => !class_exists(AbstractType::class),
@@ -222,8 +227,12 @@ class AdminExtension extends Extension implements PrependExtensionInterface
 
         $exempt = self::stringList($twoFactor['exempt_routes'] ?? []);
         $container->setParameter('admin.two_factor.required', true === ($twoFactor['required'] ?? false));
+        $container->setParameter('admin.two_factor.backup_codes', true === ($twoFactor['backup_codes'] ?? false));
         $container->setParameter('admin.two_factor.exempt_routes', $exempt);
         $loader->load('two_factor.yaml');
+        if (true === ($twoFactor['backup_codes'] ?? false)) {
+            $loader->load('two_factor_backup_codes.yaml');
+        }
 
         if (true === ($twoFactor['required'] ?? false)) {
             // Ce qu'un compte sans second facteur atteint encore : son écran d'enrôlement, la

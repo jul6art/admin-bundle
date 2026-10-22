@@ -34,6 +34,7 @@
         "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^13.0",
         "rector/rector": "^2.0",
+        "scheb/2fa-backup-code": "^8.6",
         "scheb/2fa-bundle": "^8.6",
         "scheb/2fa-totp": "^8.6",
         "symfony/asset": "^7.4 || ^8.0",
@@ -97,6 +98,7 @@
         "jul6art/datatable-bundle": "Les tableaux du back-office, et les contr\u00f4leurs Stimulus `ui--modal` / `ui--tooltip` que la coquille suppose enregistr\u00e9s.",
         "jul6art/core-bundle": "Required by the performance dashboard (Controller\\PerformanceController): it provides the profiler store this screen renders. From 3.6, it also draws the CSP nonce that lets the shell's inline scripts through the policy.",
         "scheb/2fa-bundle": "La double authentification optionnelle (`admin.two_factor`) : le second facteur apr\u00e8s le mot de passe.",
+        "scheb/2fa-backup-code": "Les codes de secours de la double authentification (`admin.two_factor.backup_codes`), pour un t\u00e9l\u00e9phone perdu.",
         "scheb/2fa-totp": "Le code \u00e0 six chiffres d'une application d'authentification (TOTP), seul fournisseur que `admin.two_factor` branche.",
         "endroid/qr-code": "Le QR code de l'enr\u00f4lement \u00e0 la double authentification, en SVG dans une URI `data:` (aucune ressource externe).",
         "symfony/rate-limiter": "La limite d'essais du code de double authentification (cinq \u00e9checs par quart d'heure et par compte)."

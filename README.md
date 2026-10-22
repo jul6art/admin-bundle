@@ -870,6 +870,43 @@ its phone is reset by `TotpEnrolment::reset()`.
 | `SchebTwoFactorBundle` | `two_factor.throttled` — scheb translates its own errors |
 | `messages` | `nav.two_factor`, and the screen's flashes `security.two_factor.flash.{enabled, disabled}` — the shell's toasts translate in `messages` |
 
+#### Backup codes (1.34)
+
+Ten single-use codes (`K7QM2-XW9RT`) for the day the phone is lost — drawn when the second factor is
+turned on, shown **once** on the page that follows, then only counted; a new set takes a current code
+and replaces the old one. A backup code is accepted wherever a current code is: at sign-in (a second,
+folded form on the code page, so the first keeps its numeric keyboard), and on the account screen to
+turn the second factor off or draw new codes — which is what lets an account without its phone get
+back in and enrol a new one.
+
+```yaml
+admin:
+    two_factor:
+        enabled: true
+        backup_codes: true   # needs scheb/2fa-backup-code
+```
+
+```php
+class User implements UserInterface, TwoFactorAwareInterface, BackupCodeAwareInterface
+{
+    use TwoFactorTrait;
+    use TwoFactorBackupCodesTrait;   // totp_backup_codes (JSON) — then a migration
+}
+```
+
+The codes are stored as SHA-256 hashes and can never be read back. Keep `totpBackupCodes` out of an
+audited diff and out of any report, as `totpSecret`. The bundle dispatches
+`TwoFactorEvent::BACKUP_CODES_GENERATED` and `TwoFactorEvent::BACKUP_CODE_USED` (at sign-in or on the
+screen — often the sign of a lost phone). `Contract\BackupCodeAwareInterface`,
+`TwoFactorBackupCodesTrait` and `TwoFactor\BackupCodeGenerator` stand alone: an application with its
+own two-factor implementation uses them without `admin.two_factor`.
+
+| Catalogue | Keys |
+| --- | --- |
+| `security` | `security.two_factor.code_or_backup`, `security.two_factor.backup.{title, help, save_now, none, left, few_left, generate_help, generate, login_toggle, login_help, login_label, login_submit}` — `left` takes `%count%` |
+| `validators` | `two_factor.code.format_or_backup` |
+| `messages` | `security.two_factor.flash.backup_codes` |
+
 ### The e-mail layout (1.30)
 
 `@Admin/email/base.html.twig` and its button `@Admin/email/_button.html.twig` draw a transactional

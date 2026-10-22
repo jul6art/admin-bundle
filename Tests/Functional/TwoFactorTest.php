@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle\Tests\Functional;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Jul6Art\AdminBundle\EventListener\BackupCodeUsedListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorEnforcementListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener;
 use Jul6Art\AdminBundle\Tests\Fixtures\Entity\Account;
@@ -13,6 +14,7 @@ use Jul6Art\AdminBundle\TwoFactor\TotpEnrolment;
 use OTPHP\TOTP;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,6 +37,7 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
 {
     private const array OFFERED = ['two_factor' => ['enabled' => true, 'issuer' => 'Acme']];
     private const array REQUIRED = ['two_factor' => ['enabled' => true, 'required' => true, 'open_routes' => ['site_home']]];
+    private const array WITH_BACKUP_CODES = ['two_factor' => ['enabled' => true, 'backup_codes' => true]];
 
     private ?Session $session = null;
 
@@ -190,6 +193,108 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('autocomplete="one-time-code"', $html);
         self::assertStringContainsString('data-totp-error', $html);
         self::assertStringContainsString('action="/2fa_check"', $html);
+    }
+
+    public function testBackupCodesNeedTheSecondFactorItself(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('admin.two_factor.backup_codes needs admin.two_factor.enabled');
+
+        $this->boot(bundleConfig: ['two_factor' => ['backup_codes' => true]], withOrm: true, withTwoFactor: true);
+    }
+
+    public function testOfferingBackupCodesWiresSchebAndTheAuditEvent(): void
+    {
+        self::assertFalse($this->boot(bundleConfig: self::OFFERED, withOrm: true, withTwoFactor: true)->has(BackupCodeUsedListener::class));
+
+        $container = $this->boot(bundleConfig: self::WITH_BACKUP_CODES, withOrm: true, withTwoFactor: true);
+
+        self::assertTrue($container->has(BackupCodeUsedListener::class));
+        self::assertTrue($container->has('scheb_two_factor.backup_code_manager'), 'scheb vérifie les codes de secours à la connexion.');
+    }
+
+    /**
+     * L'activation tire dix codes, montrés sur la page qui suit et sur elle seule ; ensuite l'écran les
+     * compte. Un nouveau jeu demande un code en cours, et remplace l'ancien.
+     */
+    public function testActivationShowsTheBackupCodesOnceThenANewSetTakesACurrentCode(): void
+    {
+        $account = $this->signIn(self::WITH_BACKUP_CODES);
+        $secret = $this->secretOf($account, $this->get());
+
+        self::assertSame(302, $this->post('two_factor_enable', TOTP::createFromSecret($secret)->now(), $this->get())->getStatusCode());
+
+        $shown = (string) $this->get()->getContent();
+        self::assertSame(10, preg_match_all('/<li>([A-Z2-9]{5}-[A-Z2-9]{5})<\/li>/', $shown, $codes));
+        self::assertTrue($account->isBackupCode($codes[1][0]));
+
+        $again = $this->get();
+        self::assertStringNotContainsString('data-new-backup-codes', (string) $again->getContent(), 'Une seule fois : recharger ne les remontre pas.');
+        self::assertStringContainsString('data-backup-codes-left="10"', (string) $again->getContent());
+
+        self::assertSame(422, $this->post('two_factor_backup_codes', '000000', $again)->getStatusCode());
+        self::assertSame(302, $this->post('two_factor_backup_codes', TOTP::createFromSecret($secret)->now(), $this->get())->getStatusCode());
+        self::assertStringContainsString('data-new-backup-codes', (string) $this->get()->getContent());
+        self::assertFalse($account->isBackupCode($codes[1][0]), 'L\'ancien jeu ne fonctionne plus.');
+    }
+
+    /**
+     * ⚠️ Le téléphone perdu : sans code en cours, un code de secours retire le second facteur.
+     */
+    public function testABackupCodeTurnsItOffOnTheScreen(): void
+    {
+        $account = $this->signIn(self::WITH_BACKUP_CODES);
+        $account->startTotpEnrolment('JBSWY3DPEHPK3PXP')->confirmTotp(new \DateTimeImmutable())->replaceBackupCodes(['K7QM2-XW9RT']);
+
+        $off = $this->post('two_factor_disable', 'k7qm2-xw9rt', $this->get());
+
+        self::assertSame(302, $off->getStatusCode());
+        self::assertFalse($account->isTotpAuthenticationEnabled());
+        self::assertSame(0, $account->countBackupCodes());
+    }
+
+    public function testTheSignInCodePageOffersABackupCodeOnlyWhenThereAreSome(): void
+    {
+        self::assertStringContainsString('data-totp-backup', $this->renderCodePage(self::WITH_BACKUP_CODES));
+        self::assertStringContainsString('id="_auth_backup_code"', $this->renderCodePage(self::WITH_BACKUP_CODES));
+        self::assertStringNotContainsString('data-totp-backup', $this->renderCodePage(self::OFFERED));
+    }
+
+    /**
+     * @param array<string, mixed> $bundleConfig
+     */
+    private function renderCodePage(array $bundleConfig): string
+    {
+        $container = $this->boot(bundleConfig: $bundleConfig, withOrm: true, withTwoFactor: true);
+        $this->pushRequest($container);
+        $twig = $container->get('twig');
+        self::assertInstanceOf(Environment::class, $twig);
+
+        return $twig->render('@Admin/security/two_factor.html.twig', [
+            'authenticationError' => null,
+            'authenticationErrorData' => [],
+            'checkPathUrl' => '/2fa_check',
+            'checkPathRoute' => null,
+            'authCodeParameterName' => '_auth_code',
+            'isCsrfProtectionEnabled' => true,
+            'csrfParameterName' => '_csrf_token',
+            'csrfTokenId' => 'two_factor',
+            'logoutPath' => '/logout',
+        ]);
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function secretOf(Account $account, Response $page): string
+    {
+        self::assertStringContainsString('data-totp-qr', (string) $page->getContent());
+        $secret = $account->getTotpAuthenticationConfiguration()?->getSecret();
+        if (null === $secret || '' === $secret) {
+            self::fail('L\'écran pose un secret en attente.');
+        }
+
+        return $secret;
     }
 
     /**

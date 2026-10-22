@@ -1,0 +1,9 @@
+# Chargé avec `admin.two_factor.backup_codes` : un code de secours accepté à la connexion devient
+# `TwoFactorEvent::BACKUP_CODE_USED`, le nom qu'écoute le journal d'audit de l'application.
+services:
+    _defaults:
+        autowire: true
+
+    Jul6Art\AdminBundle\EventListener\BackupCodeUsedListener:
+        tags:
+            - { name: kernel.event_listener, event: scheb_two_factor.backup_code.valid, method: onValid }

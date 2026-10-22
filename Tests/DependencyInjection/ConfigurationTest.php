@@ -158,6 +158,7 @@ final class ConfigurationTest extends TestCase
             'two_factor' => [
                 'enabled' => false,
                 'required' => false,
+                'backup_codes' => false,
                 'issuer' => null,
                 'exempt_routes' => [],
                 'enrolment_route' => 'admin_account_two_factor',

@@ -4,7 +4,17 @@ services:
     _defaults:
         autowire: true
 
-    Jul6Art\AdminBundle\TwoFactor\TotpEnrolment: ~
+    Jul6Art\AdminBundle\TwoFactor\BackupCodeGenerator: ~
+
+    Jul6Art\AdminBundle\TwoFactor\TotpEnrolment:
+        arguments:
+            $backupCodes: '%admin.two_factor.backup_codes%'
+
+    # La page du code (rendue par scheb) lit ici si elle propose un code de secours.
+    Jul6Art\AdminBundle\Twig\TwoFactorExtension:
+        autoconfigure: true
+        arguments:
+            $backupCodes: '%admin.two_factor.backup_codes%'
 
     # La condition de scheb (`two_factor_condition`, posée par le prepend de l'extension).
     Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition:

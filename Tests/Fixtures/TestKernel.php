@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle\Tests\Fixtures;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Jul6Art\AdminBundle\AdminBundle;
+use Jul6Art\AdminBundle\EventListener\BackupCodeUsedListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorEnforcementListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener;
 use Jul6Art\AdminBundle\Keyboard\KeyboardShortcutResolver;
@@ -163,7 +164,9 @@ final class TestKernel extends Kernel
                     ExemptRoutesCondition::class,
                     TwoFactorEnforcementListener::class,
                     TwoFactorThrottleListener::class,
+                    BackupCodeUsedListener::class,
                     'scheb_two_factor.security.totp_authenticator',
+                    'scheb_two_factor.backup_code_manager',
                 ];
 
                 foreach ($container->getDefinitions() as $id => $definition) {

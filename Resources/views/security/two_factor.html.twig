@@ -33,6 +33,29 @@
         </button>
     </form>
 
+    {#
+        Le code de secours (`admin.two_factor.backup_codes`) : un second formulaire, replié — le champ
+        du haut garde son clavier numérique, celui-ci accepte des lettres. Même nom de champ, même
+        chemin de contrôle : scheb essaie le code de secours avant le code TOTP.
+    #}
+    {% if admin_two_factor_backup_codes() %}
+        <details class="mt-4 text-sm" data-totp-backup>
+            <summary class="cursor-pointer text-center text-slate-500 hover:text-slate-700 dark:text-slate-400">{{ 'security.two_factor.backup.login_toggle'|trans }}</summary>
+            <p class="mt-3 text-slate-500 dark:text-slate-400">{{ 'security.two_factor.backup.login_help'|trans }}</p>
+            <form method="post" action="{{ checkPathUrl ? checkPathUrl : path(checkPathRoute) }}" class="space-y-3 mt-3">
+                <div class="form-field">
+                    <label class="form-label" for="_auth_backup_code">{{ 'security.two_factor.backup.login_label'|trans }}</label>
+                    <input class="form-control tracking-widest text-center uppercase" id="_auth_backup_code" type="text" name="{{ authCodeParameterName }}"
+                           autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" required>
+                </div>
+                {% if isCsrfProtectionEnabled %}
+                    <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
+                {% endif %}
+                <button type="submit" class="btn-secondary w-full justify-center">{{ 'security.two_factor.backup.login_submit'|trans }}</button>
+            </form>
+        </details>
+    {% endif %}
+
     <p class="mt-4 text-center text-sm">
         <a href="{{ logoutPath }}" class="text-slate-500 hover:text-slate-700 dark:text-slate-400">{{ 'security.two_factor.cancel'|trans }}</a>
     </p>

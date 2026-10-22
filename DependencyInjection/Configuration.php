@@ -206,6 +206,10 @@ class Configuration implements ConfigurationInterface
                     ->info('The application REQUIRES it: an account without the second factor reaches its enrolment screen and nothing else, and cannot turn it off. Needs `enabled`.')
                     ->defaultFalse()
                 ->end()
+                ->booleanNode('backup_codes')
+                    ->info('Single-use backup codes, for a lost phone: drawn at activation, redrawn on demand, typed instead of the code at sign-in and on the account screen. Needs `enabled`, scheb/2fa-backup-code, and `TwoFactorBackupCodesTrait` on the User.')
+                    ->defaultFalse()
+                ->end()
                 ->scalarNode('issuer')
                     ->info('The name the authenticator app shows next to the account. Null: `branding.name`.')
                     ->defaultNull()
@@ -229,6 +233,10 @@ class Configuration implements ConfigurationInterface
             ->validate()
                 ->ifTrue(static fn (array $twoFactor): bool => true === ($twoFactor['required'] ?? false) && true !== ($twoFactor['enabled'] ?? false))
                 ->thenInvalid('admin.two_factor.required needs admin.two_factor.enabled: an application cannot require what it does not offer, %s.')
+            ->end()
+            ->validate()
+                ->ifTrue(static fn (array $twoFactor): bool => true === ($twoFactor['backup_codes'] ?? false) && true !== ($twoFactor['enabled'] ?? false))
+                ->thenInvalid('admin.two_factor.backup_codes needs admin.two_factor.enabled: backup codes stand in for a second factor the application offers, %s.')
             ->end();
 
         return $node;
