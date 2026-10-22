@@ -311,6 +311,23 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
      *
      * Hidden until the product says where its guide is: an empty entry renders nothing.
      */
+    /**
+     * On a phone the top bar opens the menu with an icon alone: the button names itself, the icon is
+     * not read (axe `button-name`, critical, seen by every consumer at 390 px).
+     */
+    public function testTheMenuButtonOfAPhoneNamesItself(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING);
+        $document = new \DOMDocument();
+        @$document->loadHTML($html);
+        $buttons = new \DOMXPath($document)->query('//button[@data-ui-sidebar-toggle]');
+        $button = false === $buttons ? null : $buttons->item(0);
+
+        self::assertInstanceOf(\DOMElement::class, $button);
+        self::assertSame('nav.sidebar_toggle', $button->getAttribute('aria-label'));
+        self::assertSame('true', $button->getElementsByTagName('i')->item(0)?->getAttribute('aria-hidden'));
+    }
+
     public function testTheUserGuideLinkIsHiddenUntilConfigured(): void
     {
         $html = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));

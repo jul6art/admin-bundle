@@ -140,6 +140,10 @@ extra top bar — points that key at it, and makes that layout extend `@Admin/la
 The guide's label is `nav.user_guide`, read from the application's `messages` catalogue like
 `nav.logout`: every consumer that fills `user_guide` defines that key in each of its languages.
 
+The menu button of the top bar on a phone — an icon alone — is named by `nav.sidebar_toggle` (1.34.1),
+in the same `messages` catalogue: every consumer defines it in each of its languages (« Ouvrir ou
+fermer le menu », « Open or close the menu »).
+
 > ⚠️ **`routes` is a GLOBAL table — one route per entry, for the whole application.**
 >
 > An application with several areas, where the same screen exists twice — `/admin/account/appearance`
