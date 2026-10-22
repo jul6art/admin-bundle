@@ -207,7 +207,9 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 max-h-screen" data-ui--page-title-target="scroller">
+        {# The page scrolls HERE, not the document: focusable, so that the keyboard can scroll a page
+           that holds nothing focusable (axe `scrollable-region-focusable`, serious). #}
+        <main class="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 max-h-screen" tabindex="0" data-ui--page-title-target="scroller">
             <div class="{% block container_class %}max-w-7xl 2xl:max-w-[1680px]{% endblock %} mx-auto px-6 py-8">
                 {% block content %}{% endblock %}
             </div>

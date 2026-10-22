@@ -328,6 +328,18 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         self::assertSame('true', $button->getElementsByTagName('i')->item(0)?->getAttribute('aria-hidden'));
     }
 
+    /**
+     * The page scrolls in the shell's `main`, not in the document: a page with nothing focusable in it
+     * (a read-only table that scrolls sideways on a phone) could not be scrolled from the keyboard
+     * (axe `scrollable-region-focusable`, serious).
+     */
+    public function testTheScrollingMainIsReachableFromTheKeyboard(): void
+    {
+        $html = $this->render('@Admin/layout.html.twig', self::BRANDING);
+
+        self::assertMatchesRegularExpression('/<main\b[^>]*\boverflow-y-auto\b[^>]*\btabindex="0"/', $html);
+    }
+
     public function testTheUserGuideLinkIsHiddenUntilConfigured(): void
     {
         $html = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
