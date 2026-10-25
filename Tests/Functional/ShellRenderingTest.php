@@ -169,6 +169,19 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * Le bouton du menu du compte ne contient que du contenu de phrase : la pastille de l'avatar y est un
+     * `span`. Un `div` y rendait chaque page du back office invalide au validateur Nu.
+     */
+    public function testTheAccountMenuButtonHoldsPhrasingContentOnly(): void
+    {
+        $layout = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+
+        self::assertSame(1, preg_match('#<button[^>]*data-ui-dropdown-toggle[^>]*>(.*?)</button>#s', $layout, $button), 'Le bouton du menu du compte est rendu.');
+        self::assertDoesNotMatchRegularExpression('#<(div|p|ul|ol|section|header|footer|nav|form|h[1-6])[\s>]#', $button[1]);
+        self::assertStringContainsString('<span class="w-8 h-8 rounded-full', $button[1]);
+    }
+
+    /**
      * Le mode sombre se pose sur une page hors du layout aussi — sans `fixed-html`.
      */
     public function testTheDarkModeReachesAPageOutsideTheLayoutWithoutLockingIt(): void
