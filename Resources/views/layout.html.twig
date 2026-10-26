@@ -119,7 +119,7 @@
               into the free space after the left slot. Absolute, out of the flow: taking room there
               re-centred the search field each time the title came and went.
         #}
-        <header class="relative h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-4 z-10">
+        <header class="relative h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 gap-2 sm:gap-4 z-10">
             <div class="flex items-center gap-3" data-ui--page-title-target="start">
                 {# An icon alone: the button names itself (axe `button-name`, critical, on a phone). #}
                 <button type="button" data-ui-sidebar-toggle aria-label="{{ 'nav.sidebar_toggle'|trans }}" class="lg:hidden rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
@@ -138,14 +138,17 @@
             {% set user_guide = admin_user_guide() %}
             {% set user_guide_href = user_guide.route ? path(user_guide.route) : user_guide.url %}
 
-            <div class="flex items-center gap-3 flex-shrink-0">
+            {# Below `sm`, tighter gaps and no guide icon (the account menu keeps its line): an
+               application with a locale switcher, a bell and two actions of its own pushed the
+               account menu 55 px off a 360 px screen (trading-bot, 2026-10-26). #}
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 {% block admin_topbar_locale %}{% endblock %}
                 {% block admin_topbar_actions %}{% endblock %}
 
                 {% if user_guide_href %}
                     <a href="{{ user_guide_href }}" target="_blank" rel="noopener noreferrer" data-admin-user-guide="topbar"
                        title="{{ 'nav.user_guide'|trans }}" aria-label="{{ 'nav.user_guide'|trans }}"
-                       class="rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
+                       class="hidden sm:block rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700">
                         <i class="fa-solid fa-circle-question text-lg"></i>
                     </a>
                 {% endif %}
@@ -157,7 +160,8 @@
                         <button type="button" class="flex flex-shrink-0 items-center gap-2 rounded-xl px-2 admin-touch-tight hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" data-ui-dropdown-toggle>
                             {{ include('@Admin/partials/_avatar.html.twig', { user: app.user, size: 8 }) }}
                             <span class="hidden md:block text-sm text-slate-700 dark:text-slate-200 whitespace-nowrap truncate max-w-[14rem]" title="{{ admin_user_label(app.user) }}">{{ admin_user_label(app.user) }}</span>
-                            <i class="fa-solid fa-chevron-down text-xs text-slate-500 dark:text-slate-400"></i>
+                            {# Wrapped: `.fa-solid` sets its own `display`, which a bare `hidden` would not beat. #}
+                            <span class="hidden sm:inline-flex"><i class="fa-solid fa-chevron-down text-xs text-slate-500 dark:text-slate-400" aria-hidden="true"></i></span>
                         </button>
 
                         <div data-ui-dropdown-menu class="hidden absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl z-10">

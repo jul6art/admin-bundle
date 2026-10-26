@@ -376,6 +376,11 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
 
         self::assertSame(['topbar', 'menu'], array_map(static fn (\DOMElement $link): string => $link->getAttribute('data-admin-user-guide'), $links));
         self::assertSame('nav.user_guide', $links[0]->getAttribute('title'), 'The icon names itself.');
+
+        // On a phone the icon folds away — the top bar has no room left for it — and the line of
+        // the account menu stays: the guide is never out of reach.
+        self::assertStringContainsString('hidden sm:block', $links[0]->getAttribute('class'));
+        self::assertStringNotContainsString('hidden', $links[1]->getAttribute('class'));
     }
 
     public function testTheUserGuideLinkFollowsAConfiguredUrl(): void
