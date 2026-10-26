@@ -1,0 +1,233 @@
+{#
+    Les briques d'une fiche (1.35), à utiliser dans `@Admin/record/_page.html.twig` :
+
+    ```twig
+    {% import '@Admin/record/_macros.html.twig' as record %}
+    ```
+
+    | Macro        | Ce qu'elle rend                                                              |
+    | ------------ | ---------------------------------------------------------------------------- |
+    | `avatar`     | les initiales d'un nom (ou une icône) dans le carré de l'en-tête              |
+    | `property`   | une ligne icône · libellé · valeur d'une colonne de propriétés               |
+    | `properties` | la liste entière, repliée au-delà de `visible` lignes tant qu'elle est empilée |
+    | `stat`       | une carte de chiffre : libellé, valeur, tendance, jauge, indication           |
+    | `figure`     | un montant formaté dont les décimales passent en retrait                      |
+    | `steps`      | la barre des étapes d'un statut, et sa ligne de résumé sur un téléphone       |
+    | `timeline`   | un journal vertical horodaté                                                  |
+    | `tabs`       | les onglets de la fiche, des liens `?tab=`                                    |
+
+    ⚠️ **Les mots de ces macros sont ceux de l'application**, domaine `record` (le bundle ne livre
+    aucune traduction) : `record.tabs`, `record.properties.show_all` (`%count%`),
+    `record.steps.caption` (`%position%`, `%total%`, `%label%`) et `record.cancel` — ce dernier pour
+    la modale de confirmation du menu ⋯.
+
+    ⚠️ **Chaque classe est écrite en toutes lettres**, jamais composée (`'…--' ~ tone`) : Tailwind ne
+    garde une classe de la couche `components` que s'il la LIT dans un gabarit scanné, et une classe
+    composée n'existe dans aucun. `RecordRenderingTest` refuse le retour d'une composition.
+
+    ⚠️ **Une valeur passée en balisage reste du balisage** : `include()`, `figure()` et une capture
+    `{% set %}` rendent un `Markup`, que l'échappement laisse intact. Une chaîne nue est échappée.
+#}
+
+{#- Le carré de l'en-tête : `avatar(company.name)`, `avatar(null, {icon: 'fa-wrench'})`, `{round: true}`
+    pour une personne (`fa-wrench` ou une classe complète, `fa-solid fa-car`), `{image: asset(path)}` pour sa photo — les initiales restent le repli d'une
+    image absente. Décoratif : le nom est déjà dans le h1, d'où l'`alt` vide. -#}
+{% macro avatar(name, options = {}) %}
+    {%- set words = (name ?? '')|trim|split(' ')|filter(word => word is not empty) -%}
+    <span class="admin-record__avatar{{ (options.round ?? false) ? ' admin-record__avatar--round' }}" aria-hidden="true">
+        {%- if options.image ?? null -%}
+            <img src="{{ options.image }}" alt="" class="admin-record__avatar-image">
+        {%- elseif options.icon is defined -%}
+            <i class="{{ options.icon matches '/^fa-(solid|regular|brands|light|thin|duotone)\\b/' ? options.icon : 'fa-solid ' ~ options.icon }}"></i>
+        {%- else -%}
+            {{ words|slice(0, 2)|map(word => word|first|upper)|join }}
+        {%- endif -%}
+    </span>
+{%- endmacro %}
+
+{#- Une ligne de propriété. `options.icon` : une classe Font Awesome. Une valeur vide rend « — ». -#}
+{% macro property(label, value, options = {}) %}
+    <div class="admin-record__prop">
+        <dt>{% if options.icon is defined %}<i class="fa-solid {{ options.icon }}" aria-hidden="true"></i>{% endif %}{{ label }}</dt>
+        <dd>{{ value is empty ? '—' : value }}</dd>
+    </div>
+{%- endmacro %}
+
+{#-
+    La colonne de propriétés : `properties([{label, value, icon, condition}, …], {visible: 6})`.
+
+    ⚠️ Au-delà de `visible` lignes, le reste passe dans une seconde liste repliée derrière un bouton
+    (`ui--collapsible`) — mais SEULEMENT tant que la colonne est empilée sous 1280 px : les deux
+    colonnes ouvertes, la feuille du bundle la rouvre et cache le bouton. Sans JavaScript, tout
+    s'affiche.
+-#}
+{% macro properties(items, options = {}) %}
+    {%- import _self as record -%}
+    {%- set rows = items|filter(item => item.condition ?? true) -%}
+    {%- set visible = options.visible ?? 6 -%}
+    {%- if rows is not empty -%}
+    <div class="admin-record__properties"{% if rows|length > visible %} data-controller="ui--collapsible"{% endif %}>
+        <dl class="admin-record__props">
+            {%- for row in rows|slice(0, visible) %}
+                {{ record.property(row.label, row.value ?? null, row) }}
+            {%- endfor %}
+        </dl>
+        {%- if rows|length > visible %}
+            <dl class="admin-record__props admin-record__props-extra" data-ui--collapsible-target="content">
+                {%- for row in rows|slice(visible) %}
+                    {{ record.property(row.label, row.value ?? null, row) }}
+                {%- endfor %}
+            </dl>
+            <button type="button" class="admin-record__props-toggle" aria-expanded="false"
+                    data-action="ui--collapsible#toggle" data-ui--collapsible-target="trigger">
+                {{ 'record.properties.show_all'|trans({'%count%': rows|length}, 'record') }}
+                <i class="fa-solid fa-chevron-down" data-ui--collapsible-target="icon" aria-hidden="true"></i>
+            </button>
+        {%- endif %}
+    </div>
+    {%- endif -%}
+{%- endmacro %}
+
+{#-
+    Une carte de chiffre. Options :
+    - `hint` : une ligne sous la valeur ;
+    - `trend` : `{label: '+12 %', direction: 'up'|'down'|'flat'}` — la couleur dit le sens, pas le
+      jugement : une baisse de l'encours est une bonne nouvelle en rouge, à la page de choisir ;
+    - `tone` : `danger` ou `success`, la couleur de la valeur ;
+    - `progress` : `{value, max}`, une jauge sous la valeur.
+-#}
+{% macro stat(label, value, options = {}) %}
+    {%- set direction = options.trend.direction ?? 'flat' -%}
+    <div class="admin-record__stat">
+        <span class="admin-record__stat-label">{{ label }}</span>
+        <span class="admin-record__stat-value{{ {danger: ' admin-record__stat-value--danger', success: ' admin-record__stat-value--success'}[options.tone ?? ''] ?? '' }}">{{ value }}</span>
+        {%- if options.progress is defined %}
+            <progress class="admin-record__progress" value="{{ options.progress.value }}" max="{{ options.progress.max ?? 100 }}">{{ options.progress.value }}</progress>
+        {%- endif %}
+        {%- if options.trend is defined %}
+            <span class="admin-record__trend {{ {up: 'admin-record__trend--up', down: 'admin-record__trend--down'}[direction] ?? 'admin-record__trend--flat' }}"><i class="fa-solid {{ {up: 'fa-arrow-trend-up', down: 'fa-arrow-trend-down'}[direction] ?? 'fa-minus' }}" aria-hidden="true"></i>{{ options.trend.label }}</span>
+        {%- endif %}
+        {%- if options.hint is defined and options.hint is not empty %}
+            <span class="admin-record__stat-hint">{{ options.hint }}</span>
+        {%- endif %}
+    </div>
+{%- endmacro %}
+
+{#-
+    `figure('48 500,00 €')` : « 48 500 » et, en retrait, « ,00 € ». Le séparateur décimal est celui
+    qui vient le plus près de la fin — `€2,450.00` (en) comme `1.234,56 €` (de) —, ou celui qu'on lui
+    donne. Sans séparateur, le texte est rendu tel quel.
+
+    ⚠️ Pour un MONTANT à décimales : « 1,234 » (un entier anglais) se lirait « 1 » et « ,234 ».
+    ⚠️ Du TEXTE, pas du HTML : un montant déjà balisé (`<span title="…">`) est découpé puis échappé,
+    et son balisage s'affiche. Passer le texte, et poser le balisage autour de la macro.
+-#}
+{% macro figure(formatted, separator = null) %}
+    {%- set text = formatted ~ '' -%}
+    {%- if separator is null -%}
+        {%- set after_comma = text|split(',')|last -%}
+        {%- set after_dot = text|split('.')|last -%}
+        {%- if ',' in text and ('.' not in text or after_comma|length < after_dot|length) -%}
+            {%- set separator = ',' -%}
+        {%- elseif '.' in text -%}
+            {%- set separator = '.' -%}
+        {%- endif -%}
+    {%- endif -%}
+    {%- set parts = separator ? text|split(separator) : [text] -%}
+    {%- if parts|length > 1 -%}
+        {{ parts|slice(0, -1)|join(separator) }}<span class="admin-record__decimals">{{ separator ~ parts|last }}</span>
+    {%- else -%}
+        {{ formatted }}
+    {%- endif -%}
+{%- endmacro %}
+
+{#-
+    La barre des étapes : `steps([{label, state, hint, color, tone}, …])`.
+
+    - `state` : `done`, `current` ou `todo` (le défaut) ;
+    - `hint` : l'heure du passage, la personne ;
+    - `color` : la couleur propre d'une étape (`#EF4444`) — refusée si ce n'est pas une couleur
+      hexadécimale : elle finit dans un attribut `style`, et une étape de pipeline se renomme et se
+      recolore par un utilisateur ;
+    - `tone` : `warning` ou `danger` sur l'étape courante (en pause, annulée).
+
+    ⚠️ Sur un téléphone, les libellés laissent place à une ligne « Étape 5 sur 7 · Sur site » :
+    sept libellés dans 312 px seraient sept troncatures.
+-#}
+{% macro steps(steps, options = {}) %}
+    {%- set reached = steps|filter(step => (step.state ?? 'todo') != 'todo') -%}
+    {%- set current = steps|filter(step => (step.state ?? 'todo') == 'current')|first -%}
+    {%- set caption_step = current ?: reached|last -%}
+    <div class="admin-record__steps">
+        {%- if caption_step %}
+            <p class="admin-record__steps-caption">{{ 'record.steps.caption'|trans({'%position%': reached|length, '%total%': steps|length, '%label%': caption_step.label}, 'record') }}</p>
+        {%- endif %}
+        <ol class="admin-record__steps-list">
+            {%- for step in steps %}
+                {%- set state = step.state ?? 'todo' %}
+                {%- set color = ((step.color ?? '') matches '/^#[0-9a-f]{3,8}$/i') ? step.color : null %}
+                <li class="admin-record__step{{ {done: ' admin-record__step--done', current: ' admin-record__step--current'}[state] ?? '' }}{{ {warning: ' admin-record__step--warning', danger: ' admin-record__step--danger'}[step.tone ?? ''] ?? '' }}"
+                    {%- if 'current' == state %} aria-current="step"{% endif %}
+                    {%- if color %} style="--admin-step-color: {{ color }}"{% endif %}>
+                    <span class="admin-record__step-bar" aria-hidden="true"></span>
+                    <span class="admin-record__step-label"><i class="{{ {done: 'fa-solid fa-circle-check', current: 'fa-regular fa-circle-dot'}[state] ?? 'fa-regular fa-circle' }}" aria-hidden="true"></i><span>{{ step.label }}</span></span>
+                    {%- if step.hint is defined and step.hint is not empty %}
+                        <span class="admin-record__step-hint">{{ step.hint }}</span>
+                    {%- endif %}
+                </li>
+            {%- endfor %}
+        </ol>
+    </div>
+{%- endmacro %}
+
+{#-
+    Un journal vertical : `timeline([{title, time, datetime, text, state}, …])`, du plus récent au
+    plus ancien. `state` : `done` (le défaut), `current` ou `todo`.
+
+    ⚠️ `<time>` seulement avec `datetime` : sans lui, le contenu de l'élément doit être lui-même une
+    date valide, et « 26/10 09:12 » n'en est pas une — le validateur refuserait la page.
+-#}
+{% macro timeline(entries) %}
+    <ol class="admin-record__timeline">
+        {%- for entry in entries %}
+            <li class="admin-record__event {{ {current: 'admin-record__event--current', todo: 'admin-record__event--todo'}[entry.state ?? 'done'] ?? 'admin-record__event--done' }}">
+                <span class="admin-record__event-dot" aria-hidden="true"></span>
+                <p class="admin-record__event-title">
+                    <span>{{ entry.title }}</span>
+                    {%- if entry.time is defined and entry.time is not empty %}
+                        {%- if entry.datetime is defined and entry.datetime is not empty %}
+                            <time class="admin-record__event-time" datetime="{{ entry.datetime }}">{{ entry.time }}</time>
+                        {%- else %}
+                            <span class="admin-record__event-time">{{ entry.time }}</span>
+                        {%- endif %}
+                    {%- endif %}
+                </p>
+                {%- if entry.text is defined and entry.text is not empty %}
+                    <p class="admin-record__event-text">{{ entry.text }}</p>
+                {%- endif %}
+            </li>
+        {%- endfor %}
+    </ol>
+{%- endmacro %}
+
+{#-
+    Les onglets : `tabs([{key, label, href, count, icon, condition, attrs}, …], current_key)`.
+
+    Des LIENS, pas des boutons (le motif de trading-bot) : un onglet se partage et marche sans
+    JavaScript, et le contrôleur ne calcule que l'onglet ouvert — l'audit d'une fiche n'est plus
+    chargé à chaque ouverture. `count` à `null` n'affiche pas de pastille.
+-#}
+{% macro tabs(items, current, options = {}) %}
+    {%- set visible = items|filter(item => item.condition ?? true) -%}
+    <nav class="admin-record__tabs" aria-label="{{ options.label ?? 'record.tabs'|trans({}, 'record') }}">
+        {%- for item in visible %}
+            <a href="{{ item.href }}" class="admin-record__tab"
+               {%- if item.key == current %} aria-current="page"{% endif %}
+               {%- for name, value in item.attrs ?? {} %} {{ name }}="{{ value }}"{% endfor %}>
+                {%- if item.icon is defined %}<i class="fa-solid {{ item.icon }}" aria-hidden="true"></i>{% endif -%}
+                {{ item.label }}
+                {%- if item.count is defined and item.count is not null %}<span class="admin-record__tab-count">{{ item.count }}</span>{% endif -%}
+            </a>
+        {%- endfor %}
+    </nav>
+{%- endmacro %}

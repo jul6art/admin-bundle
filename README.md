@@ -749,6 +749,105 @@ in the browser catalogue.
 > ⚠️ **The excerpt is plain text, and escaped.** `getInboxExcerpt()` is what the list shows under the
 > sender; strip the markup before returning it, or the list shows the tags.
 
+### The record page (1.35)
+
+A "show" page reads in three beats: **who** (a header — avatar, name, badges, one line of meta,
+the actions), **where it stands** (figures, steps, tabs), then **the detail** — the content, and a
+column of properties on the right from 1280 px. The pattern comes from the Metronic concepts
+(CRM · Company, Store · Customer details), redrawn in this theme.
+
+```twig
+{% extends 'admin/layout.html.twig' %}
+{% from '@Admin/partials/_actions_dropdown.html.twig' import dropdown %}
+
+{% block content %}
+    {% embed '@Admin/record/_page.html.twig' with { aside_first: true } %}
+        {% import '@Admin/record/_macros.html.twig' as record %}
+
+        {% block record_breadcrumb %}<nav class="text-xs …">…</nav>{% endblock %}
+        {% block record_avatar %}{{ record.avatar(company.name) }}{% endblock %}
+        {% block record_title %}{{ company.name }}{% endblock %}
+        {% block record_badges %}<span class="badge-active">{{ 'status.active'|trans }}</span>{% endblock %}
+        {% block record_meta %}<span>{{ company.industry }}</span><a href="…">{{ company.owner }}</a>{% endblock %}
+        {% block record_actions %}
+            <a href="{{ path('deal_new', {company: company.id}) }}" class="btn-primary">…</a>
+            {{ dropdown('action.actions'|trans({}, 'messages'), menu) }}
+        {% endblock %}
+        {% block record_stats %}
+            <div class="admin-record__stats">
+                {{ record.stat('Billed in 2026', record.figure(billed|format_currency('EUR')), {trend: {label: '+12.4 %', direction: 'up'}}) }}
+            </div>
+        {% endblock %}
+        {% block record_tabs %}{{ record.tabs(tabs, tab) }}{% endblock %}
+        {% block record_main %}<div class="panel">…</div>{% endblock %}
+        {% block record_aside %}
+            <div class="panel">{{ record.properties([
+                { icon: 'fa-globe', label: 'Website', value: include('_partials/_external_link.html.twig', {url: company.website}) },
+                { icon: 'fa-phone', label: 'Phone', value: company.phone },
+            ]) }}</div>
+        {% endblock %}
+        {% block record_after %}{# the audit, a modal #}{% endblock %}
+    {% endembed %}
+{% endblock %}
+```
+
+| Block | What goes in |
+| --- | --- |
+| `record_breadcrumb` | the trail above the header |
+| `record_avatar` | `record.avatar(name)` — initials, or `{icon: 'fa-wrench'}`, `{round: true}` for a person |
+| `record_title` | the page's **only `<h1>`** — `ui--page-title` copies it into the top bar |
+| `record_badges` | state badges, next to the title |
+| `record_meta` | one line of `<span>`/`<a>`, separated by dots by the stylesheet |
+| `record_actions` | one primary action, two secondary at most, the rest in the ⋯ menu |
+| `record_alerts` | a read-only or deleted banner |
+| `record_stats` | `<div class="admin-record__stats">` and `record.stat()` cards |
+| `record_steps` | `record.steps(steps)` — a status that moves forward |
+| `record_tabs` | `record.tabs(items, current)` — links to `?tab=…` |
+| `record_main` / `record_aside` | the content, and the column of properties |
+| `record_after` | below everything — the audit, a modal |
+
+Options of the embed: `aside_first` (default `true` — under 1280 px the column comes **before** the
+content: identity first; a record whose content is the work to do sets it to `false`) and
+`title_mono` (a number as a name: `WO-2026-00412`).
+
+**Every empty block disappears, tag included**: the meta, the actions and the column are captured
+before they are written, so a record without a column takes the full width and an empty meta leaves
+no empty paragraph under the title.
+
+The macros (`@Admin/record/_macros.html.twig`): `avatar`, `property`, `properties` (folds the rows
+beyond `visible`, 6 by default, behind a button — only while the column is stacked; from 1280 px
+everything shows), `stat` (`hint`, `trend {label, direction}`, `tone: danger|success`,
+`progress {value, max}`), `figure` (a formatted amount whose decimals step back), `steps`
+(`{label, state: done|current|todo, hint, color, tone: warning|danger}` — a `color` that is not a
+hexadecimal colour is dropped: it lands in a `style` attribute), `timeline`
+(`{title, time, datetime, text, state}` — a `<time>` only with `datetime`, a `<span>` otherwise) and
+`tabs` (`{key, label, href, count, icon, condition, attrs}`).
+
+**Tabs are links, not buttons.** A tab is shared and works without JavaScript, and the controller
+computes only the open one — the audit of a record is no longer loaded each time it is opened.
+
+The template's own words are in the application's **`record`** domain (the bundle ships no
+translations): `record.tabs` (the tabs' `aria-label`), `record.properties.show_all` (`%count%`),
+`record.steps.caption` (`%position%`, `%total%`, `%label%` — « Étape 5 sur 7 · Sur site ») and
+`record.cancel` (the ⋯ menu's confirmation). Every consumer defines them in each of its languages.
+
+> ⚠️ **Written in this bundle's classes, never in utilities**: the consumers do not scan its
+> templates. `RecordRenderingTest` reads every class the three templates write and fails on one the
+> stylesheet does not declare.
+
+#### The ⋯ menu (`@Admin/partials/_actions_dropdown.html.twig`)
+
+N secondary actions in one menu instead of N buttons side by side — moved up from superp and
+trading-bot, which each carried a copy. Each item: `label`, `icon`, `href` **or** `form_action`
+with `csrf` and an optional `confirm {title, message, confirm, variant}` (the `ui--modal` of
+datatable-bundle), `danger` — or `tone: success|accent|danger`, a transition coloured like its
+button —, `attrs`, and **`condition` — where the action's `is_granted` goes**:
+a link shown without the right answers 403. `{divider: true}` separates two groups; a divider left
+first, last or doubled by hidden items is not rendered. `{compact: true}` renders the ⋮ alone, for
+a table row. Without a visible item, nothing is rendered.
+
+`ui--dropdown` and `ui--collapsible` keep `aria-expanded` on their buttons up to date (1.35).
+
 ### The sign-in pages
 
 `@Admin/security/{login,register,reset_password_request,reset_password,check_email}.html.twig`.

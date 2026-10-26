@@ -1,0 +1,105 @@
+{#
+    Le menu ⋯ d'un en-tête de fiche (1.35) : N actions secondaires dans un menu déroulant au lieu
+    de N boutons côte à côte. L'action principale reste un bouton, hors du menu.
+
+    ```twig
+    {% from '@Admin/partials/_actions_dropdown.html.twig' import dropdown %}
+    {{ dropdown('action.actions'|trans({}, 'messages'), [
+        { label: 'action.edit'|trans({}, 'messages'), icon: 'fa-pen', href: path('…_edit', {id: x.id}),
+          condition: is_granted('X_EDIT', x) },
+        { divider: true },
+        { label: 'action.delete'|trans({}, 'messages'), icon: 'fa-trash-can', danger: true,
+          form_action: path('…_delete', {id: x.id}), csrf: 'delete' ~ x.id,
+          confirm: { title: '…', message: '…' } },
+    ]) }}
+    ```
+
+    Remonté de superp et de trading-bot, qui en portaient chacun une copie.
+
+    Chaque item :
+    - `label` (requis), `icon` (classe Font Awesome) ;
+    - `href`, OU `form_action` (POST) avec `csrf` (nom du jeton) et, au besoin, `confirm`
+      `{ title, message, confirm, variant }` pour la modale `ui--modal` (datatable-bundle) ;
+    - `danger` : action destructive, en rouge ; `tone` (`success`, `accent`, `danger`) colore une
+      transition comme son bouton le ferait — « Confirmer » en vert, « Expédier » en accent ;
+    - `condition` : faux, l'item n'est pas rendu — ⚠️ c'est là que va le `is_granted` du geste : un
+      lien visible sans le droit répond 403, un bug d'interface ;
+    - `attrs` : attributs de plus sur le lien ou le bouton, ceux que les tests et les scripts lisent ;
+    - `{ divider: true }` : un filet entre deux groupes. Un filet en tête, en fin ou doublé, que
+      laisseraient des items retirés par leur `condition`, n'est pas rendu.
+
+    Options :
+    - `compact` : le seul ⋮, le libellé en infobulle et pour les lecteurs d'écran — l'action d'une
+      LIGNE de tableau, où « Actions » répété à chaque ligne prendrait la largeur des données ;
+    - `cancel_label` : le bouton d'annulation de la modale (défaut `record.cancel`, domaine `record`).
+
+    Sans item visible, rien n'est rendu : pas de bouton qui ouvre un menu vide.
+#}
+{% macro dropdown(label, items, options = {}) %}
+    {%- set kept = items|filter(item => item.condition ?? true) -%}
+    {%- set visible = [] -%}
+    {%- for item in kept -%}
+        {%- set is_divider = item.divider ?? false -%}
+        {%- set previous_divider = visible is empty or ((visible|last).divider ?? false) -%}
+        {%- if not (is_divider and previous_divider) -%}
+            {%- set visible = visible|merge([item]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if visible is not empty and ((visible|last).divider ?? false) -%}
+        {%- set visible = visible|slice(0, -1) -%}
+    {%- endif -%}
+    {%- set compact = options.compact ?? false -%}
+    {%- set cancel_label = options.cancel_label ?? 'record.cancel'|trans({}, 'record') -%}
+    {%- if visible is not empty %}
+    <div class="admin-dropdown" data-controller="ui--dropdown">
+        <button type="button" class="btn-secondary" data-action="click->ui--dropdown#toggle" aria-haspopup="true" aria-expanded="false"
+                {%- if compact %} aria-label="{{ label }}" title="{{ label }}"{% endif %}>
+            <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+            {%- if not compact %}
+                {{ label }}
+                <i class="fa-solid fa-chevron-down admin-dropdown__chevron" aria-hidden="true"></i>
+            {%- endif %}
+        </button>
+        <div class="admin-dropdown__menu hidden" data-ui--dropdown-target="menu">
+            <ul class="admin-dropdown__list">
+                {%- for item in visible %}
+                    {%- if item.divider ?? false %}
+                        <li class="admin-dropdown__divider" role="separator"></li>
+                    {%- else %}
+                        {%- set danger = (item.danger ?? false) or 'danger' == (item.tone ?? '') %}
+                        {#- En toutes lettres : une classe composée n'existerait dans aucun CSS. #}
+                        {%- set tone = {success: ' admin-dropdown__item--success', accent: ' admin-dropdown__item--accent'}[item.tone ?? ''] ?? (danger ? ' admin-dropdown__item--danger' : '') %}
+                        <li>
+                            {%- if item.href is defined %}
+                                <a href="{{ item.href }}" class="admin-dropdown__item{{ tone }}"
+                                   {%- for name, value in item.attrs ?? {} %} {{ name }}="{{ value }}"{% endfor %}>
+                                    {%- if item.icon is defined %}<i class="fa-solid {{ item.icon }}" aria-hidden="true"></i>{% endif %}
+                                    <span>{{ item.label }}</span>
+                                </a>
+                            {%- elseif item.form_action is defined %}
+                                <form method="post" action="{{ item.form_action }}"
+                                      {%- if item.confirm is defined %}
+                                      data-controller="ui--modal"
+                                      data-action="submit->ui--modal#intercept"
+                                      data-ui--modal-title-value="{{ item.confirm.title }}"
+                                      data-ui--modal-message-value="{{ item.confirm.message }}"
+                                      data-ui--modal-confirm-label-value="{{ item.confirm.confirm ?? item.label }}"
+                                      data-ui--modal-cancel-label-value="{{ cancel_label }}"
+                                      data-ui--modal-confirm-variant-value="{{ item.confirm.variant ?? (danger ? 'danger' : 'primary') }}"
+                                      {%- endif %}>
+                                    {%- if item.csrf is defined %}<input type="hidden" name="_token" value="{{ csrf_token(item.csrf) }}">{% endif %}
+                                    <button type="submit" class="admin-dropdown__item{{ tone }}"
+                                            {%- for name, value in item.attrs ?? {} %} {{ name }}="{{ value }}"{% endfor %}>
+                                        {%- if item.icon is defined %}<i class="fa-solid {{ item.icon }}" aria-hidden="true"></i>{% endif %}
+                                        <span>{{ item.label }}</span>
+                                    </button>
+                                </form>
+                            {%- endif %}
+                        </li>
+                    {%- endif %}
+                {%- endfor %}
+            </ul>
+        </div>
+    </div>
+    {%- endif -%}
+{%- endmacro %}

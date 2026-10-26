@@ -980,6 +980,552 @@
             display: none;
         }
     }
+
+    /*
+     * LA FICHE D'UN ENREGISTREMENT (1.35) — `@Admin/record/_page.html.twig` et ses macros.
+     *
+     * Une fiche se lit en trois temps : QUI (l'en-tête — avatar, nom, pastilles, une ligne de méta,
+     * les actions), OÙ EN EST-ON (une bande de chiffres, des étapes, quand la fiche en a), puis le
+     * DÉTAIL — le contenu à gauche, une colonne de propriétés à droite. Motif relevé dans les
+     * concepts Metronic (CRM · Company, Store · Customer details) et redessiné dans ce thème.
+     *
+     * ⚠️ **Écrit en classes du bundle, jamais en utilitaires dans ses gabarits** : un utilitaire
+     * n'existe que si le consommateur l'a dans son contenu scanné (la leçon de `.admin-touch-row`).
+     *
+     * ⚠️ **Les deux colonnes ne s'ouvrent qu'à 1280 px.** Entre 1024 et 1280, la barre latérale de la
+     * coquille ne laisse au contenu que ~720 px : une colonne de 20rem y écraserait le texte. En
+     * dessous, la colonne passe AVANT le contenu (`--aside-first`, le défaut : l'identité d'abord)
+     * ou après, et ses propriétés au-delà de la sixième se replient derrière un bouton.
+     */
+    .admin-record {
+        @apply flex flex-col gap-6;
+    }
+
+    .admin-record__header {
+        @apply flex flex-wrap items-start justify-between gap-4;
+    }
+
+    .admin-record__identity {
+        @apply flex min-w-0 items-center gap-4;
+        flex: 1 1 18rem;
+    }
+
+    /* Le couple de `.badge-accent` (700 sur 50, 400 sur 900/30), mesuré par `AccentContrastTest`. */
+    .admin-record__avatar {
+        @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-50 text-lg font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-400;
+    }
+
+    .admin-record__avatar--round {
+        @apply rounded-full;
+    }
+
+    .admin-record__avatar-image {
+        @apply h-full w-full rounded-[inherit] object-cover;
+    }
+
+    .admin-record__heading {
+        @apply min-w-0;
+    }
+
+    .admin-record__title-row {
+        @apply flex flex-wrap items-center gap-x-3 gap-y-1;
+    }
+
+    /* `anywhere` : le nom d'un seul mot très long (l'item « limite ») ne pousse pas la page en largeur. */
+    .admin-record__title {
+        @apply text-2xl font-bold text-slate-900 dark:text-slate-100;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-record__title--mono {
+        @apply font-mono text-xl;
+    }
+
+    .admin-record__meta {
+        @apply mt-1 flex flex-wrap items-center gap-y-1 text-sm text-slate-500 dark:text-slate-400;
+    }
+
+    /*
+     * Le point entre deux éléments de la méta. ⚠️ `inline-block` : dans un lien, un pseudo-élément en
+     * ligne hériterait du soulignement au survol, et le point serait souligné avec le nom.
+     */
+    .admin-record__meta > * + *::before {
+        @apply mx-2 text-slate-300 dark:text-slate-600;
+        content: '·';
+        display: inline-block;
+    }
+
+    .admin-record__meta a {
+        @apply font-medium text-slate-600 hover:text-accent-700 dark:text-slate-300 dark:hover:text-accent-400;
+    }
+
+    .admin-record__actions {
+        @apply flex flex-wrap items-center gap-2;
+    }
+
+    /* Une bande de chiffres, ou les repères d'un aperçu : des cartes qui remplissent leur rangée. */
+    .admin-record__stats {
+        @apply flex flex-wrap gap-3;
+    }
+
+    .admin-record__stat {
+        @apply flex min-w-0 flex-col gap-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800;
+        flex: 1 1 8.5rem;
+    }
+
+    .admin-record__stat-label {
+        @apply text-xs font-medium text-slate-500 dark:text-slate-400;
+    }
+
+    /* `break-word` et non `anywhere` : une date ne se coupe qu'à défaut de tenir (« 02/05/202 5 »). */
+    .admin-record__stat-value {
+        @apply text-xl font-bold text-slate-900 dark:text-slate-100;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: break-word;
+    }
+
+    .admin-record__stat-value--danger {
+        @apply text-red-700 dark:text-red-400;
+    }
+
+    .admin-record__stat-value--success {
+        @apply text-emerald-700 dark:text-emerald-400;
+    }
+
+    .admin-record__stat-hint {
+        @apply text-xs text-slate-500 dark:text-slate-400;
+    }
+
+    /* Les décimales d'un montant, en retrait — slate-500 et non 400 : c'est encore du texte, AA. */
+    .admin-record__decimals {
+        @apply font-semibold text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-record__trend {
+        @apply inline-flex w-fit max-w-full items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium;
+    }
+
+    .admin-record__trend--up {
+        @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+    }
+
+    .admin-record__trend--down {
+        @apply bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+    }
+
+    .admin-record__trend--flat {
+        @apply bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300;
+    }
+
+    .admin-record__progress {
+        @apply mt-1 block h-1.5 w-full overflow-hidden rounded-full border-0 bg-slate-200 dark:bg-slate-700;
+        appearance: none;
+    }
+
+    .admin-record__progress::-webkit-progress-bar {
+        background: transparent;
+    }
+
+    .admin-record__progress::-webkit-progress-value {
+        @apply rounded-full;
+        background-color: rgb(var(--accent-500));
+    }
+
+    .admin-record__progress::-moz-progress-bar {
+        @apply rounded-full;
+        background-color: rgb(var(--accent-500));
+    }
+
+    /* Les étapes d'un statut qui avance — une barre par étape, l'heure du passage dessous. */
+    .admin-record__steps {
+        @apply panel px-4 py-4 sm:px-6;
+    }
+
+    .admin-record__steps-caption {
+        @apply mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100;
+    }
+
+    .admin-record__steps-list {
+        @apply m-0 grid list-none gap-1.5 p-0;
+        grid-auto-columns: minmax(0, 1fr);
+        grid-auto-flow: column;
+    }
+
+    .admin-record__step {
+        @apply flex min-w-0 flex-col gap-1.5;
+    }
+
+    .admin-record__step-bar {
+        @apply block h-1.5 rounded-full bg-slate-200 dark:bg-slate-700;
+    }
+
+    .admin-record__step--done .admin-record__step-bar {
+        background-color: var(--admin-step-color, theme('colors.emerald.600'));
+    }
+
+    .admin-record__step--current .admin-record__step-bar {
+        background-image: linear-gradient(90deg, var(--admin-step-color, rgb(var(--accent-600))) 0 50%, transparent 50%);
+    }
+
+    .admin-record__step--warning .admin-record__step-bar {
+        background-image: linear-gradient(90deg, theme('colors.amber.500') 0 50%, transparent 50%);
+    }
+
+    .admin-record__step--danger .admin-record__step-bar {
+        background-image: linear-gradient(90deg, theme('colors.red.600') 0 50%, transparent 50%);
+    }
+
+    .admin-record__step-label {
+        @apply flex min-w-0 items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-record__step-label > span {
+        @apply truncate;
+    }
+
+    .admin-record__step--done .admin-record__step-label {
+        @apply text-slate-900 dark:text-slate-100;
+    }
+
+    .admin-record__step--done .admin-record__step-label > i {
+        @apply text-emerald-600 dark:text-emerald-400;
+    }
+
+    .admin-record__step--current .admin-record__step-label {
+        @apply text-accent-700 dark:text-accent-400;
+    }
+
+    .admin-record__step--warning .admin-record__step-label {
+        @apply text-amber-700 dark:text-amber-400;
+    }
+
+    .admin-record__step--danger .admin-record__step-label {
+        @apply text-red-700 dark:text-red-400;
+    }
+
+    .admin-record__step-hint {
+        @apply truncate text-xs text-slate-500 dark:text-slate-400;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /*
+     * Les onglets d'une fiche : des LIENS (`?tab=`), partageables et sans JavaScript.
+     *
+     * ⚠️ Le filet du bas est une ombre portée vers l'intérieur, pas une bordure : la barre défile en
+     * largeur sur un téléphone, et un onglet qui chevauche une bordure par une marge négative serait
+     * rogné par ce défilement — 1 px de défilement vertical en prime.
+     */
+    .admin-record__tabs {
+        @apply flex gap-1 overflow-x-auto;
+        box-shadow: inset 0 -1px 0 theme('colors.slate.200');
+        scrollbar-width: none;
+    }
+
+    .dark .admin-record__tabs {
+        box-shadow: inset 0 -1px 0 theme('colors.slate.700');
+    }
+
+    .admin-record__tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .admin-record__tab {
+        @apply inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100;
+        min-height: 2.75rem;
+    }
+
+    .admin-record__tab[aria-current='page'] {
+        @apply border-accent-500 text-accent-700 dark:text-accent-400;
+    }
+
+    .admin-record__tab-count {
+        @apply rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .admin-record__tab[aria-current='page'] .admin-record__tab-count {
+        @apply bg-accent-50 text-accent-700 dark:bg-accent-900/30 dark:text-accent-400;
+    }
+
+    .admin-record__body {
+        @apply grid grid-cols-1 items-start gap-6;
+    }
+
+    .admin-record__main,
+    .admin-record__aside {
+        @apply flex min-w-0 flex-col gap-6;
+    }
+
+    .admin-record__body--aside-first .admin-record__aside {
+        order: -1;
+    }
+
+    /*
+     * L'espacement d'une colonne est son `gap`, et lui seul. Un panneau rendu par sous-requête
+     * (`render(controller(…))`) arrive avec le `mt-6` qu'il porte sur une fiche empilée : en plus du
+     * gap, il doublait l'écart (vu sur le bon d'intervention de cereezer, son historique). Deux
+     * classes, pour passer devant l'utilitaire seul.
+     */
+    .admin-record .admin-record__main > *,
+    .admin-record .admin-record__aside > * {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    /* La colonne de propriétés : icône, libellé, valeur. Elle remplace la grille `dl` à deux colonnes. */
+    /*
+     * ⚠️ Une requête de CONTENEUR, pas d'écran : la même liste vit dans le contenu (800 px, libellé à
+     * côté de la valeur) et dans la colonne de 20rem (libellé AU-DESSUS) — à côté, un emplacement
+     * « Site / Atelier 3 / Étagère » s'y coupait en huit lignes. Voir la règle `@container` en fin de
+     * fichier.
+     */
+    .admin-record__properties {
+        @apply min-w-0;
+        container-type: inline-size;
+    }
+
+    .admin-record__props {
+        @apply m-0 flex flex-col;
+    }
+
+    .admin-record__prop {
+        @apply grid gap-x-3 py-1.5 text-sm;
+        grid-template-columns: minmax(6.5rem, 11rem) minmax(0, 1fr);
+    }
+
+    .admin-record__prop > dt {
+        @apply flex items-start gap-2 text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-record__prop > dt > i {
+        @apply mt-0.5 w-4 shrink-0 text-center text-slate-400 dark:text-slate-500;
+    }
+
+    .admin-record__prop > dd {
+        @apply m-0 min-w-0 text-slate-900 dark:text-slate-100;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-record__props-extra.hidden {
+        display: none;
+    }
+
+    .admin-record__props-toggle {
+        @apply mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-accent-700 hover:text-accent-800 dark:text-accent-400 dark:hover:text-accent-300;
+        min-height: 2.75rem;
+    }
+
+    .admin-record__props-toggle > i {
+        @apply text-xs transition-transform;
+    }
+
+    /* Un journal vertical : un point par évènement, le fil entre deux. */
+    .admin-record__timeline {
+        @apply m-0 flex list-none flex-col p-0;
+    }
+
+    .admin-record__event {
+        @apply relative pb-4 pl-6;
+    }
+
+    .admin-record__event:last-child {
+        @apply pb-0;
+    }
+
+    .admin-record__event::before {
+        @apply absolute bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700;
+        content: '';
+        left: 5px;
+        top: 1rem;
+    }
+
+    .admin-record__event:last-child::before {
+        display: none;
+    }
+
+    .admin-record__event-dot {
+        @apply absolute left-0 top-1 h-3 w-3 rounded-full bg-slate-300 ring-2 ring-white dark:bg-slate-600 dark:ring-slate-800;
+    }
+
+    .admin-record__event--done .admin-record__event-dot {
+        @apply bg-emerald-600 dark:bg-emerald-500;
+    }
+
+    .admin-record__event--current .admin-record__event-dot {
+        @apply bg-accent-600 ring-4 ring-accent-100 dark:bg-accent-500 dark:ring-accent-900/40;
+    }
+
+    .admin-record__event-title {
+        @apply m-0 flex flex-wrap items-baseline gap-x-2 text-sm font-semibold text-slate-900 dark:text-slate-100;
+    }
+
+    .admin-record__event--todo .admin-record__event-title {
+        @apply font-medium text-slate-500 dark:text-slate-400;
+    }
+
+    .admin-record__event-time {
+        @apply text-xs font-normal text-slate-500 dark:text-slate-400;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .admin-record__event-text {
+        @apply m-0 text-xs text-slate-600 dark:text-slate-300;
+    }
+
+    /*
+     * Le menu ⋯ d'une fiche (`@Admin/partials/_actions_dropdown.html.twig`, 1.35) — remonté de superp
+     * et de trading-bot, qui en portaient chacun une copie.
+     */
+    .admin-dropdown {
+        @apply relative inline-block text-left;
+    }
+
+    .admin-dropdown__chevron {
+        @apply ml-1 text-xs;
+    }
+
+    .admin-dropdown__menu {
+        @apply absolute right-0 z-20 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800;
+    }
+
+    .admin-dropdown__menu.hidden {
+        display: none;
+    }
+
+    .admin-dropdown__list {
+        @apply m-0 list-none p-0 text-sm;
+    }
+
+    .admin-dropdown__item {
+        @apply flex w-full items-center gap-2 px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700;
+        min-height: 2.75rem;
+    }
+
+    .admin-dropdown__item > i {
+        @apply w-4 shrink-0 text-center text-slate-400;
+    }
+
+    .admin-dropdown__item--danger {
+        @apply text-red-700 dark:text-red-400;
+    }
+
+    .admin-dropdown__item--danger > i {
+        @apply text-red-600 dark:text-red-400;
+    }
+
+    /* Les tons d'une transition (`tone`), les couples de `.badge-success` et `.badge-accent`. */
+    .admin-dropdown__item--success,
+    .admin-dropdown__item--success > i {
+        @apply text-emerald-700 dark:text-emerald-400;
+    }
+
+    .admin-dropdown__item--accent,
+    .admin-dropdown__item--accent > i {
+        @apply text-accent-700 dark:text-accent-400;
+    }
+
+    .admin-dropdown__divider {
+        @apply my-1 border-t border-slate-100 dark:border-slate-700;
+    }
+
+    @media (max-width: 767.98px) {
+        /* Sur un téléphone, une ligne de résumé dit l'étape ; sept libellés tronqués ne diraient rien. */
+        .admin-record__step-label,
+        .admin-record__step-hint {
+            display: none;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .admin-record__steps-caption {
+            display: none;
+        }
+    }
+
+    @media (max-width: 639.98px) {
+        /* L'action principale au pouce : les boutons prennent la largeur, le menu ⋯ garde la sienne. */
+        .admin-record__actions {
+            width: 100%;
+        }
+
+        .admin-record__actions > a,
+        .admin-record__actions > button,
+        .admin-record__actions > form {
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+
+        .admin-record__actions > form > button {
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* En haut, pas au milieu : un nom sur six lignes laissait l'avatar flotter à mi-hauteur. */
+        .admin-record__identity {
+            @apply items-start;
+        }
+
+        .admin-record__avatar {
+            @apply h-12 w-12 text-base;
+        }
+
+        .admin-record__title {
+            @apply text-xl;
+        }
+
+        /* Une ligne par élément : un point en tête de ligne après un retour ne sépare plus rien. */
+        .admin-record__meta {
+            @apply flex-col items-start;
+        }
+
+        .admin-record__meta > * + *::before {
+            display: none;
+        }
+
+        /* Deux chiffres par rangée : la valeur et son retrait raccourcis pour tenir une date entière. */
+        .admin-record__stat {
+            @apply px-3 py-2.5;
+        }
+
+        .admin-record__stat-value {
+            @apply text-lg;
+        }
+
+    }
+
+    @media (min-width: 1280px) {
+        .admin-record__body--with-aside {
+            grid-template-columns: minmax(0, 1fr) 20rem;
+        }
+
+        .admin-record__body--aside-first .admin-record__aside {
+            order: 0;
+        }
+
+        /* Les deux colonnes ouvertes, tout tient : les propriétés repliées reviennent, le bouton part. */
+        .admin-record__props-extra.hidden {
+            display: flex;
+        }
+
+        .admin-record__props-toggle {
+            display: none;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .admin-record__tab,
+        .admin-dropdown__item {
+            min-height: 0;
+        }
+
+        .admin-record__tab {
+            @apply py-2.5;
+        }
+
+        .admin-dropdown__item {
+            @apply py-2;
+        }
+    }
 }
 
 /*
@@ -1126,5 +1672,23 @@
     .admin-touch-tight {
         padding-top: 0.375rem;
         padding-bottom: 0.375rem;
+    }
+}
+
+/*
+ * Les propriétés d'une fiche, libellé AU-DESSUS de la valeur dès que leur liste est étroite — la
+ * colonne de 20rem, un téléphone. Côte à côte dans 270 px, une adresse e-mail se coupait en deux et
+ * un emplacement en huit lignes. Hors couche : `@container` n'a rien à faire dans l'ordre des
+ * utilitaires.
+ */
+@container (max-width: 24rem) {
+    .admin-record__prop {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 0.125rem;
+    }
+
+    /* Aligné sur le texte du libellé, derrière son icône quand il en a une. */
+    .admin-record__prop:has(> dt > i) > dd {
+        padding-left: 1.5rem;
     }
 }

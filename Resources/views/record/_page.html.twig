@@ -1,0 +1,79 @@
+{#
+    La FICHE d'un enregistrement (1.35) — à embarquer dans la page de « show » :
+
+    ```twig
+    {% embed '@Admin/record/_page.html.twig' with { aside_first: true } %}
+        {% import '@Admin/record/_macros.html.twig' as record %}
+
+        {% block record_breadcrumb %}<nav class="…">…</nav>{% endblock %}
+        {% block record_avatar %}{{ record.avatar(company.name) }}{% endblock %}
+        {% block record_title %}{{ company.name }}{% endblock %}
+        {% block record_badges %}<span class="badge-active">{{ 'status.active'|trans }}</span>{% endblock %}
+        {% block record_meta %}<span>{{ company.industry }}</span><a href="…">{{ company.owner }}</a>{% endblock %}
+        {% block record_actions %}<a href="…" class="btn-primary">…</a>{{ dropdown(…) }}{% endblock %}
+        {% block record_stats %}<div class="admin-record__stats">{{ record.stat(…) }}</div>{% endblock %}
+        {% block record_steps %}{{ record.steps(steps) }}{% endblock %}
+        {% block record_tabs %}{{ record.tabs(tabs, tab) }}{% endblock %}
+        {% block record_main %}<div class="panel">…</div>{% endblock %}
+        {% block record_aside %}<div class="panel">{{ record.properties(items) }}</div>{% endblock %}
+        {% block record_after %}…l'audit, une modale…{% endblock %}
+    {% endembed %}
+    ```
+
+    Trois temps, toujours dans cet ordre : QUI (l'en-tête), OÙ EN EST-ON (chiffres, étapes,
+    onglets), puis le DÉTAIL (le contenu, et la colonne à droite à partir de 1280 px).
+
+    ⚠️ **Le titre est le `<h1>` de la page** : `ui--page-title` le recopie dans la barre du haut
+    quand il sort de l'écran. Une page qui embarque ce gabarit n'en écrit pas d'autre.
+
+    ⚠️ **Chaque bloc vide disparaît, balise comprise.** La méta, les actions et la colonne sont
+    capturées avant d'être écrites : une fiche sans colonne prend toute la largeur, et une méta vide
+    ne laisse pas un `<p>` vide sous le titre. Une capture `{% set %}…{% endset %}` produit du
+    balisage déjà échappé par le gabarit qui l'a rendu — rien n'est réinterprété.
+
+    `aside_first` (vrai par défaut) : sous 1280 px, la colonne passe AVANT le contenu — l'identité
+    d'abord. Une fiche dont le contenu est l'action (une intervention à mener) le met à faux.
+#}
+{% set aside_first = aside_first ?? true %}
+{% set avatar %}{% block record_avatar %}{% endblock %}{% endset %}
+{% set meta %}{% block record_meta %}{% endblock %}{% endset %}
+{% set actions %}{% block record_actions %}{% endblock %}{% endset %}
+{% set aside %}{% block record_aside %}{% endblock %}{% endset %}
+{% set has_aside = aside|trim is not empty %}
+<div class="admin-record">
+    {% block record_breadcrumb %}{% endblock %}
+
+    <header class="admin-record__header">
+        <div class="admin-record__identity">
+            {{ avatar }}
+            <div class="admin-record__heading">
+                <div class="admin-record__title-row">
+                    <h1 class="admin-record__title{{ title_mono|default(false) ? ' admin-record__title--mono' }}">{% block record_title %}{% endblock %}</h1>
+                    {% block record_badges %}{% endblock %}
+                </div>
+                {% if meta|trim is not empty %}
+                    <p class="admin-record__meta">{{ meta }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if actions|trim is not empty %}
+            <div class="admin-record__actions">{{ actions }}</div>
+        {% endif %}
+    </header>
+
+    {% block record_alerts %}{% endblock %}
+    {% block record_stats %}{% endblock %}
+    {% block record_steps %}{% endblock %}
+    {% block record_tabs %}{% endblock %}
+
+    <div class="admin-record__body{{ has_aside ? ' admin-record__body--with-aside' }}{{ has_aside and aside_first ? ' admin-record__body--aside-first' }}">
+        <div class="admin-record__main">
+            {% block record_main %}{% endblock %}
+        </div>
+        {% if has_aside %}
+            <aside class="admin-record__aside">{{ aside }}</aside>
+        {% endif %}
+    </div>
+
+    {% block record_after %}{% endblock %}
+</div>

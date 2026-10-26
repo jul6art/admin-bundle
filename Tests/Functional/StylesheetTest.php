@@ -840,6 +840,51 @@ final class StylesheetTest extends TestCase
         return false;
     }
 
+    /**
+     * ⚠️ **La fiche (1.35) n'ouvre ses deux colonnes qu'à 1280 px**, et c'est là seulement que les
+     * propriétés repliées reviennent et que leur bouton part. Entre 1024 et 1280, la barre latérale
+     * de la coquille ne laisse au contenu que ~720 px : une colonne de 20rem y écraserait le texte,
+     * et un repli levé plus tôt laisserait sur un téléphone une colonne de quinze lignes avant le
+     * contenu.
+     */
+    public function testTheRecordOpensItsColumnAndItsFoldedPropertiesOnlyAt1280(): void
+    {
+        $css = self::withoutComments(self::components());
+
+        self::assertSame(1, preg_match('/@media \(min-width: 1280px\) \{(.*?)\n    \}\n/s', $css, $wide), 'La fiche a son palier de 1280 px.');
+        self::assertMatchesRegularExpression('/\.admin-record__body--with-aside \{\s*grid-template-columns: minmax\(0, 1fr\) 20rem;/', $wide[1]);
+        self::assertMatchesRegularExpression('/\.admin-record__props-extra\.hidden \{\s*display: flex;/', $wide[1]);
+        self::assertMatchesRegularExpression('/\.admin-record__props-toggle \{\s*display: none;/', $wide[1]);
+
+        // Sous le palier, le repli tient même chez un consommateur dont Tailwind ne génère pas `.hidden`.
+        self::assertMatchesRegularExpression('/\.admin-record__props-extra\.hidden \{\s*display: none;/', $css);
+    }
+
+    /**
+     * Sur un téléphone, une ligne « Étape 5 sur 7 · Sur site » remplace les libellés — sept libellés
+     * dans 312 px seraient sept troncatures —, et sur un écran plus large, c'est la ligne qui part.
+     */
+    public function testTheStepsTradeTheirLabelsForACaptionOnAPhone(): void
+    {
+        $css = self::withoutComments(self::components());
+
+        self::assertMatchesRegularExpression('/@media \(max-width: 767\.98px\) \{\s*\.admin-record__step-label,\s*\.admin-record__step-hint \{\s*display: none;/', $css);
+        self::assertMatchesRegularExpression('/@media \(min-width: 768px\) \{\s*\.admin-record__steps-caption \{\s*display: none;/', $css);
+    }
+
+    /**
+     * ⚠️ Le filet sous les onglets est une ombre intérieure : la barre défile en largeur sur un
+     * téléphone, et un onglet qui chevaucherait une bordure par une marge négative serait rogné par ce
+     * défilement.
+     */
+    public function testTheRecordTabsDrawTheirRuleInsideTheScroller(): void
+    {
+        $css = self::withoutComments(self::components());
+
+        self::assertMatchesRegularExpression('/\.admin-record__tabs \{[^}]*overflow-x-auto[^}]*box-shadow: inset 0 -1px 0/s', $css);
+        self::assertDoesNotMatchRegularExpression('/\.admin-record__tab \{[^}]*margin-bottom: -/s', $css);
+    }
+
     private static function withoutComments(string $css): string
     {
         return (string) preg_replace('!/\*.*?\*/!s', '', $css);
