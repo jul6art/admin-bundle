@@ -16,12 +16,17 @@ export default class extends Controller {
         event.preventDefault();
         event.stopPropagation();
         if (!this.hasMenuTarget) return;
-        this.menuTarget.classList.toggle('hidden');
+        const open = this.menuTarget.classList.toggle('hidden') === false;
+        // The button says whether its menu is open (1.35) — a reader has no other way to know.
+        event.currentTarget?.setAttribute?.('aria-expanded', String(open));
     }
 
     close() {
         if (!this.hasMenuTarget) return;
         this.menuTarget.classList.add('hidden');
+        this.element.querySelectorAll('[aria-expanded="true"]').forEach((button) => {
+            button.setAttribute('aria-expanded', 'false');
+        });
     }
 
     onDocumentClick(event) {
