@@ -858,6 +858,10 @@ a table row. Without a visible item, nothing is rendered.
 
 `ui--dropdown` and `ui--collapsible` keep `aria-expanded` on their buttons up to date (1.35).
 
+The menu hangs from its button's right edge; when that would cross the left edge of what shows it — a
+list's preview sheet, a phone, where the actions wrap under the title — it hangs from the left edge
+instead (1.35.1).
+
 ### The sign-in pages
 
 `@Admin/security/{login,register,reset_password_request,reset_password,check_email}.html.twig`.
