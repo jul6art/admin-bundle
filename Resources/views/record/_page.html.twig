@@ -33,15 +33,25 @@
 
     `aside_first` (vrai par défaut) : sous 1280 px, la colonne passe AVANT le contenu — l'identité
     d'abord. Une fiche dont le contenu est l'action (une intervention à mener) le met à faux.
+
+    **L'aperçu d'une liste** (jul6art/datatable-bundle ≥ 2.13, `previewAction`) : le panneau montre
+    `[data-preview]` — l'en-tête et ses actions, les alertes, les chiffres, les étapes et la colonne.
+    Le fil d'Ariane, les onglets, le contenu et la suite (`record_after`) portent
+    `data-preview-exclude` ; un panneau du contenu marqué `data-preview-keep` y reste (une fiche dont
+    les détails sont dans le contenu).
 #}
 {% set aside_first = aside_first ?? true %}
 {% set avatar %}{% block record_avatar %}{% endblock %}{% endset %}
 {% set meta %}{% block record_meta %}{% endblock %}{% endset %}
 {% set actions %}{% block record_actions %}{% endblock %}{% endset %}
 {% set aside %}{% block record_aside %}{% endblock %}{% endset %}
+{% set breadcrumb %}{% block record_breadcrumb %}{% endblock %}{% endset %}
+{% set after %}{% block record_after %}{% endblock %}{% endset %}
 {% set has_aside = aside|trim is not empty %}
-<div class="admin-record">
-    {% block record_breadcrumb %}{% endblock %}
+<div class="admin-record" data-preview>
+    {% if breadcrumb|trim is not empty %}
+        <div data-preview-exclude>{{ breadcrumb }}</div>
+    {% endif %}
 
     <header class="admin-record__header">
         <div class="admin-record__identity">
@@ -67,7 +77,7 @@
     {% block record_tabs %}{% endblock %}
 
     <div class="admin-record__body{{ has_aside ? ' admin-record__body--with-aside' }}{{ has_aside and aside_first ? ' admin-record__body--aside-first' }}">
-        <div class="admin-record__main">
+        <div class="admin-record__main" data-preview-exclude>
             {% block record_main %}{% endblock %}
         </div>
         {% if has_aside %}
@@ -75,5 +85,7 @@
         {% endif %}
     </div>
 
-    {% block record_after %}{% endblock %}
+    {% if after|trim is not empty %}
+        <div data-preview-exclude>{{ after }}</div>
+    {% endif %}
 </div>

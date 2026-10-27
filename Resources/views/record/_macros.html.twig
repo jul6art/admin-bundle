@@ -219,7 +219,7 @@
 -#}
 {% macro tabs(items, current, options = {}) %}
     {%- set visible = items|filter(item => item.condition ?? true) -%}
-    <nav class="admin-record__tabs" aria-label="{{ options.label ?? 'record.tabs'|trans({}, 'record') }}">
+    <nav class="admin-record__tabs" aria-label="{{ options.label ?? 'record.tabs'|trans({}, 'record') }}" data-preview-exclude>
         {%- for item in visible %}
             <a href="{{ item.href }}" class="admin-record__tab"
                {%- if item.key == current %} aria-current="page"{% endif %}

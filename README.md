@@ -831,9 +831,19 @@ translations): `record.tabs` (the tabs' `aria-label`), `record.properties.show_a
 `record.steps.caption` (`%position%`, `%total%`, `%label%` — « Étape 5 sur 7 · Sur site ») and
 `record.cancel` (the ⋯ menu's confirmation). Every consumer defines them in each of its languages.
 
-> ⚠️ **Written in this bundle's classes, never in utilities**: the consumers do not scan its
-> templates. `RecordRenderingTest` reads every class the three templates write and fails on one the
-> stylesheet does not declare.
+> ⚠️ **Written in this bundle's classes, never in utilities**: the applications of this ecosystem
+> scan the bundle's templates (`bundleContentPaths()`), an application set up otherwise may not —
+> and a utility only a template names is then purged from its production stylesheet.
+> `RecordRenderingTest` reads every class the three templates write and fails on one the stylesheet
+> does not declare.
+
+**The preview of a list** (jul6art/datatable-bundle ≥ 2.13, `previewAction`): a plain click on a
+row's link opens the record in a panel on the right, which shows the page's `[data-preview]` element
+minus its `[data-preview-exclude]` regions. The record page marks both: the panel shows the header
+and its actions, the alerts, the figures, the steps and the column; the breadcrumb, the tabs, the
+content and `record_after` stay out. A panel of the content marked `data-preview-keep` stays in —
+for a record whose details live in the content. Inside the panel the record takes one column,
+whatever the width of the window.
 
 #### The ⋯ menu (`@Admin/partials/_actions_dropdown.html.twig`)
 

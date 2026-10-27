@@ -66,6 +66,51 @@ final class RecordRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * The preview of a list (jul6art/datatable-bundle ≥ 2.13) shows `[data-preview]` minus its
+     * `[data-preview-exclude]` regions: who, where it stands and the column — not the way back, the
+     * tabs, the content nor what follows it, unless a panel of the content asks to stay.
+     */
+    public function testThePreviewOfAListKeepsTheHeaderFiguresAndColumnOnly(): void
+    {
+        $html = $this->render("{% embed '@Admin/record/_page.html.twig' %}
+            {% import '@Admin/record/_macros.html.twig' as record %}
+            {% block record_breadcrumb %}<nav id=\"way-back\">Customers</nav>{% endblock %}
+            {% block record_title %}Acme{% endblock %}
+            {% block record_stats %}<div id=\"figures\"></div>{% endblock %}
+            {% block record_tabs %}{{ record.tabs([{key: 'a', label: 'A', href: '?tab=a'}], 'a') }}{% endblock %}
+            {% block record_main %}<div id=\"content\"></div><div id=\"kept\" data-preview-keep></div>{% endblock %}
+            {% block record_aside %}<div id=\"details\"></div>{% endblock %}
+            {% block record_after %}<div id=\"audit\"></div>{% endblock %}
+        {% endembed %}");
+
+        $document = new \DOMDocument();
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $count = static fn (string $query): int => ($nodes = $xpath->query($query)) instanceof \DOMNodeList ? $nodes->length : 0;
+        $excluded = static fn (string $id): bool => 1 === $count(\sprintf('//*[@id="%s"]/ancestor-or-self::*[@data-preview-exclude]', $id));
+
+        self::assertSame(1, $count('//*[@data-preview][contains(@class, "admin-record")]'), 'The record is what a preview shows.');
+        foreach (['way-back', 'content', 'kept', 'audit'] as $id) {
+            self::assertTrue($excluded($id), $id.' is left out of the preview.');
+        }
+        self::assertSame(1, $count('//nav[contains(@class, "admin-record__tabs")][@data-preview-exclude]'), 'The tabs too: the preview has one page, not its sections.');
+        self::assertSame(1, $count('//*[@id="kept"][@data-preview-keep]'), 'A panel of the content can ask to stay.');
+        foreach (['figures', 'details'] as $id) {
+            self::assertFalse($excluded($id), $id.' is part of the preview.');
+        }
+        self::assertSame(0, $count('//h1/ancestor-or-self::*[@data-preview-exclude]'), 'Nor is the header.');
+    }
+
+    public function testAnEmptyBreadcrumbOrAfterLeavesNoWrapper(): void
+    {
+        $html = $this->render("{% embed '@Admin/record/_page.html.twig' %}
+            {% block record_title %}Acme{% endblock %}
+        {% endembed %}");
+
+        self::assertSame(1, substr_count($html, 'data-preview-exclude'), 'Only the content column: no empty wrapper for an absent breadcrumb or after.');
+    }
+
+    /**
      * ⚠️ A capture keeps the escaping of the template that rendered it: a name the user typed is
      * escaped ONCE, never interpreted and never escaped twice.
      */
@@ -263,7 +308,7 @@ final class RecordRenderingTest extends AbstractFunctionalTestCase
                 {key: 'audit', label: 'History', href: '?tab=audit', condition: false},
             ], 'contacts') }}");
 
-        self::assertStringContainsString('<nav class="admin-record__tabs" aria-label="record.tabs">', $html);
+        self::assertStringContainsString('<nav class="admin-record__tabs" aria-label="record.tabs" data-preview-exclude>', $html);
         self::assertMatchesRegularExpression('#<a href="\?tab=contacts" class="admin-record__tab" aria-current="page">Contacts<span class="admin-record__tab-count">4</span></a>#', $html);
         self::assertSame(1, substr_count($html, 'aria-current'));
         self::assertStringContainsString('Deals<span class="admin-record__tab-count">0</span>', $html, 'Zero is a count: an empty tab says so.');

@@ -1261,6 +1261,15 @@
     }
 
     /*
+     * La fiche dans l'aperçu d'une liste (jul6art/datatable-bundle ≥ 2.13 pose `data-preview-active`
+     * sur ce qu'il affiche) : un panneau de 28rem, donc une seule colonne quelle que soit la largeur
+     * de l'écran — la règle à deux colonnes de 1280 px ne voit que la fenêtre.
+     */
+    .admin-record[data-preview-active] .admin-record__body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /*
      * L'espacement d'une colonne est son `gap`, et lui seul. Un panneau rendu par sous-requête
      * (`render(controller(…))`) arrive avec le `mt-6` qu'il porte sur une fiche empilée : en plus du
      * gap, il doublait l'écart (vu sur le bon d'intervention de cereezer, son historique). Deux
