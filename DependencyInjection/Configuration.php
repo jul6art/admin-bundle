@@ -181,9 +181,50 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->append($this->twoFactorNode())
+                ->append($this->deadlinesNode())
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * `deadlines` (1.36): the deadlines to renew — a screen, and a reminder by e-mail at D-7, D-1 and
+     * on the day. Off until `entity` names the application's entity.
+     */
+    private function deadlinesNode(): ArrayNodeDefinition
+    {
+        $node = new TreeBuilder('deadlines')->getRootNode();
+        $node
+            ->info('The deadlines to renew: an API secret, a service account\'s token, an annual review. A screen (the application imports `DeadlineController`) and a reminder by e-mail at D-7, D-1 and on the day (`admin:deadlines:remind`, scheduled by the application). Off until `entity` is set — see the README.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode('entity')
+                    ->info('The application\'s entity: implements `DeadlineInterface`, uses `DeadlineTrait`, constructible without arguments. Empty registers nothing.')
+                    ->defaultValue('')
+                ->end()
+                ->variableNode('recipients')
+                    ->info('Who receives the reminders: a list of addresses, or one string of comma-separated addresses — `%env(DEADLINE_ALERTS_TO)%` works. Empty: nothing is sent, and nothing is marked sent.')
+                    ->defaultValue([])
+                ->end()
+                ->scalarNode('from')
+                    ->info('The sender of the reminders. Empty leaves it to the mailer\'s own configuration (`framework.mailer.headers`).')
+                    ->defaultValue('')
+                ->end()
+                ->scalarNode('access')
+                    ->info('What every action of the screen asks `isGranted()` — a role or a permission code. The application\'s menu entry must carry the same.')
+                    ->defaultValue('ROLE_SUPER_ADMIN')
+                ->end()
+                ->scalarNode('locale')
+                    ->info('The language of the reminders: they are written outside of any request.')
+                    ->defaultValue('en')
+                ->end()
+                ->scalarNode('timezone')
+                    ->info('Where « today » is read, to count the days left. Empty: PHP\'s default timezone.')
+                    ->defaultValue('')
+                ->end()
+            ->end();
+
+        return $node;
     }
 
     /**

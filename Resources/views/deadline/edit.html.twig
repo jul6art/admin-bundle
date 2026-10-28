@@ -1,0 +1,65 @@
+{#
+    Une échéance saisie (`admin.deadlines`, 1.36) : la carte du formulaire, et pour une échéance existante la zone
+    de suppression, à part — c'est le seul endroit où l'on supprime.
+#}
+{% extends admin_layout_template() %}
+{% trans_default_domain 'deadline' %}
+
+{% set heading = deadline.id ? deadline.label : 'deadline.edit.title_new'|trans %}
+
+{% block title %}{{ heading }} · {{ admin_branding().name }}{% endblock %}
+
+{% block content %}
+    <div class="mx-auto max-w-3xl">
+        <nav class="mb-3 text-xs text-slate-400 dark:text-slate-500" aria-label="{{ 'deadline.breadcrumb'|trans }}">
+            <a href="{{ path('admin_deadline_index') }}" class="hover:text-slate-700 dark:hover:text-slate-300">{{ 'deadline.title'|trans }}</a>
+            <span class="mx-2" aria-hidden="true">/</span><span class="text-slate-600 dark:text-slate-400">{{ heading }}</span>
+        </nav>
+
+        <section class="panel p-0" aria-labelledby="deadline-form-title">
+            <header class="flex items-center gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-700 sm:px-6">
+                <span class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
+                    <i class="fa-solid {{ deadline.id ? 'fa-pen' : 'fa-calendar-plus' }}" aria-hidden="true"></i>
+                </span>
+                <div class="min-w-0">
+                    <h1 id="deadline-form-title" class="text-lg font-bold text-slate-900 dark:text-slate-100 break-words">{{ heading }}</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ 'deadline.edit.lead'|trans }}</p>
+                </div>
+            </header>
+
+            {{ form_start(form, { attr: { class: 'form-grid', novalidate: 'novalidate' } }) }}
+                <div class="space-y-5 px-5 py-6 sm:px-6">
+                    {{ form_errors(form) }}
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        <div class="md:col-span-2">{{ form_row(form.label) }}</div>
+                        <div>{{ form_row(form.dueOn) }}</div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        <div>{{ form_row(form.periodDays) }}</div>
+                        <div class="md:col-span-2">{{ form_row(form.renewUrl) }}</div>
+                    </div>
+                    {{ form_row(form.note) }}
+                </div>
+                <footer class="flex flex-wrap justify-end gap-2 border-t border-slate-200 rounded-b-2xl bg-slate-50 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/40 sm:px-6">
+                    <a href="{{ path('admin_deadline_index') }}" class="btn-secondary">{{ 'deadline.action.cancel'|trans }}</a>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> {{ 'deadline.action.save'|trans }}</button>
+                </footer>
+            {{ form_end(form) }}
+        </section>
+
+        {% if deadline.id %}
+            <section class="panel mt-6 border-red-200 p-0 dark:border-red-500/30" aria-labelledby="deadline-danger-title">
+                <div class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div>
+                        <h2 id="deadline-danger-title" class="text-sm font-bold text-red-700 dark:text-red-400">{{ 'deadline.edit.danger_title'|trans }}</h2>
+                        <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{{ 'deadline.edit.danger_text'|trans }}</p>
+                    </div>
+                    <form method="post" action="{{ path('admin_deadline_delete', {id: deadline.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_deadline_' ~ deadline.id) }}">
+                        <button type="submit" class="btn-danger"><i class="fa-solid fa-trash" aria-hidden="true"></i> {{ 'deadline.action.delete'|trans }}</button>
+                    </form>
+                </div>
+            </section>
+        {% endif %}
+    </div>
+{% endblock %}

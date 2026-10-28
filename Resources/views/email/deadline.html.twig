@@ -1,0 +1,31 @@
+{#
+    Le rappel d'une échéance (`admin.deadlines`, 1.36), à J-7, J-1 et le jour J. Rendu par
+    `DeadlineNotifier` dans la langue de `admin.deadlines.locale`, hors de toute requête. Aucun secret : le
+    libellé, la date, les jours restants, deux liens.
+#}
+{% extends '@Admin/email/base.html.twig' %}
+
+{% block email_title %}{{ (past ? 'deadline.email.subject_past' : 'deadline.email.subject')|trans(parameters, 'deadline', locale) }}{% endblock %}
+
+{% block email_body %}
+    <p style="margin: 0 0 16px;">{{ (past ? 'deadline.email.lead_past' : 'deadline.email.lead')|trans(parameters, 'deadline', locale) }}</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 16px; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">{{ 'deadline.email.what'|trans({}, 'deadline', locale) }}</td>
+            <td style="padding: 8px 0;">{{ label }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">{{ 'deadline.email.when'|trans({}, 'deadline', locale) }}</td>
+            <td style="padding: 8px 0;">{{ date }}</td>
+        </tr>
+    </table>
+    {% if note %}
+        <p style="margin: 0 0 16px; white-space: pre-line;">{{ note }}</p>
+    {% endif %}
+    {% if renew_url %}
+        {{ include('@Admin/email/_button.html.twig', { url: renew_url, label: 'deadline.email.renew'|trans({}, 'deadline', locale) }) }}
+    {% endif %}
+    {% if screen_url %}
+        <p style="margin: 16px 0 0; font-size: 13px;"><a href="{{ screen_url }}">{{ 'deadline.email.screen'|trans({}, 'deadline', locale) }}</a></p>
+    {% endif %}
+{% endblock %}

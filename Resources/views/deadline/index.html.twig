@@ -1,0 +1,184 @@
+{#
+    Les échéances à renouveler (`admin.deadlines`, 1.36) : quatre chiffres en tête, la liste en carte — la plus
+    proche d'abord, sa pastille, ses jours restants, la part de sa période écoulée —, et à côté le calendrier des
+    rappels à venir (J-7, J-1, jour J, chaque matin).
+
+    Le statut ne se dit jamais par la couleur seule : chaque pastille l'écrit. Supprimer n'est pas ici, mais sur
+    l'écran de modification : une ligne ne s'efface pas d'un clic égaré.
+#}
+{% extends admin_layout_template() %}
+{% trans_default_domain 'deadline' %}
+
+{% set tones = {
+    past: { symbol: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400', badge: 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30', bar: 'bg-red-500', icon: 'fa-solid fa-circle-exclamation' },
+    soon: { symbol: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400', badge: 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30', bar: 'bg-amber-500', icon: 'fa-solid fa-hourglass-half' },
+    month: { symbol: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400', badge: 'bg-sky-50 text-sky-800 ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30', bar: 'bg-sky-500', icon: 'fa-solid fa-calendar-days' },
+    later: { symbol: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', badge: 'bg-emerald-50 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30', bar: 'bg-emerald-500', icon: 'fa-solid fa-calendar-check' },
+    undated: { symbol: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400', badge: 'bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-500/30', bar: 'bg-slate-400', icon: 'fa-solid fa-calendar' },
+} %}
+{% set date_format = 'deadline.date_format'|trans %}
+{% set icon_button = 'inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-accent-50 hover:text-accent-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-500 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-accent-500/10 dark:hover:text-accent-400' %}
+
+{% block title %}{{ 'deadline.title'|trans }} · {{ admin_branding().name }}{% endblock %}
+{% block container_class %}max-w-full{% endblock %}
+
+{% block content %}
+    <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ 'deadline.title'|trans }}</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ 'deadline.subtitle'|trans }}</p>
+        </div>
+        <a href="{{ path('admin_deadline_new') }}" class="btn-primary self-start md:self-auto">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> {{ 'deadline.action.new'|trans }}
+        </a>
+    </div>
+
+    {# Les quatre chiffres : ce qui a expiré, ce qui tombe dans la semaine, dans le mois, et le tout. #}
+    {# Deux par ligne sur téléphone, quatre sur grand écran : les chiffres se lisent sans défiler. #}
+    <div class="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" data-deadline-stats>
+        {% for key, tone in { past: 'past', soon: 'soon', month: 'month', total: 'later' } %}
+            <div class="panel relative overflow-hidden p-4 sm:p-5">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <span class="flex h-10 w-10 flex-none items-center justify-center rounded-xl sm:h-12 sm:w-12 {{ tones[tone].symbol }}">
+                        <i class="{{ key == 'total' ? 'fa-solid fa-layer-group' : tones[tone].icon }} sm:text-lg" aria-hidden="true"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <div class="text-2xl font-bold leading-none text-slate-900 dark:text-slate-100 sm:text-3xl">{{ stats[key] }}</div>
+                        <div class="mt-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">{{ ('deadline.stats.' ~ key)|trans }}</div>
+                    </div>
+                </div>
+                <p class="mt-3 hidden text-xs text-slate-500 dark:text-slate-400 sm:block">{{ ('deadline.stats.' ~ key ~ '_hint')|trans }}</p>
+                <span class="absolute inset-x-0 bottom-0 h-1 {{ tones[tone].bar }}" aria-hidden="true"></span>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# La liste prend toute la largeur ; le calendrier ne se met à côté qu'en très grand écran (2xl), où les
+       colonnes de la liste tiennent encore. #}
+    <div class="grid grid-cols-1 gap-6 2xl:grid-cols-3">
+        <section class="panel min-w-0 p-0 2xl:col-span-2" aria-labelledby="deadline-list-title">
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700 sm:px-6">
+                <div>
+                    <h2 id="deadline-list-title" class="text-base font-bold text-slate-900 dark:text-slate-100">{{ 'deadline.list.title'|trans }}</h2>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ 'deadline.list.count'|trans({'%count%': stats.total}) }}</p>
+                </div>
+            </header>
+
+            {% if rows is empty %}
+                <div class="flex flex-col items-center px-6 py-14 text-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
+                        <i class="fa-solid fa-calendar-plus text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <p class="mt-4 text-base font-semibold text-slate-900 dark:text-slate-100">{{ 'deadline.list.empty_title'|trans }}</p>
+                    <p class="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">{{ 'deadline.list.empty_text'|trans }}</p>
+                    <a href="{{ path('admin_deadline_new') }}" class="btn-primary mt-5"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{ 'deadline.action.new'|trans }}</a>
+                </div>
+            {% else %}
+                <ul class="divide-y divide-dashed divide-slate-200 dark:divide-slate-700" data-deadline-list>
+                    {% for row in rows %}
+                        {% set deadline = row.deadline %}
+                        {% set tone = tones[row.status] %}
+                        <li class="flex flex-col gap-4 px-5 py-4 sm:px-6 lg:flex-row lg:items-center" data-deadline="{{ deadline.id }}" data-status="{{ row.status }}">
+                            <div class="flex min-w-0 flex-1 items-start gap-4 lg:min-w-[16rem]">
+                                <span class="flex h-11 w-11 flex-none items-center justify-center rounded-xl {{ tone.symbol }}">
+                                    <i class="{{ tone.icon }}" aria-hidden="true"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-900 dark:text-slate-100 break-words">{{ deadline.label }}</p>
+                                    {% if deadline.note %}
+                                        <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400 whitespace-pre-line break-words">{{ deadline.note }}</p>
+                                    {% endif %}
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        {% if deadline.source %}
+                                            <span class="inline-flex items-center gap-1 rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"><i class="fa-solid fa-gears" aria-hidden="true"></i> {{ 'deadline.provided'|trans }}</span>
+                                        {% endif %}
+                                        {% if deadline.periodDays %}
+                                            <span class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"><i class="fa-solid fa-repeat" aria-hidden="true"></i> {{ 'deadline.period'|trans({'%count%': deadline.periodDays}) }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-x-6 gap-y-3 lg:flex-none lg:flex-nowrap">
+                                <div class="w-32">
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ deadline.dueOn ? deadline.dueOn|date(date_format) : '—' }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                                        {%- if row.days is null -%}—
+                                        {%- elseif row.days < 0 -%}{{ 'deadline.overdue'|trans({'%count%': -row.days}) }}
+                                        {%- else -%}{{ 'deadline.left'|trans({'%count%': row.days}) }}{%- endif -%}
+                                    </p>
+                                </div>
+
+                                <div class="w-36">
+                                    {% if row.progress is not null %}
+                                        <div class="mb-1 flex justify-between text-xs text-slate-500 dark:text-slate-400"><span>{{ 'deadline.progress_label'|trans }}</span><span>{{ row.progress }} %</span></div>
+                                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ row.progress }}" aria-label="{{ 'deadline.progress'|trans({'%percent%': row.progress}) }}">
+                                            <div class="h-full rounded-full {{ tone.bar }}" style="width: {{ row.progress }}%"></div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-xs text-slate-400 dark:text-slate-500">{{ 'deadline.no_period'|trans }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <span class="inline-flex w-28 justify-center rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset {{ tone.badge }}">{{ ('deadline.status.' ~ row.status)|trans }}</span>
+
+                                {# Une largeur fixe pour trois boutons : les colonnes restent alignées d'une ligne à l'autre. #}
+                                <div class="flex items-center gap-1.5 lg:w-[7.5rem] lg:justify-end">
+                                    {% if deadline.renewUrl %}
+                                        <a href="{{ deadline.renewUrl }}" class="{{ icon_button }}" target="_blank" rel="noopener noreferrer" title="{{ 'deadline.action.open'|trans }}">
+                                            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i><span class="admin-sr">{{ 'deadline.action.open'|trans }} — {{ deadline.label }}</span>
+                                        </a>
+                                    {% endif %}
+                                    {% if not deadline.source %}
+                                        {% if deadline.periodDays %}
+                                            <form method="post" action="{{ path('admin_deadline_renew', {id: deadline.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('admin_deadline_' ~ deadline.id) }}">
+                                                <button type="submit" class="{{ icon_button }}" title="{{ 'deadline.action.renew'|trans({'%count%': deadline.periodDays}) }}">
+                                                    <i class="fa-solid fa-rotate" aria-hidden="true"></i><span class="admin-sr">{{ 'deadline.action.renew'|trans({'%count%': deadline.periodDays}) }} — {{ deadline.label }}</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <a href="{{ path('admin_deadline_edit', {id: deadline.id}) }}" class="{{ icon_button }}" title="{{ 'deadline.action.edit'|trans }}">
+                                            <i class="fa-solid fa-pen" aria-hidden="true"></i><span class="admin-sr">{{ 'deadline.action.edit'|trans }} — {{ deadline.label }}</span>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        {# Le calendrier des rappels : les prochains e-mails, chacun à sa date (le passage du matin). #}
+        <section class="panel min-w-0 self-start p-0" aria-labelledby="deadline-reminders-title" data-deadline-reminders>
+            <header class="border-b border-slate-200 px-5 py-4 dark:border-slate-700 sm:px-6">
+                <h2 id="deadline-reminders-title" class="text-base font-bold text-slate-900 dark:text-slate-100">{{ 'deadline.reminders.title'|trans }}</h2>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ 'deadline.reminders.lead'|trans }}</p>
+            </header>
+            <div class="px-5 py-5 sm:px-6">
+                {% if reminders is empty %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'deadline.reminders.empty'|trans }}</p>
+                {% else %}
+                    <ol class="relative space-y-5 border-s-2 border-dashed border-slate-200 ps-6 dark:border-slate-700">
+                        {% for reminder in reminders %}
+                            {% set stage_tone = reminder.stage.value == 7 ? tones.soon : tones.past %}
+                            <li class="relative">
+                                <span class="absolute -start-[2.05rem] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-4 ring-white dark:bg-slate-800 dark:ring-slate-800" aria-hidden="true">
+                                    <span class="h-2.5 w-2.5 rounded-full {{ stage_tone.bar }}"></span>
+                                </span>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                    {{ reminder.date == today ? 'deadline.reminders.today'|trans : reminder.date|date(date_format) }}
+                                </p>
+                                <p class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                                    <span class="me-1 inline-flex rounded px-1.5 py-0.5 text-xs font-bold ring-1 ring-inset {{ stage_tone.badge }}">{{ ('deadline.stage.' ~ reminder.stage.value)|trans }}</span>
+                                    {{ reminder.deadline.label }}
+                                </p>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

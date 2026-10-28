@@ -1072,6 +1072,93 @@ admin:
 > properties. A palette whose content on the panel, name on the background or button text on the
 > accent falls under 4.5:1 is refused when the container compiles, not discovered in an inbox.
 
+### Deadlines to renew (1.36)
+
+An API secret that expires in 24 months, a service account's token every 60 days, an annual review: a
+screen lists them, the nearest first, and an e-mail reminds of each one **at D-7, D-1 and on the day**
+(or later, while nothing was renewed) — each once per date. A reminder missed (the worker was stopped) goes
+at the next run, the most urgent one alone; a new date re-arms the three.
+
+The bundle knows no entity. The application declares its own:
+
+```php
+#[ORM\Entity]
+#[ORM\Table(name: 'deadline')]
+class Deadline implements DeadlineInterface
+{
+    use DeadlineTrait;   // label, due_on, period_days, renew_url, note, source, notified_stage
+
+    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
+    private ?int $id = null;
+
+    public function getId(): ?int { return $this->id; }
+}
+```
+
+```yaml
+# config/packages/admin.yaml
+admin:
+    deadlines:
+        entity: App\Entity\Deadline              # empty (the default) registers nothing
+        recipients: '%env(DEADLINE_ALERTS_TO)%'   # comma-separated, or a list
+        from: '%env(MAILER_FROM)%'
+        access: ROLE_SUPER_ADMIN                  # asked by every action of the screen
+        locale: fr                                # the reminders are written outside any request
+        timezone: Europe/Brussels                 # where « today » is read
+
+# config/routes/admin.yaml — keep the route names: `admin_deadline_index` is the link of every reminder
+admin_deadlines:
+    resource: '@AdminBundle/Controller/DeadlineController.php'
+    type: attribute
+    prefix: /admin
+```
+
+Then the menu entry, with **the same attribute** as `access` — a menu test reads it back as the
+container parameter `admin.deadlines.access`, since the screen carries no `#[IsGranted]` of its own —, and
+the morning run in the schedule:
+
+```php
+new NavItem('admin_deadline_index', 'nav.deadlines', 'fa-solid fa-calendar-check', permission: 'ROLE_SUPER_ADMIN');
+
+RecurringMessage::every('1 day', new RunCommandMessage('admin:deadlines:remind'), from: '08:00');
+```
+
+**A deadline the code already knows** — a token's date of entry plus its lifetime — comes from a
+`DeadlineProviderInterface` (declaring the class as a service is enough). Its rows are written before each
+run and on each visit of the screen, keyed by `source`; the screen shows them without letting them be
+edited, and a source that stops yielding is removed:
+
+```php
+final readonly class NpssoDeadline implements DeadlineProviderInterface
+{
+    public function deadlines(): iterable
+    {
+        $account = $this->service->current();
+        if (null !== $account) {
+            yield new ProvidedDeadline('psn.npsso', 'NPSSO PSN', $account->getExpectedExpiry(), 'https://ca.account.sony.com/api/v1/ssocookie');
+        }
+    }
+}
+```
+
+« Renewed » sets today plus the period (`period_days`); without one, the date is corrected in the form.
+Deleting lives on the edit screen only — a row is never erased by a stray click.
+
+> ⚠️ **The mail carries no secret** — the label, the date, the days left, the renewal link and the
+> screen's. A forwarded reminder leaks nothing. And with no recipient, nothing is sent **and nothing is
+> marked sent**: the day the address is set, the reminder goes.
+
+The catalogue is the application's, domain `deadline`: `title`, `subtitle`, `breadcrumb`, `date_format`
+(a PHP date format), `action.{new,open,renew,edit,delete,save,cancel}` (`renew` receives `%count%`, the
+period), `stats.{past,soon,month,total}` and their `_hint`, `list.{title,count,empty_title,empty_text}`,
+`status.{past,soon,month,later,undated}`, `left` and `overdue` (`%count%` days, plural forms), `provided`,
+`period` (`%count%`), `progress` (`%percent%`), `progress_label`, `no_period`,
+`reminders.{title,lead,empty,today}`, `stage.{7,1,0}`, `edit.{title_new,lead,danger_title,danger_text}`,
+`field.{label,due_on,period_days,renew_url,note}`, `help.{period_days,renew_url,note}`,
+`error.{label,due_on,period_days,renew_url}` and `email.{subject,subject_past,lead,lead_past,what,when,renew,screen}`
+(`%app%`, `%label%`, `%date%`, `%count%`). The three flashes are keys of **`messages`**, like every flash
+the shell's toasts render: `deadline.flash.{saved,renewed,deleted}`.
+
 Quality assurance
 -----------------
 

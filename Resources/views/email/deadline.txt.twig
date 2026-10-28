@@ -1,0 +1,20 @@
+{% autoescape false %}
+{{ (past ? 'deadline.email.lead_past' : 'deadline.email.lead')|trans(parameters, 'deadline', locale) }}
+
+{{ 'deadline.email.what'|trans({}, 'deadline', locale) }} {{ label }}
+{{ 'deadline.email.when'|trans({}, 'deadline', locale) }} {{ date }}
+{% if note %}
+
+{{ note }}
+{% endif %}
+{% if renew_url %}
+
+{{ 'deadline.email.renew'|trans({}, 'deadline', locale) }}
+{{ renew_url }}
+{% endif %}
+{% if screen_url %}
+
+{{ 'deadline.email.screen'|trans({}, 'deadline', locale) }}
+{{ screen_url }}
+{% endif %}
+{% endautoescape %}

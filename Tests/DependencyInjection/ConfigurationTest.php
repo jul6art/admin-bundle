@@ -164,6 +164,14 @@ final class ConfigurationTest extends TestCase
                 'enrolment_route' => 'admin_account_two_factor',
                 'open_routes' => [],
             ],
+            'deadlines' => [
+                'entity' => '',
+                'recipients' => [],
+                'from' => '',
+                'access' => 'ROLE_SUPER_ADMIN',
+                'locale' => 'en',
+                'timezone' => '',
+            ],
         ], $this->process([]));
     }
 

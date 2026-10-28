@@ -6,6 +6,8 @@ namespace Jul6Art\AdminBundle\Tests\Fixtures;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Jul6Art\AdminBundle\AdminBundle;
+use Jul6Art\AdminBundle\Command\DeadlineRemindCommand;
+use Jul6Art\AdminBundle\Deadline\DeadlineNotifier;
 use Jul6Art\AdminBundle\EventListener\BackupCodeUsedListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorEnforcementListener;
 use Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener;
@@ -29,6 +31,7 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Mailer\MailerInterface;
 
 /**
  * Minimal application kernel used by the functional tests.
@@ -165,6 +168,8 @@ final class TestKernel extends Kernel
                     TwoFactorEnforcementListener::class,
                     TwoFactorThrottleListener::class,
                     BackupCodeUsedListener::class,
+                    DeadlineNotifier::class,
+                    DeadlineRemindCommand::class,
                     'scheb_two_factor.security.totp_authenticator',
                     'scheb_two_factor.backup_code_manager',
                 ];
@@ -244,6 +249,14 @@ final class TestKernel extends Kernel
         $container->register(WidgetNavigation::class, WidgetNavigation::class)
             ->setAutoconfigured(true)
             ->setPublic(false);
+
+        // Les échéances (1.36) : un fournisseur déclaré comme un projet le ferait, et un mailer qui
+        // garde ce qu'on lui donne — public tous deux, le test les lit.
+        $container->register(TokenDeadlineProvider::class, TokenDeadlineProvider::class)
+            ->setAutoconfigured(true)
+            ->setPublic(true);
+        $container->register(MailerInterface::class, RecordingMailer::class)
+            ->setPublic(true);
     }
 
     /**

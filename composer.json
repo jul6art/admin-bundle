@@ -41,6 +41,7 @@
         "symfony/flex": "^2.4",
         "symfony/form": "^7.4 || ^8.0",
         "symfony/framework-bundle": "^7.4 || ^8.0",
+        "symfony/mailer": "^7.4 || ^8.0",
         "symfony/phpunit-bridge": "^7.4 || ^8.0",
         "symfony/rate-limiter": "^7.4 || ^8.0",
         "symfony/routing": "^7.4 || ^8.0",
@@ -101,6 +102,7 @@
         "scheb/2fa-backup-code": "Les codes de secours de la double authentification (`admin.two_factor.backup_codes`), pour un t\u00e9l\u00e9phone perdu.",
         "scheb/2fa-totp": "Le code \u00e0 six chiffres d'une application d'authentification (TOTP), seul fournisseur que `admin.two_factor` branche.",
         "endroid/qr-code": "Le QR code de l'enr\u00f4lement \u00e0 la double authentification, en SVG dans une URI `data:` (aucune ressource externe).",
-        "symfony/rate-limiter": "La limite d'essais du code de double authentification (cinq \u00e9checs par quart d'heure et par compte)."
+        "symfony/rate-limiter": "La limite d'essais du code de double authentification (cinq \u00e9checs par quart d'heure et par compte).",
+        "symfony/mailer": "Les rappels des \u00e9ch\u00e9ances \u00e0 renouveler (`admin.deadlines`), \u00e0 J-7, J-1 et le jour J."
     }
 }

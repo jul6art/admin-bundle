@@ -28,7 +28,11 @@ return static function (RoutingConfigurator $routes): void {
         $routes->add($name, $path);
     }
 
-    // Le seul écran de ce fichier qui est réellement DEMANDÉ : la double authentification, importée
+    // L'écran des échéances (1.36), importé comme une application l'importe. Son service n'existe
+    // qu'avec `admin.deadlines.entity`.
+    $routes->import(__DIR__.'/../../Controller/DeadlineController.php', 'attribute')->prefix('/admin');
+
+    // L'autre écran de ce fichier qui est réellement DEMANDÉ : la double authentification, importée
     // comme une application l'importe (attribut, préfixe). Son service n'existe qu'avec l'option.
     $routes->import(__DIR__.'/../../Controller/TwoFactorController.php', 'attribute')->prefix('/admin');
     // Un second espace connecté, comme cegeta (`/app`) : le même écran, son préfixe, son layout.

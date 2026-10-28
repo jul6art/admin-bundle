@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Jul6Art\AdminBundle;
 
+use Jul6Art\AdminBundle\Deadline\DeadlineProviderInterface;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\AppearanceControllerPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\FeatureVisibilityPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\GlobalSearchPass;
@@ -30,6 +31,9 @@ class AdminBundle extends Bundle
         // qu'un tag manquait est exactement le genre de défaut qu'on ne voit qu'à l'usage.
         $container->registerForAutoconfiguration(NavigationProviderInterface::class)
             ->addTag('admin.navigation');
+        // Même raison pour les échéances que l'application calcule (1.36).
+        $container->registerForAutoconfiguration(DeadlineProviderInterface::class)
+            ->addTag('admin.deadline_provider');
 
         $container->addCompilerPass(new FeatureVisibilityPass());
         // Même question, même réponse : le port des raccourcis est FACULTATIF, et son absence

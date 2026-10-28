@@ -6,7 +6,10 @@ namespace Jul6Art\AdminBundle\DependencyInjection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
+use Jul6Art\AdminBundle\Contract\DeadlineInterface;
+use Jul6Art\AdminBundle\Controller\DeadlineController;
 use Jul6Art\AdminBundle\Controller\TwoFactorController;
+use Jul6Art\AdminBundle\Deadline\DeadlineNotifier;
 use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\AdminBundle\Ui\EmailPalette;
@@ -20,6 +23,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
@@ -167,6 +171,11 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             $loader->load('performance.yaml');
         }
 
+        $deadlines = \is_array($config['deadlines'] ?? null) ? $config['deadlines'] : [];
+        if ('' !== self::asString($deadlines['entity'] ?? null, '')) {
+            $this->loadDeadlines($loader, $container, $deadlines);
+        }
+
         // Le formulaire d'apparence n'a de sens qu'avec le composant Form ; son contrôleur ajoute
         // Doctrine. Les deux sont des `suggest` : un projet peut vouloir la coquille sans l'écran
         // de préférences.
@@ -249,6 +258,44 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ]))));
             $loader->load('two_factor_required.yaml');
         }
+    }
+
+    /**
+     * The deadlines' screen and reminders. Their packages are `suggest`s, so naming an entity without
+     * them fails HERE, with the command to run, rather than on the first morning.
+     *
+     * @param array<array-key, mixed> $deadlines
+     */
+    private function loadDeadlines(YamlFileLoader $loader, ContainerBuilder $container, array $deadlines): void
+    {
+        $missing = array_keys(array_filter([
+            'doctrine/orm' => !interface_exists(EntityManagerInterface::class),
+            'symfony/mailer' => !interface_exists(MailerInterface::class),
+            'symfony/form' => !class_exists(AbstractType::class),
+            'twig/twig' => !class_exists(Environment::class),
+        ]));
+        if ([] !== $missing) {
+            throw new \LogicException(\sprintf('admin.deadlines needs: composer require %s', implode(' ', $missing)));
+        }
+        $entity = self::asString($deadlines['entity'] ?? null, '');
+        if (!is_a($entity, DeadlineInterface::class, true)) {
+            throw new \LogicException(\sprintf('admin.deadlines.entity must name a class implementing %s (with DeadlineTrait): "%s" does not.', DeadlineInterface::class, $entity));
+        }
+
+        $loader->load('deadlines.yaml');
+        $recipients = $deadlines['recipients'] ?? [];
+        $container->getDefinition(DeadlineNotifier::class)
+            ->setArgument('$entityClass', $entity)
+            ->setArgument('$recipients', \is_string($recipients) ? $recipients : self::stringList($recipients))
+            ->setArgument('$from', \is_string($deadlines['from'] ?? null) ? $deadlines['from'] : '')
+            ->setArgument('$locale', self::asString($deadlines['locale'] ?? null, 'en'))
+            ->setArgument('$timezone', \is_string($deadlines['timezone'] ?? null) ? $deadlines['timezone'] : '');
+        // La décision d'accès de l'écran, aussi en paramètre : le test de menu d'une application la compare à
+        // celle de l'entrée qui y mène — l'écran ne la porte pas en `#[IsGranted]`, elle se configure.
+        $container->setParameter('admin.deadlines.access', self::asString($deadlines['access'] ?? null, 'ROLE_SUPER_ADMIN'));
+        $container->getDefinition(DeadlineController::class)
+            ->setArgument('$entityClass', $entity)
+            ->setArgument('$access', '%admin.deadlines.access%');
     }
 
     /**
