@@ -80,7 +80,7 @@ final class DeadlineTest extends AbstractFunctionalTestCase
     public function testAnEntityThatIsNotADeadlineIsRefused(): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('admin.deadlines.entity must name a class implementing');
+        $this->expectExceptionMessageIsOrContains('admin.deadlines.entity must name a class implementing');
 
         $this->boot(bundleConfig: ['deadlines' => ['entity' => Account::class]], withOrm: true);
     }

@@ -92,7 +92,7 @@ final class ConfigurationTest extends TestCase
     public function testTwoFactorCannotBeRequiredWithoutBeingOffered(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('admin.two_factor.required needs admin.two_factor.enabled');
+        $this->expectExceptionMessageIsOrContains('admin.two_factor.required needs admin.two_factor.enabled');
 
         self::process([['two_factor' => ['required' => true]]]);
     }
@@ -226,7 +226,7 @@ final class ConfigurationTest extends TestCase
     public function testAnEmailColourMustBeAHexLiteral(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('admin.branding.email.accent expects a #rrggbb colour');
+        $this->expectExceptionMessageIsOrContains('admin.branding.email.accent expects a #rrggbb colour');
 
         $this->process([['branding' => ['email' => ['accent' => 'red; background: url(x)']]]]);
     }
@@ -235,7 +235,7 @@ final class ConfigurationTest extends TestCase
     public function testAnIllegibleEmailPaletteIsRefused(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('accent_text on accent is');
+        $this->expectExceptionMessageIsOrContains('accent_text on accent is');
 
         $this->process([['branding' => ['email' => ['accent' => '#f59e0b', 'accent_text' => '#ffffff']]]]);
     }

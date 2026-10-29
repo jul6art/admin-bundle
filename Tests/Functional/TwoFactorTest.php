@@ -80,7 +80,7 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
     public function testOfferingItWithoutSchebRegisteredSaysWhatToDo(): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('SchebTwoFactorBundle');
+        $this->expectExceptionMessageIsOrContains('SchebTwoFactorBundle');
 
         $this->boot(bundleConfig: self::OFFERED, withOrm: true);
     }
@@ -198,7 +198,7 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
     public function testBackupCodesNeedTheSecondFactorItself(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('admin.two_factor.backup_codes needs admin.two_factor.enabled');
+        $this->expectExceptionMessageIsOrContains('admin.two_factor.backup_codes needs admin.two_factor.enabled');
 
         $this->boot(bundleConfig: ['two_factor' => ['backup_codes' => true]], withOrm: true, withTwoFactor: true);
     }
