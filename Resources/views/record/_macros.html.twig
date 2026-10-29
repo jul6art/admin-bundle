@@ -63,7 +63,7 @@
 -#}
 {% macro properties(items, options = {}) %}
     {%- import _self as record -%}
-    {%- set rows = items|filter(item => item.condition ?? true) -%}
+    {%- set rows = items|filter(item => (item.condition ?? true)) -%}
     {%- set visible = options.visible ?? 6 -%}
     {%- if rows is not empty -%}
     <div class="admin-record__properties"{% if rows|length > visible %} data-controller="ui--collapsible"{% endif %}>
@@ -218,7 +218,7 @@
     chargé à chaque ouverture. `count` à `null` n'affiche pas de pastille.
 -#}
 {% macro tabs(items, current, options = {}) %}
-    {%- set visible = items|filter(item => item.condition ?? true) -%}
+    {%- set visible = items|filter(item => (item.condition ?? true)) -%}
     <nav class="admin-record__tabs" aria-label="{{ options.label ?? 'record.tabs'|trans({}, 'record') }}" data-preview-exclude>
         {%- for item in visible %}
             <a href="{{ item.href }}" class="admin-record__tab"

@@ -36,7 +36,7 @@
     Sans item visible, rien n'est rendu : pas de bouton qui ouvre un menu vide.
 #}
 {% macro dropdown(label, items, options = {}) %}
-    {%- set kept = items|filter(item => item.condition ?? true) -%}
+    {%- set kept = items|filter(item => (item.condition ?? true)) -%}
     {%- set visible = [] -%}
     {%- for item in kept -%}
         {%- set is_divider = item.divider ?? false -%}
