@@ -38,7 +38,18 @@ final readonly class AdminUiExtension
         private string $userGuideRoute = '',
         private string $userGuideUrl = '',
         private ?CspNonce $cspNonce = null,
+        private bool $rememberMeDefault = false,
     ) {
+    }
+
+    /**
+     * Whether the « remember me » switch of the sign-in card is on when the page opens
+     * (`login.remember_me_default`).
+     */
+    #[AsTwigFunction(name: 'admin_remember_me_default')]
+    public function rememberMeDefault(): bool
+    {
+        return $this->rememberMeDefault;
     }
 
     /**

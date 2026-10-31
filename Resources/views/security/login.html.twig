@@ -57,10 +57,11 @@
         <div class="flex items-center justify-between">
             {# L'interrupteur du reste de la coquille : les jetons `.toggle-*` viennent de
                `assets/styles/components.css` de ce bundle, rien n'est emprunté au projet.
-               ⚠️ `name="_remember_me"` est le contrat du pare-feu Symfony — il ne bouge pas. #}
+               ⚠️ `name="_remember_me"` est le contrat du pare-feu Symfony — il ne bouge pas.
+               Éteint à l'ouverture, sauf si l'application l'allume (`login.remember_me_default`). #}
             <label class="toggle-row" for="remember_me">
                 <span class="toggle-switch">
-                    <input type="checkbox" id="remember_me" name="_remember_me" class="toggle-switch-input">
+                    <input type="checkbox" id="remember_me" name="_remember_me" class="toggle-switch-input"{{ admin_remember_me_default() ? ' checked' }}>
                     <span class="toggle-switch-track"></span>
                 </span>
                 <span class="toggle-label">{{ 'security.login.remember_me'|trans }}</span>

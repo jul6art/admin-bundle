@@ -140,6 +140,11 @@ final class ConfigurationTest extends TestCase
                 'two_factor' => 'admin_account_two_factor',
                 'privacy' => '',
             ],
+            // L'interrupteur « se souvenir de moi » est éteint à l'ouverture de la page : le
+            // comportement d'avant l'ajout du nœud.
+            'login' => [
+                'remember_me_default' => false,
+            ],
             // ⚠️ Le clavier est ACTIF par défaut et son catalogue d'extension est vide : le socle
             // apporte ses trois actions, et une application n'en déclare que si elle en a.
             'keyboard' => [

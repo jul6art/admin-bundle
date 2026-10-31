@@ -886,6 +886,20 @@ that ONE file and extending the original through `@!Admin` — never by copying 
 | `auth_topbar` | above the card, right-aligned — a language picker |
 | `auth_title`, `auth_subtitle`, `auth_body`, `auth_footer` | the card itself, filled by each page |
 
+The « remember me » switch of the sign-in card is off when the page opens. An application installed
+on phones (a PWA) turns it on (1.37):
+
+```yaml
+admin:
+    login:
+        remember_me_default: true
+```
+
+> ⚠️ A phone forgets the session cookie when an installed app closes: without the remember-me
+> cookie, every launch asks to sign in again. The switch only sends `_remember_me` — the firewall's
+> `remember_me` block (secret, lifetime) stays the application's, and without it the switch does
+> nothing. The account can still turn it off, on a shared computer.
+
 > ⚠️ The password-reset flow must never reveal whether an address exists. Both cases lead to the
 > same confirmation page with the same text — a different message turns the form into an
 > account-enumeration oracle. The shipped templates already read that way; keep them that way.

@@ -493,6 +493,21 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * Éteint par défaut ; `login.remember_me_default` l'allume à l'ouverture de la page. C'est le
+     * réglage d'une application installée sur un téléphone (PWA) : le téléphone oublie le cookie de
+     * session quand l'application se ferme, et seul le cookie « se souvenir de moi » ramène le
+     * compte à la relance — encore faut-il que l'interrupteur ait été allumé.
+     */
+    public function testTheRememberMeSwitchIsOffUnlessTheApplicationTurnsItOn(): void
+    {
+        $off = $this->render('@Admin/security/login.html.twig', self::BRANDING);
+        self::assertDoesNotMatchRegularExpression('/<input[^>]*name="_remember_me"[^>]*\bchecked\b/', $off);
+
+        $on = $this->render('@Admin/security/login.html.twig', self::BRANDING + ['login' => ['remember_me_default' => true]]);
+        self::assertMatchesRegularExpression('/<input[^>]*name="_remember_me"[^>]*\bchecked\b/', $on, 'Le compte peut encore l\'éteindre : seul son état de départ change.');
+    }
+
+    /**
      * `logo_width` dimensionne le logo des pages d'authentification ; sans lui, la hauteur fixe
      * historique s'applique. `show_name` retire la ligne du nom sous le logo — le cas d'un
      * wordmark, où le nom serait écrit deux fois.
