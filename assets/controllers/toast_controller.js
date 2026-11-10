@@ -40,13 +40,20 @@ export default class extends Controller {
             item.dataset.autodismiss = '1';
         }
         item.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm transition-all duration-200 ${colors}`;
-        item.innerHTML = `
-            <span>${message}</span>
-            <button type="button"
-                    data-action="ui--toast#close"
-                    class="ml-2 flex-shrink-0 text-current opacity-60 hover:opacity-100 transition-opacity"
-                    aria-label="${closeLabel}">✕</button>
-        `;
+
+        // ⚠️ Built node by node, never with `innerHTML`: a message can carry a value someone typed
+        // (a name in « « %subject% » supprimé »), and it would run as HTML (audit 2026-11-10, S9).
+        const text = document.createElement('span');
+        text.textContent = String(message ?? '');
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.dataset.action = 'ui--toast#close';
+        close.className = 'ml-2 flex-shrink-0 text-current opacity-60 hover:opacity-100 transition-opacity';
+        close.setAttribute('aria-label', closeLabel);
+        close.textContent = '✕';
+
+        item.append(text, close);
 
         this.element.appendChild(item);
         this._scheduleAutoDismiss(item);
