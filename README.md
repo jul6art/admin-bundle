@@ -1050,6 +1050,39 @@ its phone is reset by `TotpEnrolment::reset()`.
 | `SchebTwoFactorBundle` | `two_factor.throttled` — scheb translates its own errors |
 | `messages` | `nav.two_factor`, and the screen's flashes `security.two_factor.flash.{enabled, disabled}` — the shell's toasts translate in `messages` |
 
+#### The secret is stored encrypted (1.39)
+
+`totp_secret` uses core-bundle's `encrypted_string` type: a copy of the `user` table — a backup, a
+dump — no longer hands out every account's second factor. A TOTP secret cannot be hashed (it is
+read back to check each code), so it is encrypted with `core.encryption_key`. With
+`admin.two_factor.enabled`, the container refuses to boot without the key or the type:
+
+```yaml
+# config/packages/core.yaml
+core:
+    encryption_key: '%env(APP_ENCRYPTION_KEY)%'   # openssl rand -base64 32
+
+# config/packages/doctrine.yaml
+doctrine:
+    dbal:
+        types:
+            encrypted_string: Jul6Art\CoreBundle\Doctrine\Type\EncryptedStringType
+```
+
+The secrets stored before 1.39 are in clear: a migration widens the column (`TEXT`) and encrypts
+them, in `postUp()` — the type gets its encryptor at every console command, the migration's
+included:
+
+```php
+public function postUp(Schema $schema): void
+{
+    TotpSecretEncryption::encryptStoredSecrets($this->connection);   // table `user`, column `totp_secret`
+}
+```
+
+It can be played again: a value the type decrypts is left as it is. ⚠️ Lose the key, and every
+account turns its second factor on again — keep it with the backups, never draw a new one in place.
+
 #### Backup codes (1.34)
 
 Ten single-use codes (`K7QM2-XW9RT`) for the day the phone is lost — drawn when the second factor is

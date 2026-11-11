@@ -23,11 +23,15 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
  * A trait for the reason `AppearancePreferencesTrait` is one: a bundle-shipped embeddable needs a
  * Doctrine mapping for the bundle's namespace, and those are switched off in this ecosystem.
  *
- * ## The secret is not a password
+ * ## The secret is not a password, so it is ENCRYPTED (1.39)
  *
  * A TOTP secret is shared with the authenticator app: it has to be read back to check a code, so it
- * cannot be hashed. Guard the database accordingly — and never print it outside the enrolment
- * screen, which shows it once, while it is still pending.
+ * cannot be hashed. It is stored with core-bundle's `encrypted_string` type instead: a copy of the
+ * `user` table — a backup, a dump — no longer hands out the second factor of every account. The
+ * application declares the type and `core.encryption_key` (checked at boot when
+ * `admin.two_factor.enabled`), and migrates the secrets stored in clear before 1.39 with
+ * {@see \Jul6Art\AdminBundle\TwoFactor\TotpSecretEncryption}. Never print the secret outside the
+ * enrolment screen, which shows it once, while it is still pending.
  *
  * ⚠️ The username in the authenticator app is `getUserIdentifier()` — the e-mail in every
  * application of this ecosystem. Overriding `getTotpAuthenticationUsername()` changes the label
@@ -35,8 +39,11 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
  */
 trait TwoFactorTrait
 {
-    /** Set at enrolment, it protects nothing while `totpEnabledAt` is empty. */
-    #[ORM\Column(name: 'totp_secret', length: 255, nullable: true)]
+    /**
+     * Set at enrolment, it protects nothing while `totpEnabledAt` is empty. Stored encrypted
+     * (`encrypted_string`, core-bundle): named by its string, so that the trait loads without core.
+     */
+    #[ORM\Column(name: 'totp_secret', type: 'encrypted_string', nullable: true)]
     private ?string $totpSecret = null;
 
     #[ORM\Column(name: 'totp_enabled_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]

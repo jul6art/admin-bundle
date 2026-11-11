@@ -10,6 +10,7 @@ use Jul6Art\AdminBundle\DependencyInjection\Compiler\FeatureVisibilityPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\GlobalSearchPass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\KeyboardStorePass;
 use Jul6Art\AdminBundle\DependencyInjection\Compiler\PerformanceControllerPass;
+use Jul6Art\AdminBundle\DependencyInjection\Compiler\TwoFactorEncryptionPass;
 use Jul6Art\AdminBundle\Navigation\NavigationProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -51,5 +52,8 @@ class AdminBundle extends Bundle
         // Même priorité, même raison : le locataire de service survit à un `removeDefinition`
         // posé plus tard, et l'écran de profilage dépend d'un bundle que celui-ci ne requiert pas.
         $container->addCompilerPass(new PerformanceControllerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 100);
+        // Le secret TOTP est chiffré (1.39) : un second facteur sans clé ni type échoue au démarrage,
+        // pas à la première connexion d'un compte.
+        $container->addCompilerPass(new TwoFactorEncryptionPass());
     }
 }

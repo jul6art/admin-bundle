@@ -21,6 +21,7 @@ use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\TwoFactor\TotpEnrolment;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\CoreBundle\CoreBundle;
+use Jul6Art\CoreBundle\Doctrine\Type\EncryptedStringType;
 use Scheb\TwoFactorBundle\SchebTwoFactorBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -46,6 +47,9 @@ use Symfony\Component\Mailer\MailerInterface;
  */
 final class TestKernel extends Kernel
 {
+    /** La clé de chiffrement de test : 32 octets en base64, sans valeur hors de ces tests. */
+    public const string ENCRYPTION_KEY = 'a2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2s=';
+
     /**
      * @param array<string, mixed> $bundleConfig configuration for the "admin" extension
      * @param bool                 $withOrm      registers DoctrineBundle on in-memory SQLite,
@@ -88,7 +92,8 @@ final class TestKernel extends Kernel
 
         // Le core apporte la brique de profilage que l'écran de performance consomme. Il est en
         // `require-dev` : ce bundle ne l'impose pas, et le test doit prouver LES DEUX cas.
-        if ($this->withCore) {
+        // Le second facteur chiffre son secret (1.39) : il amène le core, sa clé et son type.
+        if ($this->withCore || $this->withTwoFactor) {
             yield new CoreBundle();
         }
 
@@ -241,6 +246,11 @@ final class TestKernel extends Kernel
             $this->configureDoctrine($container);
         }
 
+        if ($this->withTwoFactor) {
+            // Une clé de test (32 octets en base64) : le secret TOTP est stocké chiffré.
+            $container->loadFromExtension('core', ['encryption_key' => self::ENCRYPTION_KEY]);
+        }
+
         $container->loadFromExtension('admin', $this->bundleConfig);
 
         // Un fournisseur de menu déclaré comme un projet le ferait : en service, sans tag. C'est
@@ -269,6 +279,8 @@ final class TestKernel extends Kernel
             'dbal' => [
                 'driver' => 'pdo_sqlite',
                 'memory' => true,
+                // Le type du secret TOTP (1.39), déclaré comme une application le fait.
+                'types' => ['encrypted_string' => EncryptedStringType::class],
             ],
             'orm' => [
                 'controller_resolver' => ['auto_mapping' => false],
