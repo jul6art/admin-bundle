@@ -7,14 +7,20 @@
     `logout: { enable_csrf: true }` le vérifie sans autre réglage, et une qui ne l'a pas encore
     fait reçoit un POST qu'elle traite comme le GET d'avant.
 
-    Avec un jeton sans état (`framework.csrf_protection.stateless_token_ids` contient `logout`),
-    Symfony vérifie l'origine de la requête : un POST la porte toujours, un lien non.
+    ⚠️ **`data-controller="csrf-protection"` sur le champ, et ce n'est pas décoratif.** Avec un
+    jeton sans état (`framework.csrf_protection.stateless_token_ids` contient `logout`), la valeur
+    rendue est le nom du cookie, et Symfony retient EN SESSION comment le formulaire précédent
+    s'est protégé. Dès qu'un formulaire Symfony est passé par le double envoi du contrôleur
+    `csrf-protection` de l'application (chargé à la demande), un POST qui n'en porte pas est
+    refusé — « double-submit info was used in a previous request but is now missing ». L'attribut
+    fait charger le contrôleur, qui remplace la valeur avant l'envoi. Une application sans ce
+    contrôleur, ou à jeton en session, l'ignore.
 
     Attend `action` (l'URL de déconnexion) et `label` ; `icon` (classes d'une icône) et `class`
     (celles du bouton) sont optionnels.
 #}
 <form method="post" action="{{ action }}">
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
     <button type="submit" class="admin-logout{{ class is defined ? ' ' ~ class }}">
         {%- if icon is defined %}<i class="{{ icon }} w-4 text-center"></i> {% endif %}{{ label -}}
     </button>

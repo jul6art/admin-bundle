@@ -935,8 +935,15 @@ A sign-out link of the application's own templates takes the same partial:
 ```
 
 > ⚠️ Until the firewall has `enable_csrf: true`, the form still signs out — the token is simply
-> not read. With `logout` in `framework.csrf_protection.stateless_token_ids`, Symfony checks the
-> origin of the request instead of a session token: a POST always carries it, a link does not.
+> not read.
+
+> ⚠️ **With `logout` in `framework.csrf_protection.stateless_token_ids`, the token field carries
+> `data-controller="csrf-protection"` (1.38.1).** The rendered value is the cookie name, and Symfony
+> remembers in the session how the previous form protected itself: once a Symfony form went through
+> the application's lazy `csrf-protection` controller (double submit), a POST without it is refused —
+> « double-submit info was used in a previous request but is now missing ». The attribute loads the
+> controller, which replaces the value before sending. An application without that controller, or
+> with a session token, ignores it. A sign-out form of its own templates does the same.
 
 ### Two-factor authentication (1.32)
 

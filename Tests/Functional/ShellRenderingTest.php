@@ -190,7 +190,9 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
         $layout = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
 
         self::assertSame(1, preg_match('#<form method="post" action="/logout">(.*?)</form>#s', $layout, $form), 'La sortie est un formulaire POST.');
-        self::assertMatchesRegularExpression('#<input type="hidden" name="_csrf_token" value="[^"]+">#', $form[1]);
+        // ⚠️ L'attribut fait charger le contrôleur de double envoi : sans lui, une session qui a déjà
+        // soumis un formulaire Symfony voit sa sortie refusée (jeton sans état, voir le partiel).
+        self::assertMatchesRegularExpression('#<input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="[^"]+">#', $form[1]);
         self::assertMatchesRegularExpression('#<button type="submit" class="admin-logout admin-logout-row[^"]*">\s*<i class="fa-solid fa-right-from-bracket#', $form[1]);
         self::assertStringNotContainsString('href="/logout"', $layout, 'Plus aucun lien vers la sortie.');
     }
