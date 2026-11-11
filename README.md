@@ -934,6 +934,14 @@ A sign-out link of the application's own templates takes the same partial:
 }) }}
 ```
 
+> ⚠️ **In a header menu, the form goes at the END of the page (1.38.2).** The menu comes before the
+> content: a form there is the first form of every page, the one a `querySelector('form')` or a
+> test's `$crawler->filter('form')->form()` takes — 17 tests of one consumer submitted the sign-out
+> instead of the page. The menu holds `@Admin/partials/_logout_button.html.twig` (`form: 'my-logout'`,
+> `label`, optional `icon` and `class`), which sends the form through the `form` attribute; the
+> layout renders `_logout_form.html.twig` WITHOUT `label` (`id: 'my-logout'`) after its content — a
+> hidden form holding only the token. The shell's own menu does exactly that (`id="admin-logout"`).
+
 > ⚠️ Until the firewall has `enable_csrf: true`, the form still signs out — the token is simply
 > not read.
 

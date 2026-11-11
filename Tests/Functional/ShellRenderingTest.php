@@ -189,11 +189,14 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     {
         $layout = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
 
-        self::assertSame(1, preg_match('#<form method="post" action="/logout">(.*?)</form>#s', $layout, $form), 'La sortie est un formulaire POST.');
+        self::assertSame(1, preg_match('#<form method="post" action="/logout" id="admin-logout" hidden>(.*?)</form>#s', $layout, $form, \PREG_OFFSET_CAPTURE), 'La sortie est un formulaire POST.');
         // ⚠️ L'attribut fait charger le contrôleur de double envoi : sans lui, une session qui a déjà
         // soumis un formulaire Symfony voit sa sortie refusée (jeton sans état, voir le partiel).
-        self::assertMatchesRegularExpression('#<input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="[^"]+">#', $form[1]);
-        self::assertMatchesRegularExpression('#<button type="submit" class="admin-logout admin-logout-row[^"]*">\s*<i class="fa-solid fa-right-from-bracket#', $form[1]);
+        self::assertMatchesRegularExpression('#<input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="[^"]+">#', $form[1][0]);
+        self::assertMatchesRegularExpression('#<button type="submit" form="admin-logout" class="admin-logout admin-logout-row[^"]*">\s*<i class="fa-solid fa-right-from-bracket#', $layout, 'Le bouton du menu envoie ce formulaire.');
+        // ⚠️ Après la page : dans l'en-tête, il serait le premier formulaire de chaque page — celui que
+        // prend un `filter('form')` ou un `querySelector('form')`.
+        self::assertGreaterThan(strpos($layout, '</main>'), $form[0][1], 'Le formulaire vient après le contenu.');
         self::assertStringNotContainsString('href="/logout"', $layout, 'Plus aucun lien vers la sortie.');
     }
 

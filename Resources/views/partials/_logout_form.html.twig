@@ -16,12 +16,17 @@
     fait charger le contrôleur, qui remplace la valeur avant l'envoi. Une application sans ce
     contrôleur, ou à jeton en session, l'ignore.
 
-    Attend `action` (l'URL de déconnexion) et `label` ; `icon` (classes d'une icône) et `class`
-    (celles du bouton) sont optionnels.
+    Attend `action` (l'URL de déconnexion). Avec `label`, le formulaire porte son bouton (`icon`
+    et `class` optionnels). Sans `label`, il est caché et n'attend qu'un bouton posé ailleurs
+    (`partials/_logout_button.html.twig`, qui le désigne par son `id`) : c'est la forme d'un menu
+    d'en-tête, dont le formulaire va EN FIN de page — sinon il serait le premier formulaire de
+    chaque page, celui que prend un `document.querySelector('form')` ou un `filter('form')`.
 #}
-<form method="post" action="{{ action }}">
+<form method="post" action="{{ action }}"{% if id is defined %} id="{{ id }}"{% endif %}{% if label is not defined %} hidden{% endif %}>
     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
+    {%- if label is defined %}
     <button type="submit" class="admin-logout{{ class is defined ? ' ' ~ class }}">
         {%- if icon is defined %}<i class="{{ icon }} w-4 text-center"></i> {% endif %}{{ label -}}
     </button>
+    {%- endif %}
 </form>

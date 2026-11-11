@@ -1,0 +1,11 @@
+{#
+    Le bouton de sortie d'un menu d'en-tête. Il envoie le formulaire caché que
+    `partials/_logout_form.html.twig` (sans `label`) pose EN FIN de page, qu'il désigne par son
+    `id` (`form`) : le menu vient avant le contenu, et un formulaire à cet endroit serait le premier
+    de chaque page. Voir l'en-tête de ce partiel-là pour le jeton.
+
+    Attend `form` (l'`id` du formulaire) et `label` ; `icon` et `class` sont optionnels.
+#}
+<button type="submit" form="{{ form }}" class="admin-logout{{ class is defined ? ' ' ~ class }}">
+    {%- if icon is defined %}<i class="{{ icon }} w-4 text-center"></i> {% endif %}{{ label -}}
+</button>
