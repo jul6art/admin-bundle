@@ -130,7 +130,7 @@ final class NavigationTest extends AbstractFunctionalTestCase
      *
      * La convention « préfixe de nom de route » se retourne dès qu'un nom est le préfixe d'un
      * autre : `admin_asset` matche `admin_asset_type_index` aussi bien que `admin_asset_type`. Sur
-     * wovex, « Équipements » et « Types d'équipement » s'allumaient ENSEMBLE (constaté le
+     * cereezer, deux entrées voisines du menu s'allumaient ENSEMBLE (constaté le
      * 2026-08-26), et aucun `activePrefix` explicite ne pouvait les départager — tout préfixe
      * couvrant les routes d'équipement couvre aussi celles des types. Le seul critère qui tranche
      * est la SPÉCIFICITÉ, et elle ne se voit qu'en regardant les entrées ensemble.

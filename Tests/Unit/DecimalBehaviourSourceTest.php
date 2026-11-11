@@ -11,8 +11,8 @@ use PHPUnit\Framework\TestCase;
  * The decimal-input controller the ui-bundle's decimal types rely on.
  *
  * ⚠️ `CustomMoneyType` and `CustomUnitType` attach `form--decimal` to their input and ship NO
- * controller. For months a consumer project (cereezer) had none either: seven price, quantity and
- * rate fields showed "89.00", and nothing failed — a Stimulus identifier that resolves to nothing
+ * controller. For months a consumer project (cereezer) had none either: several numeric
+ * fields showed "89.00", and nothing failed — a Stimulus identifier that resolves to nothing
  * raises nothing. The controller moved here from `superp` (2026-09-25) so every consumer gets the
  * same one.
  *
@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
 final class DecimalBehaviourSourceTest extends TestCase
 {
     /**
-     * `parse()` is PUBLIC API: superp's line-total and VAT-total controllers import the class and
+     * `parse()` is PUBLIC API: controllers of consumer applications import the class and
      * call it statically. Renaming it or making it an instance method breaks them without a trace.
      */
     public function testParseStaysAStaticMethod(): void

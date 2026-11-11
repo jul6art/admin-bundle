@@ -47,7 +47,7 @@ trait AppearancePreferencesTrait
      *
      * The old default meant `data-accent` was ALWAYS written on `<html>`, for every account of
      * every product — so a consumer's own brand ramp declared on `:root` applied nowhere, the
-     * attribute rule always winning. cegeta measured it: indigo throughout `/app` and `/admin`,
+     * attribute rule always winning. cegeta measured it: indigo on every screen,
      * next to a green logo.
      *
      * ⚠️ The SQL default moves with it, and it has to: the column default is what a row inserted by

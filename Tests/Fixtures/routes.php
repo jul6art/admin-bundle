@@ -35,7 +35,7 @@ return static function (RoutingConfigurator $routes): void {
     // L'autre écran de ce fichier qui est réellement DEMANDÉ : la double authentification, importée
     // comme une application l'importe (attribut, préfixe). Son service n'existe qu'avec l'option.
     $routes->import(__DIR__.'/../../Controller/TwoFactorController.php', 'attribute')->prefix('/admin');
-    // Un second espace connecté, comme cegeta (`/app`) : le même écran, son préfixe, son layout.
+    // Un second espace connecté (`/app`) : le même écran, son préfixe, son layout.
     $routes->import(__DIR__.'/../../Controller/TwoFactorController.php', 'attribute')
         ->prefix('/app')
         ->namePrefix('app_')

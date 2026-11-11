@@ -4,7 +4,7 @@ import { Controller } from '@hotwired/stimulus';
  * The header's global search — register it as `search--global`, the identifier
  * `partials/_global_search.html.twig` addresses.
  *
- * It moved here from two products that carried it as twins (cereezer ADR-0031, superp ADR-0012):
+ * It moved here from two products that carried it as twins (cereezer, superp):
  * not one of its lines is about either of them. What is searched, and who may see it, stays in each
  * product, behind the route this controller calls.
  *

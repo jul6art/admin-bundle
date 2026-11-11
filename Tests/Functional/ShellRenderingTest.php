@@ -144,7 +144,7 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
      *
      * ⚠️ Le défaut du 2026-10-07 : la base posait la classe sur TOUTE page, et les projets la
      * traduisent par `max-height: 100vh; overflow-y: hidden`. Une page qui étend la base hors du
-     * layout — un portail client, une page publique, superp `/buy` — dépassait la fenêtre sans que
+     * layout — un portail client, une page publique de superp — dépassait la fenêtre sans que
      * la molette fasse rien. Chaque projet le contournait page par page, en réécrivant
      * `html_attr` ; la page qu'on oubliait restait bloquée.
      */
@@ -452,7 +452,7 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
      * un `extends '@Admin/base.html.twig'` en dur rend la page SANS la moindre feuille de style,
      * sans erreur nulle part. Le bug a existé : corrigé pour `layout.html.twig` chez superp, il
      * avait été oublié dans `security/_card.html.twig` et ne s'est vu qu'au premier projet qui a
-     * rendu ces pages (wovex, 2026-08-23).
+     * rendu ces pages (cereezer, 2026-08-23).
      */
     public function testEveryPageTemplateHonoursTheProjectBaseTemplate(): void
     {
@@ -709,7 +709,7 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
      * **The search slot is centred by the shell**, not by the project.
      *
      * ⚠️ A project that wrapped its field in a `w-full` div pushed it to the left edge of the free
-     * space and crushed the account button (superp, report 2026-09-22 § P2). The container is now the
+     * space and crushed the account button (superp, 2026-09-22). The container is now the
      * shell's own: it grows, centres, and may shrink below its content.
      */
     public function testTheSearchSlotSitsInACentredContainerOfTheShell(): void

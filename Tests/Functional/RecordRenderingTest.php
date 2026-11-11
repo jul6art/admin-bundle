@@ -387,7 +387,7 @@ final class RecordRenderingTest extends AbstractFunctionalTestCase
             $source = (string) preg_replace('/\{#.*?#\}/s', '', $source);
 
             // ⚠️ A class built by concatenation is read by no scanner, so Tailwind purges it: the
-            // overdue maintenance of a cegeta item stayed black because `--danger` was composed.
+            // an overdue date on a cegeta record stayed black because `--danger` was composed.
             self::assertDoesNotMatchRegularExpression('/--\'\s*~|--\{\{/', $source, $template.' builds a class by concatenation.');
             preg_match_all('/class="([^"]*)"/', $source, $matches);
 

@@ -653,7 +653,7 @@ final class StylesheetTest extends TestCase
      * ⚠️ Seule `.badge` portait `white-space: nowrap` ; les fiches écrivent la VARIANTE seule (le
      * `badgeClass()` d'une énumération). Posé à côté d'un libellé `truncate` dans une ligne flex, un
      * badge « Site client » se faisait écraser et s'écrivait sur deux lignes — une pilule haute de
-     * deux lignes, vue sur la fiche pièce de cereezer le 2026-09-25.
+     * deux lignes, vue sur une fiche de cereezer le 2026-09-25.
      */
     #[DataProvider('badgeVariants')]
     public function testEveryBadgeVariantNeverWraps(string $selector, string $palette): void
@@ -670,7 +670,7 @@ final class StylesheetTest extends TestCase
      *
      * ⚠️ Symfony pose la classe `required` sur le label d'un champ obligatoire — le thème de base
      * le fait depuis toujours — mais une classe que personne ne dessine ne dessine rien. Sur
-     * wovex, le 2026-08-26, **aucun formulaire du back-office n'affichait d'astérisque** :
+     * cereezer, le 2026-08-26, **aucun formulaire du back-office n'affichait d'astérisque** :
      * `class="form-label required"` dans le DOM, `content: none` en style calculé, et zéro
      * sélecteur `required` dans les deux feuilles chargées. Le formulaire ne disait plus ce qu'il
      * exigeait, et rien ne le signalait.
@@ -780,7 +780,7 @@ final class StylesheetTest extends TestCase
     /**
      * The header search's targets: 44 px to a finger, the desktop density above `lg`.
      *
-     * Measured at 360 px in cegeta on 2026-09-23 (ADR-0037): the result rows rendered **36 px**,
+     * Measured at 360 px in cegeta on 2026-09-23: the result rows rendered **36 px**,
      * the "see all" link **16**, the magnifier and the × **38.5 wide**. Written as CSS for the
      * reason `.admin-touch-row` is: the consumers do not scan this bundle's templates, and the
      * result rows are built by a Stimulus controller no scanner reads at all.

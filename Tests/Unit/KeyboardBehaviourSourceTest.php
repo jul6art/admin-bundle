@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  *
  * This bundle ships no JavaScript runner, and adding one to assert four branches would cost more
  * than it protects. What these cases pin is not *how* the code is written — it is that four
- * decisions are still MADE somewhere in the file. Each comes from a dated report in `superp`, the
+ * decisions are still MADE somewhere in the file. Each comes from a dated defect seen in `superp`, the
  * product where this system ran for five months before it moved here, and none of them is
  * obvious enough to survive a rewrite by accident.
  *
@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
 final class KeyboardBehaviourSourceTest extends TestCase
 {
     /**
-     * **`Enter` on a checkbox or radio TOGGLES it** (superp, report 2026-06-04 § P4).
+     * **`Enter` on a checkbox or radio TOGGLES it** (superp, 2026-06-04).
      *
      * Natively `Enter` never checks a box — only `Space` does. Merely blocking the implicit submit
      * left the box feeling dead under keyboard navigation, which is the opposite of what this whole
@@ -43,7 +43,7 @@ final class KeyboardBehaviourSourceTest extends TestCase
     }
 
     /**
-     * **The `Enter` guard spares buttons** (superp, report 2026-06-01 § P2).
+     * **The `Enter` guard spares buttons** (superp, 2026-06-01).
      *
      * A focused button's native `Enter` action is to activate itself. The first version used a
      * "everything that is not text" rule, which swallowed that activation — and made every button
@@ -146,8 +146,8 @@ final class KeyboardBehaviourSourceTest extends TestCase
     }
 
     /**
-     * **The cheat-sheet shows the combos IN FORCE, not the factory ones** (superp, report
-     * 2026-05-31-4 § P4).
+     * **The cheat-sheet shows the combos IN FORCE, not the factory ones** (superp,
+     * 2026-05-31).
      *
      * It listed hard-coded `n` and `Ctrl+Enter` while the user had rebound them — documentation
      * that contradicts the software it documents is worse than none.

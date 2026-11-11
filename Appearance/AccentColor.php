@@ -32,7 +32,7 @@ namespace Jul6Art\AdminBundle\Appearance;
  * Reported by cegeta on 2026-09-08. `Indigo` used to be the default, so `data-accent` was ALWAYS
  * written on `<html>` — for every account of every product. A consumer that declared its own brand
  * ramp on `:root` therefore saw it applied nowhere: the attribute rule always won. Measured in the
- * browser, cegeta rendered indigo throughout `/app` and `/admin` next to a green logo, while its
+ * browser, cegeta rendered indigo on every screen next to a green logo, while its
  * brand green was alive only on its anonymous surfaces, which carry no account.
  *
  * ⚠️ The fix is not another closed colour: none of the seven is any given product's brand, and

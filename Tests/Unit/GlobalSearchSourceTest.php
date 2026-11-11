@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  *
  * Same reasoning as `KeyboardBehaviourSourceTest`: no JavaScript runner ships with this bundle, and
  * what is pinned is that each decision is still MADE in the file. They come from the two products
- * that ran this controller as twins before it moved here (cereezer ADR-0031, superp ADR-0012).
+ * that ran this controller as twins before it moved here (cereezer, superp).
  */
 #[CoversNothing]
 final class GlobalSearchSourceTest extends TestCase
@@ -60,7 +60,7 @@ final class GlobalSearchSourceTest extends TestCase
     /**
      * **A family may name where "see all" leads** (`SearchGroup::$url`): the "N results" hint then
      * becomes a link to the family's own list, filtered by the same term — the panel points, the
-     * list is where one sorts and acts (cegeta ADR-0037). Without a URL it stays a plain hint.
+     * list is where one sorts and acts (cegeta). Without a URL it stays a plain hint.
      */
     public function testTheMoreHintLinksToTheFamilyListWhenItHasAUrl(): void
     {
@@ -80,8 +80,8 @@ final class GlobalSearchSourceTest extends TestCase
     }
 
     /**
-     * **The `/` shortcut can be turned off** — a product whose keyboard policy refuses it (cegeta
-     * ADR-0036/0037) must be able to take the search without the shortcut. On by default: the two
+     * **The `/` shortcut can be turned off** — a product whose keyboard policy refuses it (cegeta)
+     * must be able to take the search without the shortcut. On by default: the two
      * products that had it keep it.
      */
     public function testTheSlashShortcutCanBeTurnedOff(): void

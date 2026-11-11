@@ -15,8 +15,8 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * The header search engine — moved here from three products that each carried it (cereezer
- * ADR-0031, superp ADR-0012, cegeta ADR-0037).
+ * The header search engine — moved here from three products that each carried it (cereezer,
+ * superp, cegeta).
  *
  * What the engine owns, and these cases pin: the two-character threshold, the comparison
  * (`LOWER(field) LIKE LOWER('%term%')`, the one `api-bundle`'s `OrSearchFilter` makes, so a panel
