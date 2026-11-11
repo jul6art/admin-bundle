@@ -4,8 +4,6 @@
  * The attributes data-accent / data-density / data-font / data-contrast /
  * data-motion are rendered on <html> server-side (from User.appearance)
  * and applied live by the `ui--appearance` Stimulus controller.
- *
- * Cf. docs/analyse/theming.md § 5.2.
  */
 
 /* ── Accent colour (RGB triplets consumed by Tailwind's `accent-*`) ──
@@ -133,7 +131,7 @@ html[data-font='xl'] { font-size: 19px; }
 /* ── High contrast ──
  * Stronger than a faint border tweak so the change is actually perceptible:
  * darker + thicker borders, a wider focus-ring offset, and de-muted secondary
- * text (cf. rapport 2026-06-01 § P1). */
+ * text. */
 [data-contrast='high'] .panel,
 [data-contrast='high'] .form-control {
     border-color: rgb(51 65 85); /* slate-700 */

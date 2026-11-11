@@ -84,7 +84,7 @@ export default class extends Controller {
 
         // ⚠️ **A keystroke a control already handled is not routed.** In a Trix editor `Ctrl+B` makes
         // text bold and calls `preventDefault()`; routing it anyway clicked Cancel, and the page left
-        // with everything typed (REVIEWER, 2026-09-23).
+        // with everything typed (2026-09-23).
         if (event.defaultPrevented) {
             return;
         }

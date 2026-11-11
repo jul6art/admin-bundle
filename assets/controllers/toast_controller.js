@@ -42,7 +42,7 @@ export default class extends Controller {
         item.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm transition-all duration-200 ${colors}`;
 
         // ⚠️ Built node by node, never with `innerHTML`: a message can carry a value someone typed
-        // (a name in « « %subject% » supprimé »), and it would run as HTML (audit 2026-11-10, S9).
+        // (a name in « « %subject% » supprimé »), and it would run as HTML.
         const text = document.createElement('span');
         text.textContent = String(message ?? '');
 

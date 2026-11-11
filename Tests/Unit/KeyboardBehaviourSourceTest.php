@@ -80,7 +80,7 @@ final class KeyboardBehaviourSourceTest extends TestCase
     }
 
     /**
-     * **A keystroke a control already handled is not routed** (REVIEWER, 2026-09-23). In a Trix
+     * **A keystroke a control already handled is not routed** (2026-09-23). In a Trix
      * editor `Ctrl+B` makes text bold and calls `preventDefault()`; the router then clicked Cancel
      * and the page left with everything typed.
      */
