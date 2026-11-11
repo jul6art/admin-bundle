@@ -904,6 +904,40 @@ admin:
 > same confirmation page with the same text — a different message turns the form into an
 > account-enumeration oracle. The shipped templates already read that way; keep them that way.
 
+#### Signing out is a POST carrying its token (1.38)
+
+The account menu and the « cancel » of the two-factor page sign out through
+`@Admin/partials/_logout_form.html.twig`: a POST form that sends `_csrf_token` (token id `logout`),
+its button dressed as the link it replaces. A GET link fires from any page that embeds it — an
+`<img src="/logout">` elsewhere signs out whoever displays it. The application closes the door on
+its side:
+
+```yaml
+# config/packages/security.yaml — every firewall that has a `logout`
+logout:
+    path: admin_security_logout
+    enable_csrf: true
+```
+
+```php
+#[Route('/logout', name: 'admin_security_logout', methods: ['POST'])]
+public function logout(): never { throw new \LogicException('Intercepted by the firewall.'); }
+```
+
+A sign-out link of the application's own templates takes the same partial:
+
+```twig
+{{ include('@Admin/partials/_logout_form.html.twig', {
+    action: path('admin_security_logout'),
+    label: 'nav.logout'|trans,
+    class: 'text-sm text-red-600',   {# optional, like `icon` #}
+}) }}
+```
+
+> ⚠️ Until the firewall has `enable_csrf: true`, the form still signs out — the token is simply
+> not read. With `logout` in `framework.csrf_protection.stateless_token_ids`, Symfony checks the
+> origin of the request instead of a session token: a POST always carries it, a link does not.
+
 ### Two-factor authentication (1.32)
 
 A six-digit code from an authenticator app (TOTP), asked after the password — scheb/2fa-bundle

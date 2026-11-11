@@ -77,6 +77,20 @@
         padding-bottom: 0.625rem;
     }
 
+    /*
+     * La sortie (`partials/_logout_form.html.twig`) est le BOUTON d'un formulaire POST, avec
+     * l'apparence du lien qu'il remplace. Tailwind 4 rend à un bouton le curseur par défaut ; dans
+     * le menu de compte, il prend la ligne entière, comme les liens voisins.
+     */
+    .admin-logout {
+        cursor: pointer;
+    }
+
+    .admin-logout-row {
+        width: 100%;
+        text-align: start;
+    }
+
     .panel {
         @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm;
         padding: var(--density-panel-p);

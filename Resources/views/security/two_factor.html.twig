@@ -56,7 +56,12 @@
         </details>
     {% endif %}
 
-    <p class="mt-4 text-center text-sm">
-        <a href="{{ logoutPath }}" class="text-slate-500 hover:text-slate-700 dark:text-slate-400">{{ 'security.two_factor.cancel'|trans }}</a>
-    </p>
+    {# Renoncer, c'est se déconnecter : le même POST que le menu de compte. #}
+    <div class="mt-4 text-center text-sm">
+        {{ include('@Admin/partials/_logout_form.html.twig', {
+            action: logoutPath,
+            label: 'security.two_factor.cancel'|trans,
+            class: 'text-slate-500 hover:text-slate-700 dark:text-slate-400',
+        }) }}
+    </div>
 {% endblock %}

@@ -193,6 +193,11 @@ final class TwoFactorTest extends AbstractFunctionalTestCase
         self::assertStringContainsString('autocomplete="one-time-code"', $html);
         self::assertStringContainsString('data-totp-error', $html);
         self::assertStringContainsString('action="/2fa_check"', $html);
+
+        // Renoncer au code, c'est sortir : le même POST à jeton que le menu de compte, pas un lien.
+        self::assertSame(1, preg_match('#<form method="post" action="/logout">(.*?)</form>#s', $html, $logout), 'Renoncer est un formulaire POST.');
+        self::assertStringContainsString('name="_csrf_token"', $logout[1]);
+        self::assertStringNotContainsString('href="/logout"', $html);
     }
 
     public function testBackupCodesNeedTheSecondFactorItself(): void

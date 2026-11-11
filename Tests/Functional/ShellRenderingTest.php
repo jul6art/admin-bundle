@@ -182,6 +182,20 @@ final class ShellRenderingTest extends AbstractFunctionalTestCase
     }
 
     /**
+     * La sortie du menu de compte est un POST qui porte le jeton `logout`, jamais un lien : un lien
+     * GET se déclenche depuis n'importe quelle page qui l'embarque, et déconnecte qui l'affiche.
+     */
+    public function testTheAccountMenuSignsOutByAPostCarryingItsToken(): void
+    {
+        $layout = $this->render('@Admin/layout.html.twig', self::BRANDING, user: new Account()->setEmail('a@b.test')->setFullName('A B'));
+
+        self::assertSame(1, preg_match('#<form method="post" action="/logout">(.*?)</form>#s', $layout, $form), 'La sortie est un formulaire POST.');
+        self::assertMatchesRegularExpression('#<input type="hidden" name="_csrf_token" value="[^"]+">#', $form[1]);
+        self::assertMatchesRegularExpression('#<button type="submit" class="admin-logout admin-logout-row[^"]*">\s*<i class="fa-solid fa-right-from-bracket#', $form[1]);
+        self::assertStringNotContainsString('href="/logout"', $layout, 'Plus aucun lien vers la sortie.');
+    }
+
+    /**
      * Le mode sombre se pose sur une page hors du layout aussi — sans `fixed-html`.
      */
     public function testTheDarkModeReachesAPageOutsideTheLayoutWithoutLockingIt(): void

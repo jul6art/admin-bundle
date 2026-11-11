@@ -1,0 +1,21 @@
+{#
+    ⚠️ **La sortie est un POST qui porte le jeton `logout`, jamais un lien.**
+
+    Un lien GET se déclenche depuis n'importe quelle page : une `<img src="https://app/logout">`
+    posée ailleurs déconnecte quiconque l'affiche. Le formulaire envoie `_csrf_token`, le nom et
+    l'identifiant par défaut du `logout` de Symfony : une application qui écrit
+    `logout: { enable_csrf: true }` le vérifie sans autre réglage, et une qui ne l'a pas encore
+    fait reçoit un POST qu'elle traite comme le GET d'avant.
+
+    Avec un jeton sans état (`framework.csrf_protection.stateless_token_ids` contient `logout`),
+    Symfony vérifie l'origine de la requête : un POST la porte toujours, un lien non.
+
+    Attend `action` (l'URL de déconnexion) et `label` ; `icon` (classes d'une icône) et `class`
+    (celles du bouton) sont optionnels.
+#}
+<form method="post" action="{{ action }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+    <button type="submit" class="admin-logout{{ class is defined ? ' ' ~ class }}">
+        {%- if icon is defined %}<i class="{{ icon }} w-4 text-center"></i> {% endif %}{{ label -}}
+    </button>
+</form>
