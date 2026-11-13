@@ -130,6 +130,8 @@ final class RegistrationController extends AbstractController
         $manager->flush();
 
         $this->dispatcher->dispatch(new UserRegisteredEvent($account, $request));
+        // Signed in at once or not, the account is told it exists: « welcome » on the first page it sees.
+        $this->addFlash('success', $this->flash);
 
         if (null !== $this->signIn && $this->security instanceof Security && $account instanceof UserInterface) {
             $signedIn = $this->security->login($account, $this->signIn);
@@ -137,8 +139,6 @@ final class RegistrationController extends AbstractController
 
             return $signedIn ?? $this->redirectToRoute($home ?? $this->spaces->route($request, 'login'));
         }
-
-        $this->addFlash('success', $this->flash);
 
         return $this->redirectToRoute($this->spaces->route($request, 'login'));
     }

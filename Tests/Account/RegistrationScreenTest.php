@@ -122,11 +122,12 @@ final class RegistrationScreenTest extends AccountScreensTestCase
 
     public function testTheAuthenticatorSignsTheNewAccountInAtOnce(): void
     {
-        $this->start(['registration' => ['active' => true, 'sign_in' => 'form_login']]);
+        $this->start(['registration' => ['active' => true, 'sign_in' => 'form_login', 'flash' => 'flash.account.created']]);
 
         $this->signUp($this->client->request('GET', '/register'), ['email' => 'ada@example.test']);
 
         self::assertResponseRedirects('/admin', null, 'The form login\'s success handler: its default target.');
+        self::assertSame(['flash.account.created'], $this->flashes('success'), 'Welcomed, signed in or not.');
         $this->client->request('GET', '/admin/account/profile');
         self::assertResponseIsSuccessful('Signed in: the profile opens.');
     }
