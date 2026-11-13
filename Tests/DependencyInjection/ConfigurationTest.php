@@ -189,6 +189,40 @@ final class ConfigurationTest extends TestCase
                 'template' => 'admin/role_permission/index.html.twig',
                 'index_route' => 'admin_role_permission_index',
             ],
+            'account' => [
+                'enabled' => false,
+                'user_class' => null,
+                'registration' => [
+                    'open' => true,
+                    'active' => false,
+                    'form_type' => null,
+                    'limiter' => null,
+                    'limiter_message' => 'security.register.too_many_attempts',
+                    'sign_in' => null,
+                    'flash' => 'security.register.flash.pending',
+                ],
+                'reset_password' => [
+                    'enabled' => true,
+                    'response_floor_ms' => 250,
+                    'request_form_type' => null,
+                    'form_type' => null,
+                    'email' => [
+                        'from' => '',
+                        'template' => 'security/reset_password_email.html.twig',
+                        'text_template' => null,
+                        'subject' => 'security.reset_password.email.subject',
+                        'translation_domain' => 'security',
+                    ],
+                ],
+                'profile' => [
+                    'access' => 'IS_AUTHENTICATED_FULLY',
+                    'form_type' => null,
+                    'avatar_directory' => '%kernel.project_dir%/public/uploads/avatars',
+                    'avatar_public_path' => 'uploads/avatars',
+                    'show_attribute' => null,
+                ],
+                'spaces' => [],
+            ],
         ], $this->process([]));
     }
 

@@ -1307,6 +1307,94 @@ Your template receives `roles`, `grouped` (resource → codes), `granted` (role 
   `null`) what guards the screen — no `#[IsGranted]` carries it, so a test that the menu entry says the screen's
   permission reads it there, as it reads `%admin.deadlines.access%`.
 
+### The sign-in screens' controllers (1.42)
+
+The five pages above used to need a controller each, copied in every application. The bundle ships them
+(`Controller\Security\*`, [ADR-0001](docs/adr/0001-connexion-et-compte.md)) — sign-in and sign-out, forgotten
+password, sign-up, profile — **off by default**: an application keeps its own until it turns them on. They need
+[auth-bundle](https://github.com/jul6art/auth-bundle) ≥ 2.8 (the password is written and the e-mail sent by its
+services, the API's too), `symfony/form`, `doctrine/orm`, and for the forgotten password
+`symfonycasts/reset-password-bundle`.
+
+```yaml
+# config/packages/admin.yaml
+admin:
+    account:
+        enabled: true
+        user_class: App\Entity\User
+        registration:
+            open: '%env(bool:APP_REGISTRATION_ENABLED)%'   # false: the route answers 404
+            active: false            # true: self-service; ~: the account has no active flag
+            form_type: ~             # your type, best one whose parent is Form\Security\RegistrationFormType
+            limiter: ~               # limiter.sign_up: every submission counts, per IP — 429 past it
+            sign_in: ~               # form_login: the new account is signed in at once
+            flash: security.register.flash.pending
+        reset_password:
+            response_floor_ms: 250   # the request never answers faster, known address or not
+            request_form_type: ~
+            form_type: ~
+            email:
+                from: '%env(MAILER_FROM)%'
+                template: security/reset_password_email.html.twig   # receives resetToken, space, locale
+        profile:
+            access: IS_AUTHENTICATED_FULLY
+            show_attribute: 'user:read'       # returns to the space's profile_show after saving ({id})
+        spaces:                               # a second door to the same accounts: what differs only
+            admin:
+                routes: { profile_show: admin_user_show }   # the account's page, where the profile returns
+            portal:
+                templates: { login: 'portal/security/login.html.twig' }
+                routes: { login: portal_security_login, reset_password_check_email: portal_reset_password_check_email }
+                context: { layout: 'portal/layout.html.twig' }   # variables of every template of the space
+                redirect_authenticated_to: portal_dashboard
+```
+
+```yaml
+# config/routes/security.yaml — the bundle declares no route: name them, translate their paths
+admin_security_login:
+    path: /login
+    controller: Jul6Art\AdminBundle\Controller\Security\LoginController::login
+    methods: [GET, POST]
+admin_security_logout:
+    path: /logout
+    controller: Jul6Art\AdminBundle\Controller\Security\LoginController::logout
+    methods: [POST]
+admin_security_register:
+    path: /register
+    controller: Jul6Art\AdminBundle\Controller\Security\RegistrationController
+admin_reset_password_request:
+    path: /reset-password
+    controller: Jul6Art\AdminBundle\Controller\Security\ResetPasswordController::request
+admin_reset_password_check_email:
+    path: /reset-password/check-email
+    controller: Jul6Art\AdminBundle\Controller\Security\ResetPasswordController::checkEmail
+admin_reset_password_reset:
+    path: /reset-password/reset/{token}
+    controller: Jul6Art\AdminBundle\Controller\Security\ResetPasswordController::reset
+    defaults: { token: ~ }
+admin_account_profile_edit:
+    path: /admin/account/profile
+    controller: Jul6Art\AdminBundle\Controller\Security\AccountProfileController::edit
+portal_security_login:               # a second space: _auth_space in the route's defaults
+    path: /portal/login
+    controller: Jul6Art\AdminBundle\Controller\Security\LoginController::login
+    defaults: { _auth_space: portal }
+```
+
+- **The forgotten password never tells whether an address exists** — by its page, nor by its duration: the
+  request is held until `response_floor_ms`. The e-mail leaves in the account's language (`getLocale()`) when it
+  has one.
+- **The forms ask what the entity keeps**: names when it has `setFirstName()`/`setLastName()`, a picture with
+  `setAvatarPath()`. Every text has `empty_data: ''`: an emptied field is a form error (422), never a 500.
+- **What differs from one product to the next listens** to three events: `RegistrationFormEvent` before the form
+  is built (prepare the account, give the form its options — a captcha's question), `RegistrationSubmittedEvent`
+  before the write, in the same flush (the language, the terms, the consents), `UserRegisteredEvent` after it (the
+  confirmation link, the acknowledgement).
+- An invalid submission answers 422, a refused one 429. Flashes: `security.reset_password.flash.changed`,
+  `security.reset_password.flash.invalid_token`, `user.profile.flash.saved`, `user.profile.flash.upload_failed`, and
+  the sign-up's `flash` — your translations.
+- `%admin.account.profile.access%` holds what guards the profile, for a menu test.
+
 Quality assurance
 -----------------
 

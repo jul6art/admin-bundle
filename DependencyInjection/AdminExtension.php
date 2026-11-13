@@ -7,28 +7,42 @@ namespace Jul6Art\AdminBundle\DependencyInjection;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Jul6Art\AclBundle\Doctrine\DoctrinePermissionStore;
+use Jul6Art\AdminBundle\Account\AccountSpaces;
 use Jul6Art\AdminBundle\Contract\DeadlineInterface;
 use Jul6Art\AdminBundle\Controller\DeadlineController;
 use Jul6Art\AdminBundle\Controller\RolePermissionController;
+use Jul6Art\AdminBundle\Controller\Security\AccountProfileController;
+use Jul6Art\AdminBundle\Controller\Security\LoginController;
+use Jul6Art\AdminBundle\Controller\Security\RegistrationController;
+use Jul6Art\AdminBundle\Controller\Security\ResetPasswordController;
 use Jul6Art\AdminBundle\Controller\TwoFactorController;
 use Jul6Art\AdminBundle\Deadline\DeadlineNotifier;
+use Jul6Art\AdminBundle\Form\Security\NewPasswordFormType;
+use Jul6Art\AdminBundle\Form\Security\ProfileFormType;
+use Jul6Art\AdminBundle\Form\Security\RegistrationFormType;
+use Jul6Art\AdminBundle\Form\Security\ResetPasswordRequestFormType;
 use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\AdminBundle\Ui\EmailPalette;
+use Jul6Art\AuthBundle\Account\PasswordWriter;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use Twig\Environment;
 
 /**
@@ -181,6 +195,11 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             $this->registerRolePermissions($container, $rolePermissions);
         }
 
+        $account = \is_array($config['account'] ?? null) ? $config['account'] : [];
+        if (true === ($account['enabled'] ?? false)) {
+            $this->registerAccount($container, $account);
+        }
+
         $deadlines = \is_array($config['deadlines'] ?? null) ? $config['deadlines'] : [];
         if ('' !== self::asString($deadlines['entity'] ?? null, '')) {
             $this->loadDeadlines($loader, $container, $deadlines);
@@ -301,6 +320,116 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ->setArgument('$escalationGuard', true === ($config['escalation_guard'] ?? false))
             ->setArgument('$template', self::asString($config['template'] ?? null, 'admin/role_permission/index.html.twig'))
             ->setArgument('$indexRoute', self::asString($config['index_route'] ?? null, 'admin_role_permission_index'))
+            ->addTag('controller.service_arguments')
+            ->addTag('container.service_subscriber')
+            ->setPublic(true);
+    }
+
+    /**
+     * The sign-in screens (1.42, ADR-0001). Their packages are `suggest`s, so turning them on without one fails HERE,
+     * with the command to run, rather than on the first visitor.
+     *
+     * @param array<array-key, mixed> $config
+     */
+    private function registerAccount(ContainerBuilder $container, array $config): void
+    {
+        $reset = \is_array($config['reset_password'] ?? null) ? $config['reset_password'] : [];
+        $resetOn = true === ($reset['enabled'] ?? true);
+        $missing = array_keys(array_filter([
+            'jul6art/auth-bundle:^2.8' => !class_exists(PasswordWriter::class),
+            'symfony/form' => !class_exists(AbstractType::class),
+            'doctrine/orm' => !interface_exists(EntityManagerInterface::class),
+            'twig/twig' => !class_exists(Environment::class),
+            'symfony/string' => !interface_exists(SluggerInterface::class),
+            'symfonycasts/reset-password-bundle' => $resetOn && !interface_exists(ResetPasswordHelperInterface::class),
+        ]));
+        if ([] !== $missing) {
+            throw new \LogicException(\sprintf('admin.account needs: composer require %s', implode(' ', $missing)));
+        }
+
+        $userClass = self::asString($config['user_class'] ?? null, '');
+        if (!class_exists($userClass)) {
+            throw new \LogicException(\sprintf('admin.account.user_class names no class: "%s".', $userClass));
+        }
+
+        $spaces = \is_array($config['spaces'] ?? null) ? $config['spaces'] : [];
+        $container->register(AccountSpaces::class, AccountSpaces::class)->setArguments([$spaces]);
+
+        // Autoconfigured, not tagged by hand: FrameworkBundle's autoconfiguration tags a form type with the
+        // application's `form.csrf_protection.token_id` — `submit`, stateless, in the applications of this family. A
+        // hand-made tag would leave the bundle's forms on a session token, the only ones of the application.
+        $container->register(RegistrationFormType::class, RegistrationFormType::class)
+            ->setArguments([$userClass])
+            ->setAutoconfigured(true);
+        $container->register(ProfileFormType::class, ProfileFormType::class)
+            ->setArguments([$userClass])
+            ->setAutoconfigured(true);
+        $container->register(ResetPasswordRequestFormType::class, ResetPasswordRequestFormType::class)->setAutoconfigured(true);
+        $container->register(NewPasswordFormType::class, NewPasswordFormType::class)->setAutoconfigured(true);
+
+        self::screen($container, LoginController::class);
+
+        $registration = \is_array($config['registration'] ?? null) ? $config['registration'] : [];
+        $limiter = self::asString($registration['limiter'] ?? null, '');
+        $signIn = self::asString($registration['sign_in'] ?? null, '');
+        $active = $registration['active'] ?? false;
+        self::screen($container, RegistrationController::class)
+            ->setArgument('$userClass', $userClass)
+            ->setArgument('$open', $registration['open'] ?? true)
+            ->setArgument('$active', \is_bool($active) ? $active : null)
+            ->setArgument('$flash', self::asString($registration['flash'] ?? null, 'security.register.flash.pending'))
+            ->setArgument('$formType', self::asString($registration['form_type'] ?? null, RegistrationFormType::class))
+            ->setArgument('$limiter', '' !== $limiter ? new Reference($limiter) : null)
+            ->setArgument('$limiterMessage', self::asString($registration['limiter_message'] ?? null, 'security.register.too_many_attempts'))
+            ->setArgument('$signIn', '' !== $signIn ? $signIn : null)
+            ->setArgument('$security', new Reference('security.helper', ContainerInterface::NULL_ON_INVALID_REFERENCE));
+
+        $profile = \is_array($config['profile'] ?? null) ? $config['profile'] : [];
+        $showAttribute = self::asString($profile['show_attribute'] ?? null, '');
+        self::screen($container, AccountProfileController::class)
+            ->setArgument('$userClass', $userClass)
+            ->setArgument('$access', self::asString($profile['access'] ?? null, 'IS_AUTHENTICATED_FULLY'))
+            ->setArgument('$avatarDirectory', self::asString($profile['avatar_directory'] ?? null, '%kernel.project_dir%/public/uploads/avatars'))
+            ->setArgument('$avatarPublicPath', self::asString($profile['avatar_public_path'] ?? null, 'uploads/avatars'))
+            ->setArgument('$formType', self::asString($profile['form_type'] ?? null, ProfileFormType::class))
+            ->setArgument('$showAttribute', '' !== $showAttribute ? $showAttribute : null);
+        // What guards the profile, as a parameter: the application's menu test compares it to its entry's.
+        $container->setParameter('admin.account.profile.access', self::asString($profile['access'] ?? null, 'IS_AUTHENTICATED_FULLY'));
+
+        if (!$resetOn) {
+            return;
+        }
+
+        $email = \is_array($reset['email'] ?? null) ? $reset['email'] : [];
+        $from = $email['from'] ?? '';
+        if (!\is_string($from) || '' === $from) {
+            throw new \LogicException('admin.account.reset_password.email.from is empty: the forgotten-password e-mail needs a sender (%env(MAILER_FROM)%).');
+        }
+
+        $floor = $reset['response_floor_ms'] ?? 250;
+        $textTemplate = self::asString($email['text_template'] ?? null, '');
+        self::screen($container, ResetPasswordController::class)
+            ->setArgument('$userClass', $userClass)
+            ->setArgument('$responseFloorMilliseconds', \is_int($floor) ? $floor : 250)
+            ->setArgument('$mailFrom', $from)
+            ->setArgument('$mailTemplate', self::asString($email['template'] ?? null, 'security/reset_password_email.html.twig'))
+            ->setArgument('$mailTextTemplate', '' !== $textTemplate ? $textTemplate : null)
+            ->setArgument('$mailSubject', self::asString($email['subject'] ?? null, 'security.reset_password.email.subject'))
+            ->setArgument('$mailTranslationDomain', self::asString($email['translation_domain'] ?? null, 'security'))
+            ->setArgument('$requestFormType', self::asString($reset['request_form_type'] ?? null, ResetPasswordRequestFormType::class))
+            ->setArgument('$formType', self::asString($reset['form_type'] ?? null, NewPasswordFormType::class));
+    }
+
+    /**
+     * A controller of the sign-in screens: autowired, public, with the two tags `AbstractController` needs — never
+     * autoconfigured, whose `#[Route]` scan would route it outside the application's prefixes.
+     *
+     * @param class-string $class
+     */
+    private static function screen(ContainerBuilder $container, string $class): Definition
+    {
+        return $container->register($class, $class)
+            ->setAutowired(true)
             ->addTag('controller.service_arguments')
             ->addTag('container.service_subscriber')
             ->setPublic(true);

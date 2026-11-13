@@ -22,11 +22,12 @@
         "symfony/yaml": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "jul6art/acl-bundle": "^1.2.1",
         "doctrine/doctrine-bundle": "^3.3.4",
         "doctrine/orm": "^3.7.5",
         "endroid/qr-code": "^6.1.3",
         "friendsofphp/php-cs-fixer": "^3.95.27",
+        "jul6art/acl-bundle": "^1.2.1",
+        "jul6art/auth-bundle": "^2.8",
         "jul6art/core-bundle": "^3.7",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.3.4",
@@ -39,6 +40,8 @@
         "scheb/2fa-bundle": "^8.6.1",
         "scheb/2fa-totp": "^8.6.1",
         "symfony/asset": "^7.4 || ^8.0",
+        "symfony/browser-kit": "^7.4 || ^8.0",
+        "symfony/css-selector": "^7.4 || ^8.0",
         "symfony/flex": "^2.11",
         "symfony/form": "^7.4 || ^8.0",
         "symfony/framework-bundle": "^7.4 || ^8.0",
@@ -51,6 +54,7 @@
         "symfony/twig-bundle": "^7.4 || ^8.0",
         "symfony/validator": "^7.4 || ^8.0",
         "symfony/var-dumper": "^7.4 || ^8.0",
+        "symfonycasts/reset-password-bundle": "^1.26",
         "twig/twig": "^3.30"
     },
     "autoload": {
@@ -97,17 +101,20 @@
     },
     "suggest": {
         "jul6art/acl-bundle": "The grid of the roles' permissions (admin.role_permissions, 1.40): its controller writes through acl-bundle's storage (acl.storage, >= 1.2.1) and reads its catalog.",
-        "twig/twig": "La coquille, les pages d'authentification et l'\u00e9cran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entit\u00e9.",
+        "twig/twig": "La coquille, les pages d'authentification et l'écran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entité.",
         "symfony/form": "Le formulaire d'apparence (`AppearanceType`).",
-        "doctrine/orm": "Le trait `AppearancePreferencesTrait` et le contr\u00f4leur qui l'enregistre.",
+        "doctrine/orm": "Le trait `AppearancePreferencesTrait` et le contrôleur qui l'enregistre.",
         "symfony/asset": "`asset()` pour le logo et le favicon ; sans lui, les chemins sont rendus tels quels.",
-        "jul6art/datatable-bundle": "Les tableaux du back-office, et les contr\u00f4leurs Stimulus `ui--modal` / `ui--tooltip` que la coquille suppose enregistr\u00e9s.",
+        "jul6art/datatable-bundle": "Les tableaux du back-office, et les contrôleurs Stimulus `ui--modal` / `ui--tooltip` que la coquille suppose enregistrés.",
         "jul6art/core-bundle": "Required by the performance dashboard (Controller\\PerformanceController): it provides the profiler store this screen renders. From 3.6, it also draws the CSP nonce that lets the shell's inline scripts through the policy. From admin-bundle 1.39, the two-factor authentication needs it too: the TOTP secret is stored with its `encrypted_string` type, under `core.encryption_key`.",
-        "scheb/2fa-bundle": "La double authentification optionnelle (`admin.two_factor`) : le second facteur apr\u00e8s le mot de passe.",
-        "scheb/2fa-backup-code": "Les codes de secours de la double authentification (`admin.two_factor.backup_codes`), pour un t\u00e9l\u00e9phone perdu.",
-        "scheb/2fa-totp": "Le code \u00e0 six chiffres d'une application d'authentification (TOTP), seul fournisseur que `admin.two_factor` branche.",
-        "endroid/qr-code": "Le QR code de l'enr\u00f4lement \u00e0 la double authentification, en SVG dans une URI `data:` (aucune ressource externe).",
-        "symfony/rate-limiter": "La limite d'essais du code de double authentification (cinq \u00e9checs par quart d'heure et par compte).",
-        "symfony/mailer": "Les rappels des \u00e9ch\u00e9ances \u00e0 renouveler (`admin.deadlines`), \u00e0 J-7, J-1 et le jour J."
+        "scheb/2fa-bundle": "La double authentification optionnelle (`admin.two_factor`) : le second facteur après le mot de passe.",
+        "scheb/2fa-backup-code": "Les codes de secours de la double authentification (`admin.two_factor.backup_codes`), pour un téléphone perdu.",
+        "scheb/2fa-totp": "Le code à six chiffres d'une application d'authentification (TOTP), seul fournisseur que `admin.two_factor` branche.",
+        "endroid/qr-code": "Le QR code de l'enrôlement à la double authentification, en SVG dans une URI `data:` (aucune ressource externe).",
+        "symfony/rate-limiter": "La limite d'essais du code de double authentification (cinq échecs par quart d'heure et par compte).",
+        "symfony/mailer": "Les rappels des échéances à renouveler (`admin.deadlines`), à J-7, J-1 et le jour J.",
+        "jul6art/auth-bundle": "The sign-in screens (admin.account, 1.42): the password is written and the forgotten-password e-mail sent by its services (>= 2.8).",
+        "symfonycasts/reset-password-bundle": "The forgotten password of the sign-in screens (admin.account.reset_password): its one-time tokens.",
+        "symfony/string": "The profile of the sign-in screens (admin.account): the picture's name, rebuilt by the slugger."
     }
 }
