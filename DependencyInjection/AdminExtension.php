@@ -284,12 +284,19 @@ class AdminExtension extends Extension implements PrependExtensionInterface
 
         $roles = self::stringList($config['roles'] ?? []);
         $access = $config['access'] ?? null;
+        // The grid's columns, for the application's tests of its vocabulary: each role has its label.
+        $container->setParameter('admin.role_permissions.roles', $roles);
+        // What guards the screen, as `admin.deadlines.access` does for the deadlines: the screen is guarded by
+        // configuration, not by an attribute, so a test that the menu says the screen's permission reads it here.
+        $container->setParameter('admin.role_permissions.read', self::asString($config['read'] ?? null, 'permission:read'));
+        $container->setParameter('admin.role_permissions.update', self::asString($config['update'] ?? null, 'permission:update'));
+        $container->setParameter('admin.role_permissions.access', \is_string($access) && '' !== $access ? $access : null);
         $container->register(RolePermissionController::class, RolePermissionController::class)
             ->setAutowired(true)
-            ->setArgument('$roles', $roles)
-            ->setArgument('$readAttribute', self::asString($config['read'] ?? null, 'permission:read'))
-            ->setArgument('$updateAttribute', self::asString($config['update'] ?? null, 'permission:update'))
-            ->setArgument('$accessAttribute', \is_string($access) && '' !== $access ? $access : null)
+            ->setArgument('$roles', '%admin.role_permissions.roles%')
+            ->setArgument('$readAttribute', '%admin.role_permissions.read%')
+            ->setArgument('$updateAttribute', '%admin.role_permissions.update%')
+            ->setArgument('$accessAttribute', '%admin.role_permissions.access%')
             ->setArgument('$scope', self::asString($config['scope'] ?? null, RolePermissionController::SCOPE_PLATFORM))
             ->setArgument('$escalationGuard', true === ($config['escalation_guard'] ?? false))
             ->setArgument('$template', self::asString($config['template'] ?? null, 'admin/role_permission/index.html.twig'))
@@ -297,8 +304,6 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ->addTag('controller.service_arguments')
             ->addTag('container.service_subscriber')
             ->setPublic(true);
-        // The grid's columns, for the application's tests of its vocabulary: each role has its label.
-        $container->setParameter('admin.role_permissions.roles', $roles);
     }
 
     /**

@@ -1302,7 +1302,10 @@ Your template receives `roles`, `grouped` (resource → codes), `granted` (role 
 - **The escalation guard**: a cell this account cannot change is disabled in your template, so it is not posted
   — its absence changes nothing; forging its grant is a 403. The reset only touches the cells it may change.
 - Flashes: `permission.flash.saved`, `permission.flash.reset`, `flash.invalid_csrf` — your translations.
-- `%admin.role_permissions.roles%` holds the columns, for a test that every role has its label.
+- `%admin.role_permissions.roles%` holds the columns, for a test that every role has its label;
+  `%admin.role_permissions.read%`, `%admin.role_permissions.update%` and `%admin.role_permissions.access%` (or
+  `null`) what guards the screen — no `#[IsGranted]` carries it, so a test that the menu entry says the screen's
+  permission reads it there, as it reads `%admin.deadlines.access%`.
 
 Quality assurance
 -----------------

@@ -60,6 +60,7 @@ final class RolePermissionTest extends AbstractFunctionalTestCase
         self::assertTrue(self::column($contract['changeable'], 'ROLE_USER')['invoice:cancel'] ?? null, 'Without the guard, every cell changes.');
         self::assertNull($contract['organization']);
         self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $this->container->getParameter('admin.role_permissions.roles'));
+        self::assertNull($this->container->getParameter('admin.role_permissions.access'), 'No extra access unless configured.');
     }
 
     public function testTheGridIsSavedAsTicked(): void
@@ -100,6 +101,10 @@ final class RolePermissionTest extends AbstractFunctionalTestCase
     {
         $this->grid(['access' => 'ROLE_SUPER_ADMIN']);
         $this->signIn(new Member('admin@example.test', ['ROLE_ADMIN']));
+        // What guards the screen, readable by the application's tests of its menu.
+        self::assertSame('permission:read', $this->container->getParameter('admin.role_permissions.read'));
+        self::assertSame('permission:update', $this->container->getParameter('admin.role_permissions.update'));
+        self::assertSame('ROLE_SUPER_ADMIN', $this->container->getParameter('admin.role_permissions.access'));
 
         $this->expectException(AccessDeniedException::class);
 
