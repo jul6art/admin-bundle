@@ -95,12 +95,14 @@ final class ResetPasswordController extends AbstractController
     #[IsGranted('PUBLIC_ACCESS')]
     public function checkEmail(Request $request): Response
     {
-        // A fake token when there is none: the page renders, without telling whether an e-mail left.
-        if (!$this->getTokenObjectFromSession() instanceof ResetPasswordToken) {
-            $this->resetPasswordHelper->generateFakeResetToken();
+        // A fake token when there is none: the page renders the same, its link's lifetime included (`resetToken`),
+        // without telling whether an e-mail left.
+        $resetToken = $this->getTokenObjectFromSession();
+        if (!$resetToken instanceof ResetPasswordToken) {
+            $resetToken = $this->resetPasswordHelper->generateFakeResetToken();
         }
 
-        return $this->render($this->spaces->template($request, 'check_email'), $this->spaces->context($request));
+        return $this->render($this->spaces->template($request, 'check_email'), ['resetToken' => $resetToken] + $this->spaces->context($request));
     }
 
     #[IsGranted('PUBLIC_ACCESS')]

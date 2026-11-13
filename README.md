@@ -1383,7 +1383,8 @@ portal_security_login:               # a second space: _auth_space in the route'
 
 - **The forgotten password never tells whether an address exists** — by its page, nor by its duration: the
   request is held until `response_floor_ms`. The e-mail leaves in the account's language (`getLocale()`) when it
-  has one.
+  has one. The check page receives `resetToken` (1.43) — the request's, or a fake one — to say how long the link
+  lives.
 - **The forms ask what the entity keeps**: names when it has `setFirstName()`/`setLastName()`, a picture with
   `setAvatarPath()`. Every text has `empty_data: ''`: an emptied field is a form error (422), never a 500.
 - **What differs from one product to the next listens** to three events: `RegistrationFormEvent` before the form

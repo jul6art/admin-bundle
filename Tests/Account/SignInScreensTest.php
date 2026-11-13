@@ -99,6 +99,7 @@ final class SignInScreensTest extends AccountScreensTestCase
         self::assertResponseRedirects('/portal/reset-password/check-email');
         $this->client->followRedirect();
         self::assertSelectorExists('[data-portal-check-email]');
+        self::assertNotSame('', $this->client->getCrawler()->filter('[data-portal-check-email]')->attr('data-lifetime'), 'The page says how long the link lives: it receives the token.');
 
         $email = $this->mailer()->sent[0] ?? null;
         self::assertInstanceOf(TemplatedEmail::class, $email);
@@ -176,8 +177,12 @@ final class SignInScreensTest extends AccountScreensTestCase
         $this->start();
 
         $this->client->request('GET', '/reset-password/check-email');
-
         self::assertResponseIsSuccessful();
+
+        // No request in the session: a fake token, and the same page — its link's lifetime included.
+        $crawler = $this->client->request('GET', '/portal/reset-password/check-email');
+        self::assertResponseIsSuccessful();
+        self::assertNotSame('', $crawler->filter('[data-portal-check-email]')->attr('data-lifetime'));
     }
 
     /**
