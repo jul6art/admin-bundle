@@ -226,6 +226,8 @@ Ce que l'écriture a précisé :
 ## Conséquences
 
 - admin-bundle 1.42.0, dont le badge n'écrit que la majeure. auth-bundle 2.8.0, dont le badge passe à v2.8.0. Les
-  applications montent leur plancher.
+  applications montent leur plancher. **Livré** : admin-bundle 1.42.0, 1.42.1 (`registration.active: ~` lu comme
+  `false`), 1.43.0 (la page de vérification reçoit `resetToken`) et 1.43.1 (le compte connecté dès l'inscription
+  reçoit aussi le message de bienvenue) ; auth-bundle 2.8.0.
 - Démonstrations d'abord (superp, cereezer, tradebot, wtg, devinthehood), puis devingame, cegeta et devinlive.
-- Le lot 6 (import), qui vient après celui-ci dans l'ordre validé, ajoute ensuite `admin.user_import` en 1.43.0.
+- Le lot 6 (import), qui vient après celui-ci dans l'ordre validé, ajoute ensuite `admin.user_import` en 1.44.0.
