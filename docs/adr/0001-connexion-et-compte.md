@@ -1,6 +1,6 @@
 # ADR-0001 — Connexion, mot de passe oublié, inscription, profil et commandes de compte
 
-- **Statut** : Proposé — 2026-11-13, à valider par jul6art avant d'écrire du code
+- **Statut** : Accepté — 2026-11-13, validé par jul6art (« ok go ») avec les cinq recommandations, puis deux écarts relevés en ouvrant le code (voir « Décisions du 2026-11-13 »)
 - **Décideurs** : jul6art
 - **Origine** : audit Fable 5.2, T20, lot 3 (cinquième lot du chantier de remontée)
 - **Bundles** : admin-bundle (les écrans), auth-bundle (la logique sans écran et les commandes)
@@ -99,10 +99,9 @@ admin:
     account:
         enabled: true
         user_class: App\Entity\User
-        registration: { enabled: false, active: false, form_type: ~, limiter: ~ }
-        reset_password: { enabled: true, response_floor_ms: 250 }
-        profile: { access: IS_AUTHENTICATED_FULLY }
-        redirect_authenticated_to: ~
+        registration: { open: true, active: false, form_type: ~, limiter: ~, sign_in: ~, flash: security.register.flash.pending }
+        reset_password: { enabled: true, response_floor_ms: 250, email: { from: '%env(MAILER_FROM)%' } }
+        profile: { access: IS_AUTHENTICATED_FULLY, show_attribute: ~ }
         spaces:
             portal: { templates: { login: 'portal/security/login.html.twig' }, routes: { login: portal_security_login } }
 ```
@@ -144,25 +143,51 @@ redondants. Les gabarits de l'application restent ceux qu'elle a remplacés.
   si l'adresse existe.
 - **`empty_data`** : un champ vidé à l'inscription ou dans le profil donne un formulaire en erreur, plus un 500.
 - **Le lien de connexion de développement** retrouve un compte saisi avec des majuscules.
+- **Le courriel de réinitialisation part dans la langue du compte**, là où il partait dans celle de la page.
+- **Une réinitialisation sur le web ferme les sessions mobiles du compte** (cereezer, cegeta).
+- **Une soumission invalide du profil répond 422**, plus 200.
 - Partout ailleurs : aucun changement. Ce sont les mêmes routes, les mêmes gabarits, les mêmes jetons et les mêmes
   messages.
 
-## Points à confirmer avant de coder
+## Décisions du 2026-11-13
 
-1. **Les écrans dans admin-bundle**, plutôt que dans un espace `Web/` d'auth-bundle. C'est la proposition du plan
-   T20.1 : admin-bundle porte déjà le second facteur, la mise en page et ces gabarits, et auth-bundle reste sans
-   Twig.
+Les cinq points, tranchés comme recommandé :
 
-   La conséquence : les modes `web` et `admin` du squelette n'ont pas forcément admin-bundle. Soit ils l'installent
-   pour ces écrans, soit ils gardent leur copie. Leur copie date d'août et d'octobre : il faut la remettre à jour,
-   au minimum.
-2. **Le plancher de cegeta pour tout le monde.**
-3. **L'inscription par événements** : les variantes de devingame, cereezer et cegeta deviennent des écouteurs.
-   L'autre possibilité est un contrôleur de base à étendre, qui porterait le même code par héritage.
-4. **devinlive** : son inscription (`RegistrationService`, route `app_registration_register`) et sa connexion
-   (`app_login`) ne suivent pas le squelette. La proposition est de les ranger sur la référence dans ce lot, après
-   T23. Ses routes changeraient de nom, ou bien on garde ses noms par la configuration des routes.
-5. **Les noms des espaces de noms**, `Controller/Security/` dans admin-bundle et `Account/` dans auth-bundle.
+1. **Les écrans dans admin-bundle.** Les modes `web` et `admin` du squelette, qui n'avaient qu'auth-bundle,
+   l'installent : leurs gabarits restent les leurs, par un espace.
+2. **Le plancher de 250 ms pour tout le monde.**
+3. **L'inscription par événements** ; le contrôleur du bundle reste final.
+4. **devinlive** se range sur la référence en **gardant ses noms de route** (`app_login`,
+   `app_registration_register`) : la configuration des routes les nomme.
+5. **Les espaces de noms** `Controller/Security/` (admin-bundle) et `Account/` (auth-bundle).
+
+Deux écarts relevés en ouvrant le code, validés le même jour :
+
+- **`NewPasswordFormType` et `ResetPasswordRequestFormType`** (9 copies chacun), absents du relevé, partent dans
+  admin-bundle avec le contrôleur du mot de passe oublié, remplaçables (`request_form_type`, `form_type`).
+- **Les modes `web` et `admin` du squelette** reposent sur l'entité `User` d'auth-bundle (ni « actif », ni nom, ni
+  photo), connectent le compte juste après l'inscription et nomment leurs routes `app_*`. Le bundle prend
+  `registration.sign_in` (l'authentificateur qui connecte le nouveau compte) et `registration.active: ~` (une
+  entité sans drapeau) ; la fabrique d'auth-bundle ne faisant que `new User()`, le bundle instancie `user_class`.
+  Leur `ProfileController` (fiche et changement de mot de passe), hors du relevé, reste dans les modes.
+
+Ce que l'écriture a précisé :
+
+- **Les formulaires demandent ce que l'entité garde** : les noms si elle a `setFirstName()`/`setLastName()`, la
+  photo avec `setAvatarPath()`. Une application qui demande plus (captcha, conditions, pseudo) écrit un type dont
+  le parent est celui du bundle (`getParent()`), plus une copie.
+- **Trois événements, pas deux** : `RegistrationFormEvent` s'ajoute avant la construction du formulaire. Il sert
+  l'espace personnel de cegeta, que la validation lit, et la question du captcha de devingame.
+- **La fiche où revient le profil est une route de l'espace** (`profile_show`), pas un réglage global : l'espace
+  client de cegeta n'a pas de fiche de compte. Avant le lot, sa copie y renvoyait un client qui avait `user:read`
+  dans son locataire : un 403 après un enregistrement réussi, relevé dans Chrome le 2026-11-13.
+- **Le limiteur** refuse par une erreur sur le formulaire, rendu en 429, plutôt que par une page d'erreur.
+- **Une soumission invalide répond 422** sur les quatre écrans, profil compris.
+- **auth-bundle** : `PasswordResetMailer::deliver(PasswordResetEmail)` envoie le courriel décrit en entier, et
+  `send()` construit celui de l'API à partir du domaine. L'événement de `app:user:create` s'appelle
+  `AccountCreationEvent` : il part avant l'écriture, et un nom au passé aurait menti.
+- **Le mot de passe réinitialisé sur le web met fin aux sessions de l'API** du compte quand gesdinet est là
+  (cereezer, cegeta) : c'est le même `PasswordWriter`.
 
 ## Tests exigés
 
