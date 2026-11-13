@@ -177,6 +177,18 @@ final class ConfigurationTest extends TestCase
                 'locale' => 'en',
                 'timezone' => '',
             ],
+            // 1.40: off — the application keeps its own grid until it turns this on.
+            'role_permissions' => [
+                'enabled' => false,
+                'roles' => ['ROLE_ADMIN', 'ROLE_USER'],
+                'read' => 'permission:read',
+                'update' => 'permission:update',
+                'access' => null,
+                'scope' => 'platform',
+                'escalation_guard' => false,
+                'template' => 'admin/role_permission/index.html.twig',
+                'index_route' => 'admin_role_permission_index',
+            ],
         ], $this->process([]));
     }
 

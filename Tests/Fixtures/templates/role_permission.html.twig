@@ -1,0 +1,2 @@
+{# What the grid's controller hands an application's template, as JSON: the contract the tests read. #}
+{{ {roles: roles, grouped: grouped, granted: granted, defaults: defaults, superAdminOnly: superAdminOnly, changeable: changeable, organization: organization ? organization.slug : null}|json_encode|raw }}

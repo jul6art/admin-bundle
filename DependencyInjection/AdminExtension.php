@@ -6,8 +6,10 @@ namespace Jul6Art\AdminBundle\DependencyInjection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
+use Jul6Art\AclBundle\Doctrine\DoctrinePermissionStore;
 use Jul6Art\AdminBundle\Contract\DeadlineInterface;
 use Jul6Art\AdminBundle\Controller\DeadlineController;
+use Jul6Art\AdminBundle\Controller\RolePermissionController;
 use Jul6Art\AdminBundle\Controller\TwoFactorController;
 use Jul6Art\AdminBundle\Deadline\DeadlineNotifier;
 use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
@@ -174,6 +176,11 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             $loader->load('performance.yaml');
         }
 
+        $rolePermissions = \is_array($config['role_permissions'] ?? null) ? $config['role_permissions'] : [];
+        if (true === ($rolePermissions['enabled'] ?? false)) {
+            $this->registerRolePermissions($container, $rolePermissions);
+        }
+
         $deadlines = \is_array($config['deadlines'] ?? null) ? $config['deadlines'] : [];
         if ('' !== self::asString($deadlines['entity'] ?? null, '')) {
             $this->loadDeadlines($loader, $container, $deadlines);
@@ -261,6 +268,37 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ]))));
             $loader->load('two_factor_required.yaml');
         }
+    }
+
+    /**
+     * The grid of the roles' permissions. acl-bundle is a `suggest`: turning the screen on without its storage
+     * fails HERE, saying what is missing, rather than on the first request.
+     *
+     * @param array<array-key, mixed> $config
+     */
+    private function registerRolePermissions(ContainerBuilder $container, array $config): void
+    {
+        if (!class_exists(DoctrinePermissionStore::class)) {
+            throw new \LogicException('admin.role_permissions needs jul6art/acl-bundle ≥ 1.2 with acl.storage enabled: composer require jul6art/acl-bundle');
+        }
+
+        $roles = self::stringList($config['roles'] ?? []);
+        $access = $config['access'] ?? null;
+        $container->register(RolePermissionController::class, RolePermissionController::class)
+            ->setAutowired(true)
+            ->setArgument('$roles', $roles)
+            ->setArgument('$readAttribute', self::asString($config['read'] ?? null, 'permission:read'))
+            ->setArgument('$updateAttribute', self::asString($config['update'] ?? null, 'permission:update'))
+            ->setArgument('$accessAttribute', \is_string($access) && '' !== $access ? $access : null)
+            ->setArgument('$scope', self::asString($config['scope'] ?? null, RolePermissionController::SCOPE_PLATFORM))
+            ->setArgument('$escalationGuard', true === ($config['escalation_guard'] ?? false))
+            ->setArgument('$template', self::asString($config['template'] ?? null, 'admin/role_permission/index.html.twig'))
+            ->setArgument('$indexRoute', self::asString($config['index_route'] ?? null, 'admin_role_permission_index'))
+            ->addTag('controller.service_arguments')
+            ->addTag('container.service_subscriber')
+            ->setPublic(true);
+        // The grid's columns, for the application's tests of its vocabulary: each role has its label.
+        $container->setParameter('admin.role_permissions.roles', $roles);
     }
 
     /**

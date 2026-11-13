@@ -192,9 +192,64 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->append($this->twoFactorNode())
                 ->append($this->deadlinesNode())
+                ->append($this->rolePermissionsNode())
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * `role_permissions` (1.40): the grid of the roles' permissions, on acl-bundle's storage (its ADR-0001, phase
+     * 2b). The controller is the bundle's, the template the application's.
+     */
+    private function rolePermissionsNode(): ArrayNodeDefinition
+    {
+        $node = new TreeBuilder('role_permissions')->getRootNode();
+        $node
+            ->info('The grid of the roles\' permissions: the controller (`RolePermissionController::index`, `::save`, `::reset`, routed by the application) on acl-bundle\'s storage (acl.storage, ≥ 1.2) and catalog. The template stays the application\'s.')
+            ->canBeEnabled()
+            ->children()
+                ->arrayNode('roles')
+                    ->info('The grid\'s columns. Never the super admin\'s role: the engine lets it through before reading the storage.')
+                    ->scalarPrototype()->end()
+                    ->defaultValue(['ROLE_ADMIN', 'ROLE_USER'])
+                ->end()
+                ->scalarNode('read')
+                    ->info('What seeing the grid asks `isGranted()`: the product\'s permission code.')
+                    ->defaultValue('permission:read')
+                    ->cannotBeEmpty()
+                ->end()
+                ->scalarNode('update')
+                    ->info('What saving it asks `isGranted()`.')
+                    ->defaultValue('permission:update')
+                    ->cannotBeEmpty()
+                ->end()
+                ->scalarNode('access')
+                    ->info('One more attribute, asked by every action — a platform-only screen says ROLE_SUPER_ADMIN. Null asks nothing more.')
+                    ->defaultNull()
+                ->end()
+                ->enumNode('scope')
+                    ->info('platform: one grid. tenant: the account\'s tenant\'s grid, where only what differs from the platform\'s default is written (acl.storage.role_scope: tenant); the super admin edits the platform.')
+                    ->values(['platform', 'tenant'])
+                    ->defaultValue('platform')
+                ->end()
+                ->booleanNode('escalation_guard')
+                    ->info('true: a cell changes only if the account holds its code itself; forging the grant of a locked cell is a 403.')
+                    ->defaultFalse()
+                ->end()
+                ->scalarNode('template')
+                    ->info('The application\'s template. It receives roles, grouped, granted, defaults, superAdminOnly, changeable and organization.')
+                    ->defaultValue('admin/role_permission/index.html.twig')
+                    ->cannotBeEmpty()
+                ->end()
+                ->scalarNode('index_route')
+                    ->info('Where saving and resetting send back.')
+                    ->defaultValue('admin_role_permission_index')
+                    ->cannotBeEmpty()
+                ->end()
+            ->end();
+
+        return $node;
     }
 
     /**

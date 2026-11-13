@@ -54,12 +54,14 @@ abstract class AbstractFunctionalTestCase extends TestCase
         bool $withOrm = false,
         bool $withCore = false,
         bool $withTwoFactor = false,
+        bool $withAcl = false,
     ): ContainerInterface {
         $uniqueId = substr(md5(serialize([
             $bundleConfig,
             $withOrm,
             $withCore,
             $withTwoFactor,
+            $withAcl,
         ])), 0, 12);
 
         // Arguments nommés : une brique absente retire son paramètre du kernel, et un appel
@@ -71,6 +73,7 @@ abstract class AbstractFunctionalTestCase extends TestCase
             withCore: $withCore,
             withTwoFactor: $withTwoFactor,
             uniqueId: $uniqueId,
+            withAcl: $withAcl,
         );
         $this->kernel->boot();
 

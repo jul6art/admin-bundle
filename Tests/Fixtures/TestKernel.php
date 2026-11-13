@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Jul6Art\AdminBundle\Tests\Fixtures;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Jul6Art\AclBundle\AclBundle;
+use Jul6Art\AclBundle\Security\AclPermissionReadService;
 use Jul6Art\AdminBundle\AdminBundle;
 use Jul6Art\AdminBundle\Command\DeadlineRemindCommand;
 use Jul6Art\AdminBundle\Deadline\DeadlineNotifier;
@@ -14,6 +16,8 @@ use Jul6Art\AdminBundle\EventListener\TwoFactorThrottleListener;
 use Jul6Art\AdminBundle\Keyboard\KeyboardShortcutResolver;
 use Jul6Art\AdminBundle\Navigation\NavigationBuilder;
 use Jul6Art\AdminBundle\Search\GlobalSearch;
+use Jul6Art\AdminBundle\Tests\Fixtures\Acl\Entity as AclEntity;
+use Jul6Art\AdminBundle\Tests\Fixtures\Acl\PermissionCatalog;
 use Jul6Art\AdminBundle\Translation\DeclaredTranslationKeys;
 use Jul6Art\AdminBundle\Twig\AdminUiExtension;
 use Jul6Art\AdminBundle\Twig\KeyboardExtension;
@@ -67,6 +71,8 @@ final class TestKernel extends Kernel
         /** Enregistre scheb/2fa-bundle : la double authentification n'existe qu'avec lui. */
         private readonly bool $withTwoFactor = false,
         private readonly string $uniqueId = 'default',
+        /** Enregistre `jul6art/acl-bundle` et son stockage (1.40, la grille des permissions) : implique l'ORM. */
+        private readonly bool $withAcl = false,
     ) {
         // Debug mode installs Symfony's error handler and never removes it, which PHPUnit
         // rightly reports as leaking global state.
@@ -86,8 +92,12 @@ final class TestKernel extends Kernel
         // `require` et non en `require-dev`.
         yield new SecurityBundle();
 
-        if ($this->withOrm) {
+        if ($this->withOrm || $this->withAcl) {
             yield new DoctrineBundle();
+        }
+
+        if ($this->withAcl) {
+            yield new AclBundle();
         }
 
         // Le core apporte la brique de profilage que l'écran de performance consomme. Il est en
@@ -177,6 +187,9 @@ final class TestKernel extends Kernel
                     DeadlineRemindCommand::class,
                     'scheb_two_factor.security.totp_authenticator',
                     'scheb_two_factor.backup_code_manager',
+                    'security.csrf.token_manager',
+                    // La grille des permissions (1.40) : le moteur garde ses réponses par compte et par requête.
+                    AclPermissionReadService::class,
                 ];
 
                 foreach ($container->getDefinitions() as $id => $definition) {
@@ -242,8 +255,12 @@ final class TestKernel extends Kernel
             'firewalls' => ['main' => ['security' => false]],
         ]);
 
-        if ($this->withOrm) {
+        if ($this->withOrm || $this->withAcl) {
             $this->configureDoctrine($container);
+        }
+
+        if ($this->withAcl) {
+            $this->configureAcl($container);
         }
 
         if ($this->withTwoFactor) {
@@ -273,6 +290,34 @@ final class TestKernel extends Kernel
      * The whole `Tests/Fixtures/Entity` directory is mapped, so a new fixture entity is picked up
      * without touching this method.
      */
+    /**
+     * acl-bundle with its Doctrine storage, as an application wires it: the thin entities and the catalog of
+     * `Fixtures/Acl`, mapped for these tests alone.
+     */
+    private function configureAcl(ContainerBuilder $container): void
+    {
+        $container->loadFromExtension('doctrine', ['orm' => ['mappings' => [
+            'AdminBundleAclTests' => [
+                'type' => 'attribute',
+                'dir' => __DIR__.'/Acl/Entity',
+                'prefix' => 'Jul6Art\\AdminBundle\\Tests\\Fixtures\\Acl\\Entity',
+                'is_bundle' => false,
+            ],
+        ]]]);
+        $container->loadFromExtension('acl', [
+            'multi_tenant' => false,
+            'storage' => [
+                'enabled' => true,
+                'user_class' => AclEntity\Member::class,
+                'role_permission_class' => AclEntity\RolePermission::class,
+                'user_permission_override_class' => AclEntity\UserPermissionOverride::class,
+                'catalog' => PermissionCatalog::class,
+                'role_scope' => 'tenant',
+            ],
+        ]);
+        $container->register(PermissionCatalog::class, PermissionCatalog::class)->setPublic(true);
+    }
+
     private function configureDoctrine(ContainerBuilder $container): void
     {
         $container->loadFromExtension('doctrine', [

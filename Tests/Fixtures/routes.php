@@ -24,6 +24,7 @@ return static function (RoutingConfigurator $routes): void {
         'admin_report_index' => '/admin/reports',
         'admin_inbox_index' => '/admin/inbox',
         'admin_inbox_show' => '/admin/inbox/{id}',
+        'admin_role_permission_index' => '/admin/role-permissions',
     ] as $name => $path) {
         $routes->add($name, $path);
     }

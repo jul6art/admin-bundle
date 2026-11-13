@@ -1255,6 +1255,55 @@ period), `stats.{past,soon,month,total}` and their `_hint`, `list.{title,count,e
 (`%app%`, `%label%`, `%date%`, `%count%`). The three flashes are keys of **`messages`**, like every flash
 the shell's toasts render: `deadline.flash.{saved,renewed,deleted}`.
 
+### The grid of the roles' permissions (1.40)
+
+Who may do what: a grid roles × permissions, on [acl-bundle](https://github.com/jul6art/acl-bundle)'s
+storage (`acl.storage`, ≥ 1.2.1) and its catalog (`PermissionCatalogInterface`). The bundle ships the
+**controller**; the **template stays yours** — every application's grid was fixed on screen for a reason of its
+own (a sticky save bar, a locked super-admin column, horizontal scrolling measured at 360 px…).
+
+```yaml
+# config/packages/admin.yaml
+admin:
+    role_permissions:
+        enabled: true
+        roles: [ROLE_ADMIN, ROLE_USER]   # the columns — never the super admin's role
+        read: 'permission:read'          # what seeing the grid asks isGranted()
+        update: 'permission:update'      # what saving it asks
+        access: ~                        # one more attribute for every action (ROLE_SUPER_ADMIN: platform only)
+        scope: platform                  # tenant: the account's tenant's grid; the super admin edits the platform
+        escalation_guard: false          # true: a cell changes only if the account holds its code
+        template: 'admin/role_permission/index.html.twig'
+```
+
+```yaml
+# config/routes/role_permission.yaml — the bundle declares no route
+admin_role_permission_index:
+    path: /admin/role-permissions
+    controller: Jul6Art\AdminBundle\Controller\RolePermissionController::index
+    methods: [GET]
+admin_role_permission_save:
+    path: /admin/role-permissions
+    controller: Jul6Art\AdminBundle\Controller\RolePermissionController::save
+    methods: [POST]
+admin_role_permission_reset:         # optional: back to the catalog's defaults
+    path: /admin/role-permissions/reset
+    controller: Jul6Art\AdminBundle\Controller\RolePermissionController::reset
+    methods: [POST]
+```
+
+Your template receives `roles`, `grouped` (resource → codes), `granted` (role → codes granted in the scope),
+`defaults`, `superAdminOnly`, `changeable` (role → code → whether this account may change the cell) and
+`organization` (the scope, or `null`); it posts `permissions[<role>][<code>]` with a `role_permissions` CSRF token.
+
+- **One transaction for the grid**, and **one read**: fifty cells never become fifty writes or fifty queries.
+- **In a tenant, only what differs from the platform's default is written**; a cell brought back to the default
+  removes the tenant's row, and the tenant follows the platform again.
+- **The escalation guard**: a cell this account cannot change is disabled in your template, so it is not posted
+  — its absence changes nothing; forging its grant is a 403. The reset only touches the cells it may change.
+- Flashes: `permission.flash.saved`, `permission.flash.reset`, `flash.invalid_csrf` — your translations.
+- `%admin.role_permissions.roles%` holds the columns, for a test that every role has its label.
+
 Quality assurance
 -----------------
 
