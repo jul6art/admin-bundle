@@ -91,6 +91,9 @@
             "@test"
         ]
     },
+    "conflict": {
+        "doctrine/dbal": "<4.3"
+    },
     "suggest": {
         "twig/twig": "La coquille, les pages d'authentification et l'\u00e9cran d'apparence. Sans Twig, il reste le contrat de navigation, les enums et le trait d'entit\u00e9.",
         "symfony/form": "Le formulaire d'apparence (`AppearanceType`).",
