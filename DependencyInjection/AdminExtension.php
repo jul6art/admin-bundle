@@ -372,7 +372,8 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         $registration = \is_array($config['registration'] ?? null) ? $config['registration'] : [];
         $limiter = self::asString($registration['limiter'] ?? null, '');
         $signIn = self::asString($registration['sign_in'] ?? null, '');
-        $active = $registration['active'] ?? false;
+        // `~` means an account without an active flag: never `??`, which would read it as false.
+        $active = \array_key_exists('active', $registration) ? $registration['active'] : false;
         self::screen($container, RegistrationController::class)
             ->setArgument('$userClass', $userClass)
             ->setArgument('$open', $registration['open'] ?? true)

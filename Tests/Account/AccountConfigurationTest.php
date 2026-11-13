@@ -60,6 +60,15 @@ final class AccountConfigurationTest extends TestCase
         $this->process(['account' => ['enabled' => true, 'user_class' => Member::class, 'registration' => ['active' => 'yes']]]);
     }
 
+    public function testAnAccountWithoutActiveFlagIsLeftAlone(): void
+    {
+        $container = $this->load(['account' => ['enabled' => true, 'user_class' => Member::class, 'reset_password' => false, 'registration' => ['active' => null]]]);
+        self::assertNull($container->getDefinition(RegistrationController::class)->getArgument('$active'), '~ is no flag to write, not false.');
+
+        $container = $this->load(['account' => ['enabled' => true, 'user_class' => Member::class, 'reset_password' => false]]);
+        self::assertFalse($container->getDefinition(RegistrationController::class)->getArgument('$active'), 'Inactive by default.');
+    }
+
     public function testTheForgottenPasswordNeedsASender(): void
     {
         $this->expectException(\LogicException::class);
