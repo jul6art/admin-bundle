@@ -31,7 +31,9 @@ final readonly class UserRowMapper implements RowMapperInterface
 
     /**
      * @param class-string $userClass
-     * @param list<string> $roles     the roles a line may give; empty: the account keeps the implicit one only
+     * @param list<string> $roles               the roles a line may give; empty: the account keeps the implicit one only
+     * @param string|null  $superAdminAttribute what the actor must be granted to give `$superAdminRole`; `null`: the
+     *                                          role itself — an application with a "promote" right names it here
      */
     public function __construct(
         private string $userClass,
@@ -39,6 +41,7 @@ final readonly class UserRowMapper implements RowMapperInterface
         private string $superAdminRole,
         private UserPasswordHasherInterface $hasher,
         private AuthorizationCheckerInterface $authorization,
+        private ?string $superAdminAttribute = null,
     ) {
     }
 
@@ -73,7 +76,7 @@ final readonly class UserRowMapper implements RowMapperInterface
             throw new \DomainException('user.import.error.unknown_role');
         }
 
-        if ($role === $this->superAdminRole && !$this->authorization->isGranted($this->superAdminRole)) {
+        if ($role === $this->superAdminRole && !$this->authorization->isGranted($this->superAdminAttribute ?? $this->superAdminRole)) {
             throw new \DomainException('user.import.error.role_forbidden');
         }
 

@@ -1444,7 +1444,9 @@ needs) and `role`; the words are the application's `user.import.*` keys in the `
 - ⚠️ **A random password**: the account is opened by "forgotten password".
 - ⚠️ **`super_admin_role` only from a super administrator**: an administrator holds the creation
   right, and importing a super administrator at an address of their own, then opening it by
-  "forgotten password", was an elevation four of the copies still allowed.
+  "forgotten password", was an elevation four of the copies still allowed. An application whose
+  right to give that role is an attribute of its own (a "promote" right) names it in
+  `super_admin_attribute` (1.44.1).
 - The address is normalised as the entity normalises it (core-bundle's `Strings::lowerEmail()`
   when installed), and an address already stored, or twice in the file, creates no second account
   — found in one query per batch.

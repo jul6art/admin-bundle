@@ -229,6 +229,7 @@ final class ConfigurationTest extends TestCase
                 'user_class' => null,
                 'roles' => [],
                 'super_admin_role' => 'ROLE_SUPER_ADMIN',
+                'super_admin_attribute' => null,
                 'permission' => 'user:create',
                 'routes' => [
                     'upload' => 'admin_user_import_new',

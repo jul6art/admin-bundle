@@ -368,6 +368,7 @@ class AdminExtension extends Extension implements PrependExtensionInterface
                 self::asString($config['super_admin_role'] ?? null, 'ROLE_SUPER_ADMIN'),
                 new Reference('security.user_password_hasher'),
                 new Reference('security.authorization_checker'),
+                '' !== self::asString($config['super_admin_attribute'] ?? null, '') ? self::asString($config['super_admin_attribute'] ?? null, '') : null,
             ]);
 
         $container->register(UserDuplicateResolver::class, UserDuplicateResolver::class)
