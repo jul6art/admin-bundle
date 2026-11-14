@@ -24,8 +24,16 @@ use Jul6Art\AdminBundle\Form\Security\ResetPasswordRequestFormType;
 use Jul6Art\AdminBundle\TwoFactor\ExemptRoutesCondition;
 use Jul6Art\AdminBundle\Ui\Branding;
 use Jul6Art\AdminBundle\Ui\EmailPalette;
+use Jul6Art\AdminBundle\UserImport\UserDuplicateResolver;
+use Jul6Art\AdminBundle\UserImport\UserImportDefinition;
+use Jul6Art\AdminBundle\UserImport\UserRowMapper;
 use Jul6Art\AuthBundle\Account\PasswordWriter;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
+use Jul6Art\DataflowBundle\Import\ImportRunner;
+use Jul6Art\DataflowBundle\Import\Web\AbstractImportDefinition;
+use Jul6Art\DataflowBundle\Import\Web\ImportRoutes;
+use Jul6Art\DataflowBundle\Io\Reader\CsvReader;
+use Jul6Art\DataflowBundle\Io\Writer\CsvWriter;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Config\FileLocator;
@@ -200,6 +208,11 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             $this->registerAccount($container, $account);
         }
 
+        $userImport = \is_array($config['user_import'] ?? null) ? $config['user_import'] : [];
+        if (true === ($userImport['enabled'] ?? false)) {
+            self::registerUserImport($container, $userImport);
+        }
+
         $deadlines = \is_array($config['deadlines'] ?? null) ? $config['deadlines'] : [];
         if ('' !== self::asString($deadlines['entity'] ?? null, '')) {
             $this->loadDeadlines($loader, $container, $deadlines);
@@ -323,6 +336,68 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ->addTag('controller.service_arguments')
             ->addTag('container.service_subscriber')
             ->setPublic(true);
+    }
+
+    /**
+     * The accounts' import (1.44): a definition tagged for dataflow-bundle's screens, with its mapper and its resolver.
+     *
+     * ⚠️ Refused at compile time without dataflow-bundle's screens, rather than on the first request: a definition
+     * nothing can show would be a route that answers 500.
+     *
+     * @param array<array-key, mixed> $config
+     */
+    private static function registerUserImport(ContainerBuilder $container, array $config): void
+    {
+        $missing = array_keys(array_filter([
+            'jul6art/dataflow-bundle:^1.16' => !class_exists(AbstractImportDefinition::class),
+            'doctrine/orm' => !interface_exists(EntityManagerInterface::class),
+        ]));
+        if ([] !== $missing) {
+            throw new \LogicException(\sprintf('admin.user_import needs: composer require %s', implode(' ', $missing)));
+        }
+
+        $userClass = self::asString($config['user_class'] ?? null, '');
+        $routes = \is_array($config['routes'] ?? null) ? $config['routes'] : [];
+        $roles = array_values(array_filter(\is_array($config['roles'] ?? null) ? $config['roles'] : [], \is_string(...)));
+        $template = self::asString($routes['template'] ?? null, '');
+
+        $container->register(UserRowMapper::class, UserRowMapper::class)
+            ->setArguments([
+                $userClass,
+                $roles,
+                self::asString($config['super_admin_role'] ?? null, 'ROLE_SUPER_ADMIN'),
+                new Reference('security.user_password_hasher'),
+                new Reference('security.authorization_checker'),
+            ]);
+
+        $container->register(UserDuplicateResolver::class, UserDuplicateResolver::class)
+            ->setArguments([$userClass, new Reference('doctrine')]);
+
+        $container->register('admin.user_import.routes', ImportRoutes::class)
+            ->setArguments([
+                self::asString($routes['upload'] ?? null, 'admin_user_import_new'),
+                self::asString($routes['mapping'] ?? null, 'admin_user_import_mapping'),
+                self::asString($routes['run'] ?? null, 'admin_user_import_execute'),
+                '' === $template ? null : $template,
+            ]);
+
+        // ⚠️ The CONTAINER's reader and writer, not new ones: an application rebinds them to its dialect once
+        // (semicolons for a spreadsheet set up in French), and the model it hands out must be read back the same way.
+        $container->register(UserImportDefinition::class, UserImportDefinition::class)
+            ->setArguments([
+                new Reference(ImportRunner::class),
+                new Reference(UserRowMapper::class),
+                new Reference(UserDuplicateResolver::class),
+                new Reference(CsvReader::class),
+                new Reference(CsvWriter::class),
+                self::asString($config['permission'] ?? null, 'user:create'),
+                new Reference('admin.user_import.routes'),
+                self::asString($routes['back'] ?? null, 'admin_user_index'),
+                self::asString($config['translation_domain'] ?? null, 'user'),
+                self::asString($config['translation_prefix'] ?? null, 'user.import'),
+                \is_int($config['max_bytes'] ?? null) ? $config['max_bytes'] : null,
+            ])
+            ->addTag('dataflow.import', ['key' => 'user']);
     }
 
     /**

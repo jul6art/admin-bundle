@@ -1413,3 +1413,40 @@ License
 The Admin bundle is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 &copy; 2026 [jul6art](https://devinthehood.com)
+
+### The accounts' import (1.44)
+
+The accounts' import every back office copied — upload a CSV, map its columns, read the report — on
+the import screens of `jul6art/dataflow-bundle` (>= 1.16, ADR-0001 of that bundle). Off by default:
+
+```yaml
+dataflow:
+    import:
+        enabled: true
+
+admin:
+    user_import:
+        enabled: true
+        user_class: App\Entity\User
+        roles:                                   # what the "role" column may give; anything else is refused
+            - !php/const App\Security\UserRoles::ROLE_ADMIN
+            - !php/const App\Security\UserRoles::ROLE_SUPER_ADMIN
+        permission: !php/const App\Security\PermissionCodes::USER_CREATE   # checked on every screen
+        # routes: { upload: admin_user_import_new, mapping: admin_user_import_mapping,
+        #           run: admin_user_import_execute, template: '', back: admin_user_index }
+```
+
+The bundle registers the definition `user` (`UserImport\UserImportDefinition`); route
+`Jul6Art\DataflowBundle\Import\Web\ImportController::upload|mapping|run` under the names above, with
+`_import: user` in their defaults. The columns are `firstName`, `lastName`, `email` (the three a run
+needs) and `role`; the words are the application's `user.import.*` keys in the `user` domain.
+
+- ⚠️ **A random password**: the account is opened by "forgotten password".
+- ⚠️ **`super_admin_role` only from a super administrator**: an administrator holds the creation
+  right, and importing a super administrator at an address of their own, then opening it by
+  "forgotten password", was an elevation four of the copies still allowed.
+- The address is normalised as the entity normalises it (core-bundle's `Strings::lowerEmail()`
+  when installed), and an address already stored, or twice in the file, creates no second account
+  — found in one query per batch.
+- The reader and the writer are the CONTAINER's `CsvReader` and `CsvWriter`: rebind them once to
+  your dialect, and the import follows.

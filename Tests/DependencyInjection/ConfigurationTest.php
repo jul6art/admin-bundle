@@ -223,6 +223,24 @@ final class ConfigurationTest extends TestCase
                 ],
                 'spaces' => [],
             ],
+            // Off: an application keeps its own accounts' import until it turns this on (1.44).
+            'user_import' => [
+                'enabled' => false,
+                'user_class' => null,
+                'roles' => [],
+                'super_admin_role' => 'ROLE_SUPER_ADMIN',
+                'permission' => 'user:create',
+                'routes' => [
+                    'upload' => 'admin_user_import_new',
+                    'mapping' => 'admin_user_import_mapping',
+                    'run' => 'admin_user_import_execute',
+                    'template' => '',
+                    'back' => 'admin_user_index',
+                ],
+                'translation_domain' => 'user',
+                'translation_prefix' => 'user.import',
+                'max_bytes' => null,
+            ],
         ], $this->process([]));
     }
 

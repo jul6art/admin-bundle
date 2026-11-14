@@ -29,6 +29,7 @@
         "jul6art/acl-bundle": "^1.2.1",
         "jul6art/auth-bundle": "^2.8",
         "jul6art/core-bundle": "^3.7",
+        "jul6art/dataflow-bundle": "^1.16.0",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.3.4",
         "phpstan/phpstan-doctrine": "^2.0.28",
@@ -115,6 +116,7 @@
         "symfony/mailer": "Les rappels des échéances à renouveler (`admin.deadlines`), à J-7, J-1 et le jour J.",
         "jul6art/auth-bundle": "The sign-in screens (admin.account, 1.42): the password is written and the forgotten-password e-mail sent by its services (>= 2.8).",
         "symfonycasts/reset-password-bundle": "The forgotten password of the sign-in screens (admin.account.reset_password): its one-time tokens.",
-        "symfony/string": "The profile of the sign-in screens (admin.account): the picture's name, rebuilt by the slugger."
+        "symfony/string": "The profile of the sign-in screens (admin.account): the picture's name, rebuilt by the slugger.",
+        "jul6art/dataflow-bundle": "The accounts' import (admin.user_import, 1.44): its screens are dataflow-bundle's (>= 1.16, dataflow.import on)."
     }
 }

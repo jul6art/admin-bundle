@@ -194,9 +194,53 @@ class Configuration implements ConfigurationInterface
                 ->append($this->deadlinesNode())
                 ->append($this->rolePermissionsNode())
                 ->append($this->accountNode())
+                ->append($this->userImportNode())
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * `user_import` (1.44, ADR-0001 of dataflow-bundle): the accounts' import, on dataflow-bundle's import screens.
+     */
+    private function userImportNode(): ArrayNodeDefinition
+    {
+        $node = new TreeBuilder('user_import')->getRootNode();
+        $node
+            ->info('The accounts\' import: a definition "user" for dataflow-bundle\'s import screens (dataflow.import), routed by the application. Off by default. Needs jul6art/dataflow-bundle >= 1.16 with dataflow.import on, and doctrine/orm.')
+            ->canBeEnabled()
+            ->children()
+                ->scalarNode('user_class')->info('The account entity the import creates.')->defaultNull()->end()
+                ->arrayNode('roles')
+                    ->info('The roles a line may give, in the "role" column; any other is refused. Empty: every account keeps the implicit role only.')
+                    ->scalarPrototype()->end()
+                ->end()
+                ->scalarNode('super_admin_role')
+                    ->info('The role only a super administrator may import: an administrator holding the creation right must not create one at an address of their own.')
+                    ->defaultValue('ROLE_SUPER_ADMIN')
+                    ->cannotBeEmpty()
+                ->end()
+                ->scalarNode('permission')->info('The right to import, checked on every screen: the one to create an account.')->defaultValue('user:create')->cannotBeEmpty()->end()
+                ->arrayNode('routes')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('upload')->defaultValue('admin_user_import_new')->cannotBeEmpty()->end()
+                        ->scalarNode('mapping')->defaultValue('admin_user_import_mapping')->cannotBeEmpty()->end()
+                        ->scalarNode('run')->defaultValue('admin_user_import_execute')->cannotBeEmpty()->end()
+                        ->scalarNode('template')->info('The downloadable model; empty: none.')->defaultValue('')->end()
+                        ->scalarNode('back')->info('Where "back" and "see the list" lead.')->defaultValue('admin_user_index')->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+                ->scalarNode('translation_domain')->defaultValue('user')->cannotBeEmpty()->end()
+                ->scalarNode('translation_prefix')->defaultValue('user.import')->cannotBeEmpty()->end()
+                ->integerNode('max_bytes')->info('The largest file; null keeps dataflow.import.max_bytes.')->defaultNull()->min(1)->end()
+            ->end()
+            ->validate()
+                ->ifTrue(static fn (array $import): bool => true === ($import['enabled'] ?? false) && !\is_string($import['user_class'] ?? null))
+                ->thenInvalid('admin.user_import needs user_class: the entity the import creates, %s.')
+            ->end();
+
+        return $node;
     }
 
     /**

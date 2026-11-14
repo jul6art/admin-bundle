@@ -11,6 +11,7 @@ use Jul6Art\AdminBundle\Tests\Account\Fixtures\Member;
 use Jul6Art\AdminBundle\Tests\Account\Fixtures\ResetPasswordRequestRepository;
 use Jul6Art\AuthBundle\AuthBundle;
 use Jul6Art\CoreBundle\CoreBundle;
+use Jul6Art\DataflowBundle\DataflowBundle;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Controller\TemplateController;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -50,6 +51,7 @@ final class AccountTestKernel extends Kernel
         yield new SymfonyCastsResetPasswordBundle();
         yield new CoreBundle();
         yield new AuthBundle();
+        yield new DataflowBundle();
         yield new AdminBundle();
     }
 
@@ -174,6 +176,15 @@ final class AccountTestKernel extends Kernel
             ], $this->account),
         ]);
 
+        // The accounts' import (1.44), on dataflow-bundle's screens: the right is a role here, the voter of a role.
+        $container->loadFromExtension('dataflow', ['import' => ['enabled' => true, 'directory' => $this->buildDir().'/import', 'layout' => 'layout.html.twig']]);
+        $container->loadFromExtension('admin', ['user_import' => [
+            'enabled' => true,
+            'user_class' => Member::class,
+            'roles' => ['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'],
+            'permission' => 'ROLE_ADMIN',
+        ]]);
+
         $container->register(MailerInterface::class, CapturingMailer::class)->setPublic(true);
         // The 404 of a closed sign-up is expected: no logger line on the test's output.
         $container->register('logger', NullLogger::class);
@@ -192,6 +203,12 @@ final class AccountTestKernel extends Kernel
         $routes->add('app_account_profile_edit', '/app/account/profile')->controller($screens.'AccountProfileController::edit')->defaults(['_auth_space' => 'customer'])->methods(['GET', 'POST']);
         $routes->add('admin_dashboard', '/admin')->controller(TemplateController::class)->defaults(['template' => 'admin/account/profile.html.twig']);
         $routes->add('admin_user_show', '/admin/users/{id}')->controller('Symfony\Bundle\FrameworkBundle\Controller\RedirectController::urlRedirectAction')->defaults(['path' => '/admin']);
+
+        $import = 'Jul6Art\DataflowBundle\Import\Web\ImportController::';
+        $routes->add('admin_user_index', '/admin/users')->controller(TemplateController::class)->defaults(['template' => 'layout.html.twig']);
+        $routes->add('admin_user_import_new', '/admin/users/import/new')->controller($import.'upload')->defaults(['_import' => 'user'])->methods(['GET', 'POST']);
+        $routes->add('admin_user_import_mapping', '/admin/users/import/mapping')->controller($import.'mapping')->defaults(['_import' => 'user'])->methods(['GET']);
+        $routes->add('admin_user_import_execute', '/admin/users/import/execute')->controller($import.'run')->defaults(['_import' => 'user'])->methods(['POST']);
 
         $portal = ['_auth_space' => 'portal'];
         $routes->add('portal_security_login', '/portal/login')->controller($screens.'LoginController::login')->defaults($portal)->methods(['GET', 'POST']);
