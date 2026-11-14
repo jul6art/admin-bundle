@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Jul6Art\AdminBundle\Controller\Security;
 
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ObjectManager;
 use Jul6Art\AdminBundle\Account\AccountSpaces;
 use Jul6Art\AdminBundle\Form\Security\ProfileFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -93,6 +94,17 @@ final class AccountProfileController extends AbstractController
             return null !== $show && null !== $this->showAttribute && $this->isGranted($this->showAttribute) && method_exists($account, 'getId')
                 ? $this->redirectToRoute($show, ['id' => $account->getId()])
                 : $this->redirectToRoute($profile);
+        }
+
+        // ⚠️ A refused form already wrote its values into the signed-in account — the very object the shell shows
+        // around it: the header said the refused name, as if saved. The account is read again from the database; the
+        // form keeps what was typed, and its errors.
+        if ($form->isSubmitted()) {
+            $manager = $this->registry->getManagerForClass($this->userClass);
+
+            if ($manager instanceof ObjectManager && $manager->contains($account)) {
+                $manager->refresh($account);
+            }
         }
 
         return $this->render($this->spaces->template($request, 'profile'), ['form' => $form] + $this->spaces->context($request), new Response(

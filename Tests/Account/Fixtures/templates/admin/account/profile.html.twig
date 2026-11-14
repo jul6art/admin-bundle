@@ -1,4 +1,5 @@
 {# The application's profile page, inside its shell: the bundle only hands it the form and the space. #}
+<header data-account>{{ app.user.firstName|default('') }}</header>
 <main data-space="{{ space }}" data-layout="{{ layout|default('none') }}">
     {{ form_start(form) }}{{ form_widget(form) }}<button type="submit">Save</button>{{ form_end(form) }}
 </main>

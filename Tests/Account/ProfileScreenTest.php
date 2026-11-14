@@ -148,6 +148,25 @@ final class ProfileScreenTest extends AccountScreensTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    /**
+     * ⚠️ A refused profile does not change the signed-in account the page shows around the form: the form wrote its
+     * values into that very object, and the shell's header showed the refused name — nothing was stored, but the page
+     * said otherwise (seen in Chrome on a generated back office, 2026-11-14). The form keeps what was typed, with
+     * its error; the account is read again from the database.
+     */
+    public function testARefusedProfileLeavesTheSignedInAccountAsStored(): void
+    {
+        $this->start();
+        $this->client->loginUser($this->member('ada@example.test'), 'main');
+
+        $crawler = $this->client->request('GET', '/admin/account/profile');
+        $crawler = $this->client->submit($crawler->filter('form')->form(['profile_form[firstName]' => str_repeat('a', 101)]));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('Ada', $crawler->filter('header[data-account]')->text(), 'The account around the form is the stored one.');
+        self::assertSame(str_repeat('a', 101), $crawler->filter('input[name="profile_form[firstName]"]')->attr('value'), 'The form keeps what was typed.');
+    }
+
     private function upload(mixed $field, string $file): void
     {
         self::assertInstanceOf(FileFormField::class, $field);
