@@ -103,7 +103,7 @@ final readonly class GlobalSearch
         /** @var list<array{id: int|string, label: string|null}> $rows */
         $rows = (clone $builder)
             ->select(\sprintf('e.id AS id, %1$s AS label, LOWER(%1$s) AS HIDDEN sortLabel', $family->label))
-            ->orderBy('sortLabel', 'ASC')
+            ->orderBy('sortLabel', \SortDirection::Ascending)
             ->setMaxResults(self::PER_GROUP)
             ->getQuery()
             ->getArrayResult();
