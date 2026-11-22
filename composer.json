@@ -98,7 +98,7 @@
         ]
     },
     "conflict": {
-        "doctrine/dbal": "<4.3"
+        "doctrine/dbal": "<4.6"
     },
     "suggest": {
         "jul6art/acl-bundle": "The grid of the roles' permissions (admin.role_permissions, 1.40): its controller writes through acl-bundle's storage (acl.storage, >= 1.2.1) and reads its catalog.",

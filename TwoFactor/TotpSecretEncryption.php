@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Jul6Art\AdminBundle\TwoFactor;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Type;
 
 /**
  * Chiffre les secrets TOTP stockés EN CLAIR avant admin-bundle 1.39, depuis une migration.
@@ -32,7 +31,8 @@ final class TotpSecretEncryption
      */
     public static function encryptStoredSecrets(Connection $connection, string $table = 'user', string $column = 'totp_secret', string $identifier = 'id'): int
     {
-        $type = Type::getType('encrypted_string');
+        // The connection's type provider, not the static registry DBAL 4.6 deprecates.
+        $type = $connection->getConfiguration()->getTypeProvider()->get('encrypted_string');
         $platform = $connection->getDatabasePlatform();
         $quotedTable = $connection->quoteSingleIdentifier($table);
         $quotedColumn = $connection->quoteSingleIdentifier($column);
