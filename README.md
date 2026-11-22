@@ -18,7 +18,7 @@ Everything that makes a back office look like a back office, and nothing that ma
 Requirements
 ------------
 
-- PHP ^8.5
+- PHP ^8.6
 - Symfony ^7.4 || ^8.0
 - `symfony/security-bundle` — a hard requirement, not a suggestion: the navigation builder needs
   `security.authorization_checker` to **compile**, and a package the container needs to compile is

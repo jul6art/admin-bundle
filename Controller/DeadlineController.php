@@ -93,7 +93,7 @@ final class DeadlineController extends AbstractController
                 'days' => $days,
                 'status' => $status,
                 // La part de la période déjà écoulée : une barre, seulement quand il y a un rythme.
-                'progress' => null !== $period && $period > 0 && null !== $days ? (int) round(100 * min($period, max(0, $period - $days)) / $period) : null,
+                'progress' => null !== $period && $period > 0 && null !== $days ? (int) round(100 * clamp($period - $days, 0, $period) / $period) : null,
                 'next' => $next,
             ];
         }

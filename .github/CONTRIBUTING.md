@@ -32,7 +32,7 @@ cd admin-bundle
 composer install
 ```
 
-You need PHP **^8.5** and Composer 2. This bundle also carries a small development
+You need PHP **^8.6** and Composer 2. This bundle also carries a small development
 application (`src/Kernel.php`, `.env`, `compose.yaml`), which is how its screens are looked
 at without generating a whole project: `docker compose up -d` then `symfony serve`. It is a
 harness, not a product — nothing an application installs depends on it.
@@ -73,7 +73,7 @@ catch what a local run cannot:
   matrix stays honest instead of letting Composer mix components from several
   branches.
 
-Supported at the moment: **PHP ^8.5**, **Symfony ^7.4 || ^8.0**.
+Supported at the moment: **PHP ^8.6**, **Symfony ^7.4 || ^8.0**.
 
 ## Semantic versioning is a promise here
 
