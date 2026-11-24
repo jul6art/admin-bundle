@@ -489,6 +489,7 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         $container->register('admin.reset_password.response_floor', ResponseFloor::class)
             ->setArguments([\is_int($floor) ? $floor : 250]);
         $textTemplate = self::asString($email['text_template'] ?? null, '');
+        $limiter = self::asString($reset['limiter'] ?? null, '');
         self::screen($container, ResetPasswordController::class)
             ->setArgument('$userClass', $userClass)
             ->setArgument('$responseFloor', new Reference('admin.reset_password.response_floor'))
@@ -498,7 +499,9 @@ class AdminExtension extends Extension implements PrependExtensionInterface
             ->setArgument('$mailSubject', self::asString($email['subject'] ?? null, 'security.reset_password.email.subject'))
             ->setArgument('$mailTranslationDomain', self::asString($email['translation_domain'] ?? null, 'security'))
             ->setArgument('$requestFormType', self::asString($reset['request_form_type'] ?? null, ResetPasswordRequestFormType::class))
-            ->setArgument('$formType', self::asString($reset['form_type'] ?? null, NewPasswordFormType::class));
+            ->setArgument('$formType', self::asString($reset['form_type'] ?? null, NewPasswordFormType::class))
+            ->setArgument('$limiter', '' !== $limiter ? new Reference($limiter) : null)
+            ->setArgument('$limiterMessage', self::asString($reset['limiter_message'] ?? null, 'security.reset_password.too_many_attempts'));
     }
 
     /**

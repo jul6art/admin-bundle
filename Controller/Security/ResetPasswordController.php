@@ -15,6 +15,7 @@ use Jul6Art\AuthBundle\Account\ResponseFloor;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -22,8 +23,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
@@ -63,6 +66,7 @@ final class ResetPasswordController extends AbstractController
         private readonly PasswordResetMailer $mailer,
         private readonly ManagerRegistry $registry,
         private readonly AccountSpaces $spaces,
+        private readonly TranslatorInterface $translator,
         private readonly string $userClass,
         private readonly ResponseFloor $responseFloor,
         private readonly string $mailFrom,
@@ -73,6 +77,8 @@ final class ResetPasswordController extends AbstractController
         private readonly string $requestFormType = ResetPasswordRequestFormType::class,
         private readonly string $formType = NewPasswordFormType::class,
         private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly ?RateLimiterFactoryInterface $limiter = null,
+        private readonly string $limiterMessage = 'security.reset_password.too_many_attempts',
     ) {
     }
 
@@ -83,16 +89,20 @@ final class ResetPasswordController extends AbstractController
         // fields' names.
         $form = $this->forms->createNamed(self::REQUEST_FORM, $this->requestFormType);
         $form->handleRequest($request);
+        $status = $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK;
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        // Every request counts, valid or not, known address or not: per IP, never per address, whose refusal would
+        // tell it exists.
+        if ($form->isSubmitted() && $this->limiter instanceof RateLimiterFactoryInterface && !$this->limiter->create((string) $request->getClientIp())->consume()->isAccepted()) {
+            $form->addError(new FormError($this->translator->trans($this->limiterMessage, [], 'security')));
+            $status = Response::HTTP_TOO_MANY_REQUESTS;
+        } elseif ($form->isSubmitted() && $form->isValid()) {
             $email = $form->get('email')->getData();
 
             return $this->sendEmail(\is_string($email) ? $email : '', $request);
         }
 
-        return $this->render($this->spaces->template($request, 'reset_password_request'), ['form' => $form] + $this->spaces->context($request), new Response(
-            status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK,
-        ));
+        return $this->render($this->spaces->template($request, 'reset_password_request'), ['form' => $form] + $this->spaces->context($request), new Response(status: $status));
     }
 
     #[IsGranted('PUBLIC_ACCESS')]

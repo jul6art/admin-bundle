@@ -1333,6 +1333,7 @@ admin:
             response_floor_ms: 250   # the request never answers faster, known address or not
             request_form_type: ~
             form_type: ~
+            limiter: ~               # limiter.password_reset: every request counts, per IP, whatever the address — 429 past it (1.47)
             email:
                 from: '%env(MAILER_FROM)%'
                 template: security/reset_password_email.html.twig   # receives resetToken, space, locale

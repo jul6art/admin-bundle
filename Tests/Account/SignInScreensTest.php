@@ -102,6 +102,25 @@ final class SignInScreensTest extends AccountScreensTestCase
         self::assertResponseRedirects('/reset-password/check-email', 302, 'As for an unknown address: never a 500 that tells the account exists.');
     }
 
+    public function testEveryRequestCountsAgainstTheLimiterWhateverTheAddress(): void
+    {
+        $this->start(['reset_password' => ['response_floor_ms' => 0, 'limiter' => 'limiter.sign_up']]);
+        $this->member('ada@example.test');
+
+        // Three submissions per hour in this test: an invalid one and an unknown address count too.
+        $this->requestReset('not an address');
+        self::assertResponseStatusCodeSame(422);
+        $this->requestReset('nobody@example.test');
+        self::assertResponseRedirects('/reset-password/check-email');
+        $this->requestReset('nobody@example.test');
+        self::assertResponseRedirects('/reset-password/check-email');
+
+        $this->requestReset('ada@example.test');
+        self::assertResponseStatusCodeSame(429);
+        self::assertSelectorTextContains('form', 'security.reset_password.too_many_attempts');
+        self::assertCount(0, $this->mailer()->sent, 'Refused before anything is looked up or sent.');
+    }
+
     public function testTheEmailLeavesInTheAccountsLanguageWithTheSpaceOfTheRequest(): void
     {
         $this->start(['reset_password' => ['response_floor_ms' => 0]]);

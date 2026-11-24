@@ -206,6 +206,8 @@ final class ConfigurationTest extends TestCase
                     'response_floor_ms' => 250,
                     'request_form_type' => null,
                     'form_type' => null,
+                    'limiter' => null,
+                    'limiter_message' => 'security.reset_password.too_many_attempts',
                     'email' => [
                         'from' => '',
                         'template' => 'security/reset_password_email.html.twig',
