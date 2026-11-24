@@ -6,6 +6,7 @@ namespace Jul6Art\AdminBundle\Tests\Account\Fixtures;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\RawMessage;
@@ -23,9 +24,16 @@ final class CapturingMailer implements MailerInterface
     /** @var list<string> */
     public array $tokens = [];
 
+    /** A transport that is down: thrown instead of keeping the message, as a mailer without Messenger would. */
+    public ?TransportException $failure = null;
+
     #[\Override]
     public function send(RawMessage $message, ?Envelope $envelope = null): void
     {
+        if ($this->failure instanceof TransportException) {
+            throw $this->failure;
+        }
+
         if (!$message instanceof Email) {
             return;
         }

@@ -9,6 +9,7 @@ use Jul6Art\AdminBundle\Controller\Security\ResetPasswordController;
 use Jul6Art\AdminBundle\Tests\Account\Fixtures\CodeResetPasswordRequestType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\Exception\TransportException;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 
 /**
@@ -88,6 +89,17 @@ final class SignInScreensTest extends AccountScreensTestCase
         self::assertGreaterThanOrEqual(0.25, $unknown);
         self::assertLessThan(0.05, abs($known - $unknown), 'A known address and an unknown one take the same time, within 50 ms.');
         self::assertCount(1, $this->mailer()->sent, 'One e-mail, for the known address only.');
+    }
+
+    public function testAnEmailThatCannotLeaveLeadsToTheSamePage(): void
+    {
+        $this->start(['reset_password' => ['response_floor_ms' => 0]]);
+        $this->member('ada@example.test');
+        $this->mailer()->failure = new TransportException('The transport is down.');
+
+        $this->requestReset('ada@example.test');
+
+        self::assertResponseRedirects('/reset-password/check-email', 302, 'As for an unknown address: never a 500 that tells the account exists.');
     }
 
     public function testTheEmailLeavesInTheAccountsLanguageWithTheSpaceOfTheRequest(): void

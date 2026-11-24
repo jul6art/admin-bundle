@@ -12,12 +12,15 @@ use Jul6Art\AuthBundle\Account\PasswordResetEmail;
 use Jul6Art\AuthBundle\Account\PasswordResetMailer;
 use Jul6Art\AuthBundle\Account\PasswordWriter;
 use Jul6Art\AuthBundle\Account\ResponseFloor;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -33,7 +36,8 @@ use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
  *
  * ⚠️ **The answer never tells whether the address exists**, by its content nor by its duration:
  *
- * - both cases lead to the same confirmation page, with the same text — the helper's exception is swallowed;
+ * - both cases lead to the same confirmation page, with the same text — the helper's exception is swallowed, and so
+ *   is an e-mail that could not leave (logged);
  * - **the request never answers faster than `response_floor_ms`** (250 ms), through auth-bundle's `ResponseFloor`.
  *   A known address has a token generated, a row written, an e-mail built; an unknown one, nothing: the content was
  *   silent, the duration answered. The floor starts before the lookup, which already carries part of the gap.
@@ -68,6 +72,7 @@ final class ResetPasswordController extends AbstractController
         private readonly string $mailTranslationDomain,
         private readonly string $requestFormType = ResetPasswordRequestFormType::class,
         private readonly string $formType = NewPasswordFormType::class,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -190,6 +195,9 @@ final class ResetPasswordController extends AbstractController
             $this->setTokenObjectInSession($resetToken);
         } catch (ResetPasswordExceptionInterface) {
             // Too many requests, or one still valid: the same answer, always.
+        } catch (TransportExceptionInterface $exception) {
+            // A mailer that sends at once (no Messenger) and fails: a 500 for a known address only would tell it.
+            $this->logger->error('The forgotten-password e-mail could not leave.', ['exception' => $exception]);
         }
     }
 
