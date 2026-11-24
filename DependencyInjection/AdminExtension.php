@@ -27,7 +27,7 @@ use Jul6Art\AdminBundle\Ui\EmailPalette;
 use Jul6Art\AdminBundle\UserImport\UserDuplicateResolver;
 use Jul6Art\AdminBundle\UserImport\UserImportDefinition;
 use Jul6Art\AdminBundle\UserImport\UserRowMapper;
-use Jul6Art\AuthBundle\Account\PasswordWriter;
+use Jul6Art\AuthBundle\Account\ResponseFloor;
 use Jul6Art\CoreBundle\Performance\Store\PerformanceStoreInterface;
 use Jul6Art\DataflowBundle\Import\ImportRunner;
 use Jul6Art\DataflowBundle\Import\Web\AbstractImportDefinition;
@@ -412,7 +412,8 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         $reset = \is_array($config['reset_password'] ?? null) ? $config['reset_password'] : [];
         $resetOn = true === ($reset['enabled'] ?? true);
         $missing = array_keys(array_filter([
-            'jul6art/auth-bundle:^2.8' => !class_exists(PasswordWriter::class),
+            // ResponseFloor came in 2.10, after the password services of 2.8.
+            'jul6art/auth-bundle:^2.10' => !class_exists(ResponseFloor::class),
             'symfony/form' => !class_exists(AbstractType::class),
             'doctrine/orm' => !interface_exists(EntityManagerInterface::class),
             'twig/twig' => !class_exists(Environment::class),
@@ -484,10 +485,13 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         }
 
         $floor = $reset['response_floor_ms'] ?? 250;
+        // Its own floor, never auth-bundle's API one (auth.api.password_reset.response_floor): two settings.
+        $container->register('admin.reset_password.response_floor', ResponseFloor::class)
+            ->setArguments([\is_int($floor) ? $floor : 250]);
         $textTemplate = self::asString($email['text_template'] ?? null, '');
         self::screen($container, ResetPasswordController::class)
             ->setArgument('$userClass', $userClass)
-            ->setArgument('$responseFloorMilliseconds', \is_int($floor) ? $floor : 250)
+            ->setArgument('$responseFloor', new Reference('admin.reset_password.response_floor'))
             ->setArgument('$mailFrom', $from)
             ->setArgument('$mailTemplate', self::asString($email['template'] ?? null, 'security/reset_password_email.html.twig'))
             ->setArgument('$mailTextTemplate', '' !== $textTemplate ? $textTemplate : null)

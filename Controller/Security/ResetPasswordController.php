@@ -11,6 +11,7 @@ use Jul6Art\AdminBundle\Form\Security\ResetPasswordRequestFormType;
 use Jul6Art\AuthBundle\Account\PasswordResetEmail;
 use Jul6Art\AuthBundle\Account\PasswordResetMailer;
 use Jul6Art\AuthBundle\Account\PasswordWriter;
+use Jul6Art\AuthBundle\Account\ResponseFloor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormTypeInterface;
@@ -33,12 +34,9 @@ use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
  * ⚠️ **The answer never tells whether the address exists**, by its content nor by its duration:
  *
  * - both cases lead to the same confirmation page, with the same text — the helper's exception is swallowed;
- * - **the request never answers faster than `response_floor_ms`** (250 ms). A known address has a token generated,
- *   a row written, an e-mail built; an unknown one, nothing: measured on cegeta, 1.00 ms against 1.52 ms. The
- *   content was silent, the duration answered. A floor states a property a test checks as is, where a decoy's work
- *   "as long as the real one" drifts silently at the first change. The clock starts before the lookup, which
- *   already carries part of the gap; `hrtime()`, a monotonic clock: an NTP adjustment would make `microtime()` go
- *   back, hence a negative `usleep()`.
+ * - **the request never answers faster than `response_floor_ms`** (250 ms), through auth-bundle's `ResponseFloor`.
+ *   A known address has a token generated, a row written, an e-mail built; an unknown one, nothing: the content was
+ *   silent, the duration answered. The floor starts before the lookup, which already carries part of the gap.
  */
 final class ResetPasswordController extends AbstractController
 {
@@ -62,7 +60,7 @@ final class ResetPasswordController extends AbstractController
         private readonly ManagerRegistry $registry,
         private readonly AccountSpaces $spaces,
         private readonly string $userClass,
-        private readonly int $responseFloorMilliseconds,
+        private readonly ResponseFloor $responseFloor,
         private readonly string $mailFrom,
         private readonly string $mailTemplate,
         private readonly ?string $mailTextTemplate,
@@ -154,48 +152,44 @@ final class ResetPasswordController extends AbstractController
 
     private function sendEmail(string $email, Request $request): RedirectResponse
     {
-        $startedAt = hrtime(true);
-        $account = $this->registry->getRepository($this->userClass)->findOneBy(['email' => mb_strtolower(trim($email))]);
-
-        // An unknown address is redirected exactly as a known one. The silence is the feature.
-        if ($account instanceof PasswordAuthenticatedUserInterface) {
-            try {
-                $resetToken = $this->resetPasswordHelper->generateResetToken($account);
-                $locale = self::localeOf($account);
-                $space = $this->spaces->name($request);
-
-                $this->mailer->deliver(new PasswordResetEmail(
-                    from: Address::create($this->mailFrom),
-                    to: new Address(self::emailOf($account, $email)),
-                    subject: $this->mailSubject,
-                    translationDomain: $this->mailTranslationDomain,
-                    htmlTemplate: $this->mailTemplate,
-                    // The space picks the link's route: a customer receives a link to the portal.
-                    context: ['resetToken' => $resetToken, 'space' => $space, 'locale' => $locale ?? $request->getLocale()],
-                    textTemplate: $this->mailTextTemplate,
-                    // In the language of the ACCOUNT, not of the page: a visitor signed out sees the default one, and
-                    // the body renders in the transport, maybe in a worker.
-                    locale: $locale,
-                ));
-
-                $this->setTokenObjectInSession($resetToken);
-            } catch (ResetPasswordExceptionInterface) {
-                // Too many requests, or one still valid: the same answer, always.
-            }
-        }
-
-        $this->holdUntilFloor($startedAt);
+        $this->responseFloor->hold(function () use ($email, $request): void {
+            $this->requestReset($email, $request);
+        });
 
         return $this->redirectToRoute($this->spaces->route($request, 'reset_password_check_email'));
     }
 
-    private function holdUntilFloor(int $startedAt): void
+    private function requestReset(string $email, Request $request): void
     {
-        $elapsed = intdiv(hrtime(true) - $startedAt, 1_000);
-        $floor = $this->responseFloorMilliseconds * 1_000;
+        $account = $this->registry->getRepository($this->userClass)->findOneBy(['email' => mb_strtolower(trim($email))]);
 
-        if ($elapsed < $floor) {
-            usleep($floor - $elapsed);
+        // An unknown address is redirected exactly as a known one. The silence is the feature.
+        if (!$account instanceof PasswordAuthenticatedUserInterface) {
+            return;
+        }
+
+        try {
+            $resetToken = $this->resetPasswordHelper->generateResetToken($account);
+            $locale = self::localeOf($account);
+            $space = $this->spaces->name($request);
+
+            $this->mailer->deliver(new PasswordResetEmail(
+                from: Address::create($this->mailFrom),
+                to: new Address(self::emailOf($account, $email)),
+                subject: $this->mailSubject,
+                translationDomain: $this->mailTranslationDomain,
+                htmlTemplate: $this->mailTemplate,
+                // The space picks the link's route: a customer receives a link to the portal.
+                context: ['resetToken' => $resetToken, 'space' => $space, 'locale' => $locale ?? $request->getLocale()],
+                textTemplate: $this->mailTextTemplate,
+                // In the language of the ACCOUNT, not of the page: a visitor signed out sees the default one, and
+                // the body renders in the transport, maybe in a worker.
+                locale: $locale,
+            ));
+
+            $this->setTokenObjectInSession($resetToken);
+        } catch (ResetPasswordExceptionInterface) {
+            // Too many requests, or one still valid: the same answer, always.
         }
     }
 
