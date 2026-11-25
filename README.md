@@ -23,6 +23,8 @@ Requirements
 - `symfony/security-bundle` — a hard requirement, not a suggestion: the navigation builder needs
   `security.authorization_checker` to **compile**, and a package the container needs to compile is
   not a development dependency.
+- `jul6art/core-bundle` ^3.14 — the performance dashboard's store, the CSP nonce, the TOTP secret's
+  `encrypted_string` type and `Util\Clock`, which dates what the screens write.
 
 Suggested, and what each unlocks:
 
