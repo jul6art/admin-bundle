@@ -10,6 +10,7 @@ use Endroid\QrCode\Writer\SvgWriter;
 use Jul6Art\AdminBundle\Contract\BackupCodeAwareInterface;
 use Jul6Art\AdminBundle\Contract\TwoFactorAwareInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
+use Symfony\Component\Clock\Clock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -130,7 +131,7 @@ final readonly class TotpEnrolment
             return false;
         }
 
-        $account->confirmTotp(new \DateTimeImmutable());
+        $account->confirmTotp(\DateTimeImmutable::createFromInterface(Clock::get()->now()));
         $this->entityManager->flush();
         $this->dispatcher->dispatch(new TwoFactorEvent($account), TwoFactorEvent::ENABLED);
 
