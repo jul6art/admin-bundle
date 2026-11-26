@@ -1032,6 +1032,13 @@ app_two_factor:
 At sign-in, the form still redirects to its usual target; it is the NEXT request that scheb sends to
 `/2fa` while the code is missing — a functional test follows that redirect before expecting `/2fa`.
 
+An account signed in already that comes back to the code page or its check — the code sent twice
+(Enter, then a click; a password manager that submits too), the page opened again with "Back" —
+goes on to the firewall's `two_factor.default_target_path` instead of a 403. Both refuse it
+otherwise: the check, scheb's authenticator; the page, the `^/2fa` rule above, which only a sign-in in
+progress holds. This holds wherever `scheb/2fa-bundle` is registered, `admin.two_factor` on or not
+(`TwoFactorPassedListener`).
+
 The screen (`admin_account_two_factor`) enrols with a QR code — an SVG `data:` URI, nothing the
 CSP refuses — and a first correct code; it turns the second factor off on a **current** code only,
 so a session left open is not enough; it refuses to turn it off when `required`. Its account-menu

@@ -159,6 +159,12 @@ class AdminExtension extends Extension implements PrependExtensionInterface
         if ($twoFactorEnabled) {
             $this->loadTwoFactor($loader, $container, $twoFactor, self::asString($routes['logout'] ?? null, ''));
         }
+        // Le compte déjà connecté qui revient sur la page du code : partout où scheb est enregistré, `admin.two_factor` ou
+        // non — une application peut brancher le second facteur elle-même.
+        $bundles = $container->hasParameter('kernel.bundles') ? $container->getParameter('kernel.bundles') : [];
+        if (\is_array($bundles) && \array_key_exists('SchebTwoFactorBundle', $bundles)) {
+            $loader->load('two_factor_passed.yaml');
+        }
 
         $guide = \is_array($config['user_guide'] ?? null) ? $config['user_guide'] : [];
         $container->setParameter('admin.user_guide.route', self::asString($guide['route'] ?? null, ''));
