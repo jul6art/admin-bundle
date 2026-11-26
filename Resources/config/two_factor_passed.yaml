@@ -1,0 +1,13 @@
+# Chargé dès que scheb/2fa-bundle est enregistré — que l'application passe par `admin.two_factor` ou branche le second
+# facteur elle-même : un compte déjà connecté qui revient sur la page du code ou sa vérification (code envoyé deux fois,
+# « Précédent ») continue là où scheb l'envoie après un code accepté, au lieu d'un 403.
+services:
+    Jul6Art\AdminBundle\EventListener\TwoFactorPassedListener:
+        arguments:
+            $tokenStorage: '@security.token_storage'
+            $security: '@security.helper'
+            $firewalls: '@scheb_two_factor.firewall_context'
+            $httpUtils: '@security.http_utils'
+        tags:
+            # Avant l'écouteur d'exceptions du pare-feu (priorité 1), qui répondrait le 403.
+            - { name: kernel.event_listener, event: kernel.exception, priority: 2 }
